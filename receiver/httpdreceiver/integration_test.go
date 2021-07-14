@@ -52,7 +52,9 @@ func httpdContainer(t *testing.T) testcontainers.Container {
 func (suite *HttpdIntegrationSuite) TestHttpdScraperHappyPath() {
 	t := suite.T()
 	httpd := httpdContainer(t)
-	defer httpd.Terminate(context.Background())
+	defer func() {
+		require.NoError(t, httpd.Terminate(context.Background()))
+	}()
 	hostname, err := httpd.Host(context.Background())
 	require.NoError(t, err)
 
