@@ -19,6 +19,7 @@ func TestComponents(t *testing.T) {
 	require.NotNil(t, factories.Processors["attributes"])
 	require.NotNil(t, factories.Processors["filter"])
 	require.NotNil(t, factories.Processors["resource"])
+	require.NotNil(t, factories.Processors["resourcedetection"])
 
 	// Exporters
 	require.NotNil(t, factories.Exporters["file"])

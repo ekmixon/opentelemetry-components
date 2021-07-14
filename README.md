@@ -14,6 +14,7 @@ Processors:
 - [attributes](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/attributesprocessor)
 - [filter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/filterprocessor)
 - [resource](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/resourceprocessor)
+- [resourcedetectionprocessor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor)
 
 Exporters:
 - [file](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/fileexporter)

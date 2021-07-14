@@ -17,6 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 )
 
 // Get the factories for components we want to use.
@@ -36,6 +37,7 @@ func components() (component.Factories, error) {
 		attributesprocessor.NewFactory(),
 		filterprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
+		resourcedetectionprocessor.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
