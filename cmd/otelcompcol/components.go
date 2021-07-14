@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/exporter/fileexporter"
@@ -15,9 +18,7 @@ import (
 	"go.opentelemetry.io/collector/receiver/hostmetricsreceiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
+	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 )
 
 // Get the factories for components we want to use.
@@ -36,6 +37,7 @@ func components() (component.Factories, error) {
 	processors, err := component.MakeProcessorFactoryMap(
 		attributesprocessor.NewFactory(),
 		filterprocessor.NewFactory(),
+		normalizesumsprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
 		resourcedetectionprocessor.NewFactory(),
 	)
