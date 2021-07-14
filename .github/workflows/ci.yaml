@@ -1,0 +1,135 @@
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  setup-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Setup Go Environment
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Cache Go
+        id: go-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: |
+            /home/runner/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/go/bin
+          key: v1-go-pkg-mod-${{ runner.os }}-${{ hashFiles('**/go.mod', '**/go.sum') }}
+      - name: Install Dependencies
+        if: steps.go-cache.outputs.hit != 'true'
+        run: |
+          go mod download
+          make install-tools
+  ci-check:
+    runs-on: ubuntu-latest
+    needs: [setup-environment]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Setup Go Environment
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Cache Go
+        id: go-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: |
+            /home/runner/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/go/bin
+          key: v1-go-pkg-mod-${{ runner.os }}-${{ hashFiles('**/go.mod', '**/go.sum') }}
+      - name: Install Dependencies
+        if: steps.go-cache.outputs.hit != 'true'
+        run: |
+          go mod download
+          make install-tools
+      - name: CI Checks
+        run: make -j3 ci-check
+  test:
+    runs-on: ubuntu-latest
+    needs: [setup-environment]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Setup Go Environment
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Cache Go
+        id: go-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: |
+            /home/runner/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/go/bin
+          key: v1-go-pkg-mod-${{ runner.os }}-${{ hashFiles('**/go.mod', '**/go.sum') }}
+      - name: Install Dependencies
+        if: steps.go-cache.outputs.hit != 'true'
+        run: |
+          go mod download
+          make install-tools
+      - name: Go Test
+        run: make test
+  build:
+    runs-on: ubuntu-latest
+    needs: [setup-environment]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Setup Go Environment
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Cache Go
+        id: go-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: |
+            /home/runner/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/go/bin
+          key: v1-go-pkg-mod-${{ runner.os }}-${{ hashFiles('**/go.mod', '**/go.sum') }}
+      - name: Install Dependencies
+        if: steps.go-cache.outputs.hit != 'true'
+        run: |
+          go mod download
+          make install-tools
+      - name: Build All Targets
+        run: make -j4 build-all

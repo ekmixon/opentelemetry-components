@@ -28,8 +28,14 @@ Extensions:
 - [zpages](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension)
 
 
-## New Components
+## Additional Components
 
+The following components are based in this repository:
+
+Receivers:
+
+
+Processors:
 
 
 ## Development
