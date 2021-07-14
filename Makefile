@@ -40,7 +40,7 @@ build:
 	$(GOBUILD) $(LDFLAGS) -o $(OUTDIR)/otelcompcol_$(GOOS)_$(GOARCH)$(EXT) ./cmd/otelcompcol
 
 .PHONY: build-all
-build-all: amd64_linux amd64_darwin amd64_windows arm_linux
+build-all: amd64_linux amd64_darwin amd64_windows arm64_linux
 
 # Other build targets
 .PHONY: amd64_linux
@@ -51,9 +51,9 @@ amd64_linux:
 amd64_darwin:
 	GOOS=darwin GOARCH=amd64 $(MAKE) build
 
-.PHONY: arm_linux
-arm_linux:
-	GOOS=linux GOARCH=arm $(MAKE) build
+.PHONY: arm64_linux
+arm64_linux:
+	GOOS=linux GOARCH=arm64 $(MAKE) build
 
 .PHONY: amd64_windows
 amd64_windows:
