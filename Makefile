@@ -45,19 +45,19 @@ build-all: amd64_linux amd64_darwin amd64_windows arm_linux
 # Other build targets
 .PHONY: amd64_linux
 amd64_linux:
-	GOOS=linux GOARCH=amd64 $(MAKE) otelcompcol
+	GOOS=linux GOARCH=amd64 $(MAKE) build
 
 .PHONY: amd64_darwin
 amd64_darwin:
-	GOOS=darwin GOARCH=amd64 $(MAKE) otelcompcol
+	GOOS=darwin GOARCH=amd64 $(MAKE) build
 
 .PHONY: arm_linux
 arm_linux:
-	GOOS=linux GOARCH=arm $(MAKE) otelcompcol
+	GOOS=linux GOARCH=arm $(MAKE) build
 
 .PHONY: amd64_windows
 amd64_windows:
-	GOOS=windows GOARCH=amd64 $(MAKE) otelcompcol
+	GOOS=windows GOARCH=amd64 $(MAKE) build
 
 .PHONY: lint
 lint:
