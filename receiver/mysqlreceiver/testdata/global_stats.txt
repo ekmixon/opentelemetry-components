@@ -8,7 +8,6 @@ Binlog_stmt_cache_disk_use	0
 Binlog_stmt_cache_use	1
 Bytes_received	17686
 Bytes_sent	7668292
-Caching_sha2_password_rsa_public_key	-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0PGhrAm/jJELoNVd9usm\nAtefAJGI2h4VhCc2AQBVKkXrcOMes0r/EGeyQxCBcnBzblpy3yAnegpbTTJcV3EU\nc1J6wQBOkYoQKaLjy7Tc8AbnDkX/wi7rXCGXJ8B5pFkheso9lJmY8Xc/ANyb0Jjq\nWEuMa5FLpT5JBOlBUzH4nEkCDMVHfdjKy0RIIvc+eA6ZE9XOU9kp8DTnDUVBJaZf\nNyi95mz8lcMZs70ag9XJfSp8hp0cLkINJBjJGGfH1XetlFan33Hml+caNt9OP0t9\n3wwYC9ARs5JVN8HWoHpjYO4OIwaKaGEjSPGMf9k9dKoGeba6/SpMOrmCsQcHA2y+\n3wIDAQAB\n-----END PUBLIC KEY-----\n
 Com_admin_commands	0
 Com_assign_to_keycache	0
 Com_alter_db	0
@@ -421,8 +420,6 @@ Performance_schema_users_lost	0
 Prepared_stmt_count	0
 Queries	567
 Questions	566
-Rsa_public_key	-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0PGhrAm/jJELoNVd9usm\nAtefAJGI2h4VhCc2AQBVKkXrcOMes0r/EGeyQxCBcnBzblpy3yAnegpbTTJcV3EU\nc1J6wQBOkYoQKaLjy7Tc8AbnDkX/wi7rXCGXJ8B5pFkheso9lJmY8Xc/ANyb0Jjq\nWEuMa5FLpT5JBOlBUzH4nEkCDMVHfdjKy0RIIvc+eA6ZE9XOU9kp8DTnDUVBJaZf\nNyi95mz8lcMZs70ag9XJfSp8hp0cLkINJBjJGGfH1XetlFan33Hml+caNt9OP0t9\n3wwYC9ARs5JVN8HWoHpjYO4OIwaKaGEjSPGMf9k9dKoGeba6/SpMOrmCsQcHA2y+\n3wIDAQAB\n-----END PUBLIC KEY-----\n
-Secondary_engine_execution_count	0
 Select_full_join	0
 Select_full_range_join	0
 Select_range	0
