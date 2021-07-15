@@ -41,7 +41,7 @@ metrics:
     description: The data size
     unit: By
     data:
-      type: double gauge
+      type: gauge
     labels: [database_name]
   mongodb.extents:
     description: The number of extents
@@ -61,7 +61,7 @@ metrics:
     description: The index size
     unit: By
     data:
-      type: double gauge
+      type: gauge
     labels: [database_name]
   mongodb.indexes:
     description: The number of indexes
@@ -73,7 +73,7 @@ metrics:
     description: The amount of memory used
     unit: By
     data:
-      type: double gauge
+      type: gauge
     labels: [database_name, memory_type]
   mongodb.objects:
     description: The number of objects
@@ -93,5 +93,5 @@ metrics:
     description: The storage size
     unit: By
     data:
-      type: double gauge
+      type: gauge
     labels: [database_name]
