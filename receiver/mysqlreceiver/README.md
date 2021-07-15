@@ -16,7 +16,7 @@ MySQL receiver supports MySQL version 8.0.25
 
 The following settings are required to create a database connection:
 
-- `user`
+- `username`
 - `password`
 - `endpoint`
 
@@ -35,7 +35,7 @@ Example:
 receivers:
   mysql:
     collection_interval: 10s
-    user: otel
+    username: otel
     password: otel
     endpoint: "localhost:3306"
 ```

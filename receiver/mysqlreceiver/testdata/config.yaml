@@ -1,7 +1,7 @@
 receivers:
   mysql:
     collection_interval: 10s
-    user: otel
+    username: otel
     password: otel
     endpoint: "localhost:3306"
 

@@ -36,8 +36,8 @@ func (m *mySQLScraper) start(_ context.Context, host component.Host) error {
 		return errors.New("missing database configuration parameters")
 	}
 	client, err := newMySQLClient(mySQLConfig{
-		user:     m.config.Username,
-		pass:     m.config.Password,
+		username: m.config.Username,
+		password: m.config.Password,
 		endpoint: m.config.Endpoint,
 	})
 	if err != nil {
