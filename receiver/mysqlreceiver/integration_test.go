@@ -60,7 +60,7 @@ func (suite *MysqlIntegrationSuite) TestHappyPath() {
 	require.NoError(t, err)
 
 	sc := newMySQLScraper(zap.NewNop(), &Config{
-		User:     "otel",
+		Username: "otel",
 		Password: "otel",
 		Endpoint: fmt.Sprintf("%s:3306", hostname),
 	})
@@ -359,7 +359,7 @@ func (suite *MysqlIntegrationSuite) TestStartStop() {
 	require.NoError(t, err)
 
 	sc := newMySQLScraper(zap.NewNop(), &Config{
-		User:     "otel",
+		Username: "otel",
 		Password: "otel",
 		Endpoint: fmt.Sprintf("%s:3306", hostname),
 	})

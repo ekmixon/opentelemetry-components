@@ -15,7 +15,7 @@ import (
 func TestScraper(t *testing.T) {
 	mysqlMock := fakeClient{}
 	sc := newMySQLScraper(zap.NewNop(), &Config{
-		User:     "otel",
+		Username: "otel",
 		Password: "otel",
 		Endpoint: "localhost:3306",
 	})
@@ -331,7 +331,7 @@ func TestScrapeErrorBadConfig(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			mysqlMock := fakeClient{}
 			sc := newMySQLScraper(zap.NewNop(), &Config{
-				User:     tC.user,
+				Username: tC.user,
 				Password: tC.password,
 				Endpoint: tC.endpoint,
 			})
@@ -344,7 +344,7 @@ func TestScrapeErrorBadConfig(t *testing.T) {
 	t.Run("good config", func(t *testing.T) {
 		mysqlMock := fakeClient{}
 		sc := newMySQLScraper(zap.NewNop(), &Config{
-			User:     "otel",
+			Username: "otel",
 			Password: "otel",
 			Endpoint: "localhost:3306",
 		})
