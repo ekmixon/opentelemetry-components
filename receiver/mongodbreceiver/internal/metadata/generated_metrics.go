@@ -223,7 +223,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.memory_usage")
 			metric.SetDescription("The amount of memory used")
 			metric.SetUnit("By")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
+			metric.SetDataType(pdata.MetricDataTypeIntGauge)
 		},
 	},
 	&metricImpl{

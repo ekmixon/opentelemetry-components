@@ -73,7 +73,7 @@ metrics:
     description: The amount of memory used
     unit: By
     data:
-      type: gauge
+      type: int gauge
     labels: [database_name, memory_type]
   mongodb.objects:
     description: The number of objects
