@@ -44,21 +44,13 @@ func newMySQLClient(conf mySQLConfig) (*mySQLClient, error) {
 // getGlobalStats queries the db for global status metrics.
 func (c *mySQLClient) getGlobalStats() ([]*Stat, error) {
 	query := "SHOW GLOBAL STATUS;"
-	result, err := Query(*c, query)
-	if err != nil {
-		return nil, err
-	}
-	return result, err
+	return Query(*c, query)
 }
 
 // getInnodbStats queries the db for innodb metrics.
 func (c *mySQLClient) getInnodbStats() ([]*Stat, error) {
 	query := "SELECT name, count FROM information_schema.innodb_metrics WHERE name LIKE '%buffer_pool_size%';"
-	result, err := Query(*c, query)
-	if err != nil {
-		return nil, err
-	}
-	return result, err
+	return Query(*c, query)
 }
 
 type Stat struct {
