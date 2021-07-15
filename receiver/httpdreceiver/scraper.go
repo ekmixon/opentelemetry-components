@@ -68,7 +68,6 @@ func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, valu
 }
 
 func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
-
 	if r.httpClient == nil {
 		return pdata.ResourceMetricsSlice{}, errors.New("failed to connect to http client")
 	}
@@ -96,21 +95,35 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		labels := pdata.NewStringMap()
 		switch metricKey {
 		case "ServerUptimeSeconds":
-			addToIntMetric(uptime, labels, parseInt(metricValue), now)
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				addToIntMetric(uptime, labels, i, now)
+			}
 		case "ConnsTotal":
-			addToIntMetric(connections, labels, parseInt(metricValue), now)
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				addToIntMetric(connections, labels, i, now)
+			}
 		case "BusyWorkers":
-			labels.Insert(metadata.L.WorkersState, "busy")
-			addToIntMetric(workers, labels, parseInt(metricValue), now)
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				labels.Insert(metadata.L.WorkersState, "busy")
+				addToIntMetric(workers, labels, i, now)
+			}
 		case "IdleWorkers":
-			labels.Insert(metadata.L.WorkersState, "idle")
-			addToIntMetric(workers, labels, parseInt(metricValue), now)
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				labels.Insert(metadata.L.WorkersState, "idle")
+				addToIntMetric(workers, labels, i, now)
+			}
 		case "ReqPerSec":
-			addToMetric(requests, labels, parseFloat(metricValue), now)
+			if f, ok := r.parseFloat(metricKey, metricValue); ok {
+				addToMetric(requests, labels, f, now)
+			}
 		case "BytesPerSec":
-			addToMetric(bytes, labels, parseFloat(metricValue), now)
+			if f, ok := r.parseFloat(metricKey, metricValue); ok {
+				addToMetric(bytes, labels, f, now)
+			}
 		case "Total Accesses":
-			addToIntMetric(traffic, labels, parseInt(metricValue), now)
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				addToIntMetric(traffic, labels, i, now)
+			}
 		case "Scoreboard":
 			scoreboardMap := parseScoreboard(metricValue)
 			for identifier, score := range scoreboardMap {
@@ -156,15 +169,32 @@ func parseStats(resp string) map[string]string {
 }
 
 // parseFloat converts string to float64.
-func parseFloat(value string) float64 {
-	f, _ := strconv.ParseFloat(value, 64)
-	return f
+func (r *httpdScraper) parseFloat(key, value string) (float64, bool) {
+	i, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		r.logInvalid("float", key, value)
+		return 0, false
+	}
+	return i, true
 }
 
 // parseInt converts string to int64.
-func parseInt(value string) int64 {
-	i, _ := strconv.ParseInt(value, 10, 64)
-	return i
+func (r *httpdScraper) parseInt(key, value string) (int64, bool) {
+	f, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		r.logInvalid("int", key, value)
+		return f, false
+	}
+	return f, true
+}
+
+func (r *httpdScraper) logInvalid(expectedType, key, value string) {
+	r.logger.Info(
+		"invalid value",
+		zap.String("expectedType", expectedType),
+		zap.String("key", key),
+		zap.String("value", value),
+	)
 }
 
 // parseScoreboard quantifies the symbolic mapping of the scoreboard.

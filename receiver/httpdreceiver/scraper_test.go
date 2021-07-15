@@ -185,16 +185,6 @@ func TestParseScoreboard(t *testing.T) {
 	})
 }
 
-func TestParseInt(t *testing.T) {
-	require.EqualValues(t, int64(10), parseInt("10"))
-	require.EqualValues(t, int64(0), parseInt("0"))
-}
-
-func TestParseFloat(t *testing.T) {
-	require.EqualValues(t, float64(10.5), parseFloat("10.5"))
-	require.EqualValues(t, float64(0.0), parseFloat("0"))
-}
-
 func TestParseStats(t *testing.T) {
 	t.Run("with empty value", func(t *testing.T) {
 		emptyString := ""
@@ -220,7 +210,6 @@ ConnsTotal: 110
 		}
 		require.EqualValues(t, want, parseStats(got))
 	})
-
 }
 
 func TestScraperError(t *testing.T) {
