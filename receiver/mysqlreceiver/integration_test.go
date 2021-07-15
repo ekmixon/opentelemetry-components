@@ -78,8 +78,7 @@ func (suite *MysqlIntegrationSuite) TestHappyPath() {
 	ilm := ilms.At(0)
 	ms := ilm.Metrics()
 
-	require.Equal(t, 14, ms.Len())
-	require.Equal(t, 14, len(metadata.M.Names()))
+	require.Equal(t, len(metadata.M.Names()), ms.Len())
 
 	for i := 0; i < ms.Len(); i++ {
 		m := ms.At(i)
