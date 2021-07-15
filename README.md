@@ -13,7 +13,6 @@ Receivers:
 Processors:
 - [attributes](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/attributesprocessor)
 - [filter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/filterprocessor)
-- [normalizesums](/processor/normalizesumsprocessor/)
 - [resource](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/resourceprocessor)
 - [resourcedetectionprocessor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor)
 
@@ -35,9 +34,10 @@ Extensions:
 The following components are based in this repository:
 
 Receivers:
-
+- [httpd](/receiver/httpdreceiver/)
 
 Processors:
+- [normalizesums](/processor/normalizesumsprocessor/)
 
 
 ## Development
