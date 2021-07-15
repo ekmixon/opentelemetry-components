@@ -44,11 +44,11 @@ func createDefaultConfig() config.Receiver {
 	return &Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			ReceiverSettings:   config.NewReceiverSettings(config.NewID(typeStr)),
-			CollectionInterval: 10 * time.Second,
+			CollectionInterval: 60 * time.Second,
 		},
 		Timeout: 10 * time.Second,
 		TCPAddr: confignet.TCPAddr{
-			Endpoint: "localhost:11211",
+			Endpoint: "localhost:27017",
 		},
 	}
 }
