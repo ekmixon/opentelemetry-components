@@ -133,6 +133,7 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	for _, stat := range globalStats {
 		labels := pdata.NewStringMap()
 		switch stat.key {
+
 		// buffer_pool_pages
 		case "Innodb_buffer_pool_pages_data":
 			labels.Insert(metadata.L.BufferPoolPagesState, "data")
@@ -152,7 +153,8 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_buffer_pool_pages_total":
 			labels.Insert(metadata.L.BufferPoolPagesState, "total")
 			addToDoubleLabeledMetric(bufferPoolPages, now, labels, parseFloat(stat.value))
-			// 	// buffer_pool_operations
+
+		// buffer_pool_operations
 		case "Innodb_buffer_pool_read_ahead_rnd":
 			labels.Insert(metadata.L.BufferPoolOperationsState, "read_ahead_rnd")
 			addToIntLabeledMetric(bufferPoolOperations, now, labels, parseInt(stat.value))
@@ -174,14 +176,16 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_buffer_pool_write_requests":
 			labels.Insert(metadata.L.BufferPoolOperationsState, "write_requests")
 			addToIntLabeledMetric(bufferPoolOperations, now, labels, parseInt(stat.value))
-			// 	// buffer_pool_size
+
+		// buffer_pool_size
 		case "Innodb_buffer_pool_bytes_data":
 			labels.Insert(metadata.L.BufferPoolSizeState, "data")
 			addToDoubleLabeledMetric(bufferPoolSize, now, labels, parseFloat(stat.value))
 		case "Innodb_buffer_pool_bytes_dirty":
 			labels.Insert(metadata.L.BufferPoolSizeState, "dirty")
 			addToDoubleLabeledMetric(bufferPoolSize, now, labels, parseFloat(stat.value))
-			// 	// commands
+
+		// commands
 		case "Com_stmt_execute":
 			labels.Insert(metadata.L.CommandState, "execute")
 			addToIntLabeledMetric(commands, now, labels, parseInt(stat.value))
@@ -200,7 +204,8 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Com_stmt_send_long_data":
 			labels.Insert(metadata.L.CommandState, "send_long_data")
 			addToIntLabeledMetric(commands, now, labels, parseInt(stat.value))
-			// 	// handlers
+
+		// handlers
 		case "Handler_commit":
 			labels.Insert(metadata.L.HandlerState, "commit")
 			addToIntLabeledMetric(handlers, now, labels, parseInt(stat.value))
@@ -255,14 +260,16 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Handler_write":
 			labels.Insert(metadata.L.HandlerState, "write")
 			addToIntLabeledMetric(handlers, now, labels, parseInt(stat.value))
-			// 	// double_writes
+
+		// double_writes
 		case "Innodb_dblwr_pages_written":
 			labels.Insert(metadata.L.DoubleWritesState, "written")
 			addToIntLabeledMetric(doubleWrites, now, labels, parseInt(stat.value))
 		case "Innodb_dblwr_writes":
 			labels.Insert(metadata.L.DoubleWritesState, "writes")
 			addToIntLabeledMetric(doubleWrites, now, labels, parseInt(stat.value))
-			// 	// log_operations
+
+		// log_operations
 		case "Innodb_log_waits":
 			labels.Insert(metadata.L.LogOperationsState, "waits")
 			addToIntLabeledMetric(logOperations, now, labels, parseInt(stat.value))
@@ -272,7 +279,8 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_log_writes":
 			labels.Insert(metadata.L.LogOperationsState, "writes")
 			addToIntLabeledMetric(logOperations, now, labels, parseInt(stat.value))
-			// 	// operations
+
+		// operations
 		case "Innodb_data_fsyncs":
 			labels.Insert(metadata.L.OperationsState, "fsyncs")
 			addToIntLabeledMetric(operations, now, labels, parseInt(stat.value))
@@ -282,7 +290,8 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_data_writes":
 			labels.Insert(metadata.L.OperationsState, "writes")
 			addToIntLabeledMetric(operations, now, labels, parseInt(stat.value))
-			// 	// page_operations
+
+		// page_operations
 		case "Innodb_pages_created":
 			labels.Insert(metadata.L.PageOperationsState, "created")
 			addToIntLabeledMetric(pageOperations, now, labels, parseInt(stat.value))
@@ -292,14 +301,16 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_pages_written":
 			labels.Insert(metadata.L.PageOperationsState, "written")
 			addToIntLabeledMetric(pageOperations, now, labels, parseInt(stat.value))
-			// 	// row_locks
+
+		// row_locks
 		case "Innodb_row_lock_waits":
 			labels.Insert(metadata.L.RowLocksState, "waits")
 			addToIntLabeledMetric(rowLocks, now, labels, parseInt(stat.value))
 		case "Innodb_row_lock_time":
 			labels.Insert(metadata.L.RowLocksState, "time")
 			addToIntLabeledMetric(rowLocks, now, labels, parseInt(stat.value))
-			// 	// row_operations
+
+		// row_operations
 		case "Innodb_rows_deleted":
 			labels.Insert(metadata.L.RowOperationsState, "deleted")
 			addToIntLabeledMetric(rowOperations, now, labels, parseInt(stat.value))
@@ -312,14 +323,16 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_rows_updated":
 			labels.Insert(metadata.L.RowOperationsState, "updated")
 			addToIntLabeledMetric(rowOperations, now, labels, parseInt(stat.value))
-			// 	// locks
+
+		// locks
 		case "Table_locks_immediate":
 			labels.Insert(metadata.L.LocksState, "immediate")
 			addToIntLabeledMetric(locks, now, labels, parseInt(stat.value))
 		case "Table_locks_waited":
 			labels.Insert(metadata.L.LocksState, "waited")
 			addToIntLabeledMetric(locks, now, labels, parseInt(stat.value))
-			// 	// sorts
+
+		// sorts
 		case "Sort_merge_passes":
 			labels.Insert(metadata.L.SortsState, "merge_passes")
 			addToIntLabeledMetric(sorts, now, labels, parseInt(stat.value))
@@ -332,7 +345,8 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Sort_scan":
 			labels.Insert(metadata.L.SortsState, "scan")
 			addToIntLabeledMetric(sorts, now, labels, parseInt(stat.value))
-			// 	// threads
+
+		// threads
 		case "Threads_cached":
 			labels.Insert(metadata.L.ThreadsState, "cached")
 			addToDoubleLabeledMetric(threads, now, labels, parseFloat(stat.value))
