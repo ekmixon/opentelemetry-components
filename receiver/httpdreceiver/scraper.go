@@ -170,22 +170,22 @@ func parseStats(resp string) map[string]string {
 
 // parseFloat converts string to float64.
 func (r *httpdScraper) parseFloat(key, value string) (float64, bool) {
-	i, err := strconv.ParseFloat(value, 64)
+	f, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		r.logInvalid("float", key, value)
 		return 0, false
 	}
-	return i, true
+	return f, true
 }
 
 // parseInt converts string to int64.
 func (r *httpdScraper) parseInt(key, value string) (int64, bool) {
-	f, err := strconv.ParseInt(value, 10, 64)
+	i, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		r.logInvalid("int", key, value)
-		return f, false
+		return 0, false
 	}
-	return f, true
+	return i, true
 }
 
 func (r *httpdScraper) logInvalid(expectedType, key, value string) {
