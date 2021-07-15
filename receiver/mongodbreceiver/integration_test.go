@@ -18,6 +18,7 @@ package mongodbreceiver
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -26,18 +27,20 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/model/pdata"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testing/container"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbreceiver/internal/metadata"
 )
 
 func TestIntegration(t *testing.T) {
-	cs := container.New(t)
-	c := cs.StartImage("mongodb:1.6-alpine", container.WithPortReady(11211))
+	// cs := container.New(t)
+	// c := cs.StartImage("mongodb:1.6-alpine", container.WithPortReady(27017))
 
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = c.AddrForPort(11211)
+	cfg.Endpoint = net.JoinHostPort("localhost", "27017")
+
+	user := "otel"
+	pass := "otel"
+	cfg.User = &user
+	cfg.Password = &pass
 
 	consumer := new(consumertest.MetricsSink)
 

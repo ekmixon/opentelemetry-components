@@ -15,7 +15,7 @@ OUTDIR=./build
 MODNAME=github.com/observIQ/observiq-collector
 
 LINT=$(GOPATH)/bin/golangci-lint
-LINT_TIMEOUT?=5m0s
+LINT_TIMEOUT?=10m
 MISSPELL=$(GOPATH)/bin/misspell
 
 GOBUILDEXTRAENV=GO111MODULE=on CGO_ENABLED=0
