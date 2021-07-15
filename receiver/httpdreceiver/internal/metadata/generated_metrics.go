@@ -115,7 +115,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.requests")
 			metric.SetDescription("The number of requests serviced by the HTTP server per second")
-			metric.SetUnit("/s")
+			metric.SetUnit("1/s")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
@@ -144,7 +144,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.uptime")
 			metric.SetDescription("The amount of time that the server has been running in seconds")
-			metric.SetUnit("/s")
+			metric.SetUnit("s")
 			metric.SetDataType(pdata.MetricDataTypeIntSum)
 			metric.IntSum().SetIsMonotonic(true)
 			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
