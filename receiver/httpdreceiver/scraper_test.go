@@ -22,7 +22,7 @@ func TestScraper(t *testing.T) {
 	httpdMock := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/server-status?auto" {
 			rw.WriteHeader(200)
-			_, _ = rw.Write([]byte(`ServerUptimeSeconds: 410
+			_, err := rw.Write([]byte(`ServerUptimeSeconds: 410
 Total Accesses: 14169
 ReqPerSec: 719.771
 BytesPerSec: 1129490
@@ -31,6 +31,7 @@ IdleWorkers: 227
 ConnsTotal: 110
 Scoreboard: S_DD_L_GGG_____W__IIII_C________________W__________________________________.........................____WR______W____W________________________C______________________________________W_W____W______________R_________R________C_________WK_W________K_____W__C__________W___R______.............................................................................................................................
 `))
+			require.NoError(t, err)
 			return
 		}
 		rw.WriteHeader(404)
