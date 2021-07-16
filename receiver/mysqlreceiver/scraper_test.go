@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.uber.org/zap"
 
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver/internal/metadata"
@@ -300,55 +299,4 @@ func TestScraper(t *testing.T) {
 			}, threadsMetrics)
 		}
 	}
-}
-
-func TestScrapeErrorBadConfig(t *testing.T) {
-	testCases := []struct {
-		desc     string
-		user     string
-		password string
-		endpoint string
-	}{
-		{
-			desc:     "no user",
-			password: "otel",
-			endpoint: "localhost:3306",
-		},
-		{
-			desc:     "no password",
-			user:     "otel",
-			endpoint: "localhost:3306",
-		},
-		{
-			desc:     "no endpoint",
-			user:     "otel",
-			password: "otel",
-			endpoint: "",
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			mysqlMock := fakeClient{}
-			sc := newMySQLScraper(zap.NewNop(), &Config{
-				Username: tC.user,
-				Password: tC.password,
-				Endpoint: tC.endpoint,
-			})
-			sc.client = &mysqlMock
-			err := sc.start(context.Background(), componenttest.NewNopHost())
-			require.NotNil(t, err)
-		})
-	}
-
-	t.Run("good config", func(t *testing.T) {
-		mysqlMock := fakeClient{}
-		sc := newMySQLScraper(zap.NewNop(), &Config{
-			Username: "otel",
-			Password: "otel",
-			Endpoint: "localhost:3306",
-		})
-		sc.client = &mysqlMock
-		err := sc.start(context.Background(), componenttest.NewNopHost())
-		require.Nil(t, err)
-	})
 }

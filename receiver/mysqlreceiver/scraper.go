@@ -32,9 +32,6 @@ func newMySQLScraper(
 
 // start starts the scraper by initializing the db client connection.
 func (m *mySQLScraper) start(_ context.Context, host component.Host) error {
-	if m.config.Username == "" || m.config.Password == "" || m.config.Endpoint == "" {
-		return errors.New("missing database configuration parameters")
-	}
 	client, err := newMySQLClient(mySQLConfig{
 		username: m.config.Username,
 		password: m.config.Password,
