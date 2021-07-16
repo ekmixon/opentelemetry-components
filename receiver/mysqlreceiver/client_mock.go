@@ -12,12 +12,8 @@ var _ client = (*fakeClient)(nil)
 type fakeClient struct {
 }
 
-func newFakeClient() *fakeClient {
-	return &fakeClient{}
-}
-
-func readFile(fname string) ([]*Stat, error) {
-	var stats = []*Stat{}
+func readFile(fname string) (map[string]string, error) {
+	var stats = map[string]string{}
 	file, err := os.Open(path.Join("testdata", fname+".txt"))
 	if err != nil {
 		return nil, err
@@ -27,17 +23,16 @@ func readFile(fname string) ([]*Stat, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := strings.Split(scanner.Text(), "\t")
-		stats = append(stats, &Stat{key: text[0], value: text[1]})
-
+		stats[text[0]] = text[1]
 	}
 	return stats, nil
 }
 
-func (c *fakeClient) getGlobalStats() ([]*Stat, error) {
+func (c *fakeClient) getGlobalStats() (map[string]string, error) {
 	return readFile("global_stats")
 }
 
-func (c *fakeClient) getInnodbStats() ([]*Stat, error) {
+func (c *fakeClient) getInnodbStats() (map[string]string, error) {
 	return readFile("innodb_stats")
 }
 
