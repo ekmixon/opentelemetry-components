@@ -12,7 +12,7 @@ The MySQL `SHOW GLOBAL STATUS` and `information_schema.innodb_metrics` table con
 
 > :information_source: This receiver is in beta and configuration fields are subject to change.
 
-MySQL receiver supports MySQL version 8.0.25
+MySQL receiver supports MySQL version 8.0
 
 The following settings are required to create a database connection:
 
