@@ -53,7 +53,7 @@ func TestScraper(t *testing.T) {
 	ilm := ilms.At(0)
 	ms := ilm.Metrics()
 
-	require.Equal(t, 9, ms.Len())
+	require.Equal(t, 13, ms.Len())
 
 	for i := 0; i < ms.Len(); i++ {
 		m := ms.At(i)
@@ -76,8 +76,16 @@ func TestScraper(t *testing.T) {
 			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
 		case "mongodb.memory_usage":
 			require.Equal(t, 12, m.IntGauge().DataPoints().Len())
+		case "mongodb.global_lock_hold_time":
+			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+		case "mongodb.cache_misses":
+			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+		case "mongodb.cache_hits":
+			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+		case "mongodb.operation_count":
+			require.Equal(t, 6, m.IntSum().DataPoints().Len())
 		default:
-			t.Error("Incorrect name or untracked metric name.")
+			t.Errorf("Incorrect name or untracked metric name %s", m.Name())
 		}
 	}
 }

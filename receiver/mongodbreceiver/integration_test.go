@@ -50,7 +50,7 @@ func TestIntegration(t *testing.T) {
 
 	require.Eventuallyf(t, func() bool {
 		return len(consumer.AllMetrics()) > 0
-	}, 15*time.Second, 1*time.Second, "failed to receive at least 5 metrics")
+	}, 15*time.Second, 1*time.Second, "failed to receive more than 0 metrics")
 
 	md := consumer.AllMetrics()[0]
 
@@ -60,7 +60,7 @@ func TestIntegration(t *testing.T) {
 	require.Equal(t, 1, ilms.Len())
 
 	metrics := ilms.At(0).Metrics()
-	require.Equal(t, 5, metrics.Len())
+	require.Equal(t, 13, metrics.Len())
 
 	assertAllMetricNamesArePresent(t, metadata.Metrics.Names(), metrics)
 

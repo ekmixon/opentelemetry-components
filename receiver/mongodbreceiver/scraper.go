@@ -40,103 +40,74 @@ type mongodbScraper struct {
 type mongoMetric struct {
 	metricDef        metadata.MetricIntf
 	path             []string
-	dataType         pdata.MetricDataType
 	additionalLabels pdata.StringMap
 }
 
-// DB Stats
-// MongodbCollections        MetricIntf
-// MongodbDataSize           MetricIntf
-// MongodbIndexSize          MetricIntf
-// MongodbIndexes            MetricIntf
-// MongodbObjects            MetricIntf
-// MongodbStorageSize        MetricIntf
-// MongodbExtents            MetricIntf
 var dbStatsMetrics []mongoMetric = []mongoMetric{
 	mongoMetric{
 		metricDef:        metadata.M.MongodbCollections,
 		path:             []string{"collections"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbDataSize,
 		path:             []string{"dataSize"},
-		dataType:         pdata.MetricDataTypeGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbExtents,
 		path:             []string{"numExtents"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbIndexSize,
 		path:             []string{"indexSize"},
-		dataType:         pdata.MetricDataTypeGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbIndexes,
 		path:             []string{"indexes"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbObjects,
 		path:             []string{"objects"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbStorageSize,
 		path:             []string{"storageSize"},
-		dataType:         pdata.MetricDataTypeGauge,
 		additionalLabels: pdata.NewStringMap(),
 	},
 }
 
-// MongodbConnections        MetricIntf
-// MongodbMemoryUsage        MetricIntf
 var serverStatusMetrics []mongoMetric = []mongoMetric{
 	mongoMetric{
 		metricDef:        metadata.M.MongodbConnections,
-		path:             []string{"connections", "active"},
-		dataType:         pdata.MetricDataTypeIntGauge,
+		path:             []string{"connections", "current"},
 		additionalLabels: pdata.NewStringMap(),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "resident"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "resident"}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "virtual"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "virtual"}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mapped"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "mapped"}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mappedWithJournal"},
-		dataType:         pdata.MetricDataTypeIntGauge,
 		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "mappedWithJournal"}),
 	},
 }
-
-// MongodbCacheHits          MetricIntf
-// MongodbCacheMisses        MetricIntf
-// MongodbGlobalLockHoldTime MetricIntf
-
-// MongodbOperationCount     MetricIntf
 
 func newMongodbScraper(
 	logger *zap.Logger,
@@ -177,17 +148,19 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	initializedMetrics := map[string]pdata.Metric{}
-	initializeMetrics(initializedMetrics, ilm, dbStatsMetrics)
-	initializeMetrics(initializedMetrics, ilm, serverStatusMetrics)
+	err = r.collectSpecialMetrics(ctx, client, ilm, now)
+	if err != nil {
+		r.logger.Error("Failed to collect mongoDB metrics from serverStatus in admin", zap.Error(err))
+	}
 
+	initializedMetrics := map[string]pdata.Metric{}
 	for _, databaseName := range databaseNames {
-		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, initializedMetrics, dbStatsMetrics, bson.M{"dbStats": 1})
+		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, ilm, initializedMetrics, dbStatsMetrics, true, bson.M{"dbStats": 1})
 		if err != nil {
 			r.logger.Error(fmt.Sprintf("Failed to collect mongoDB metrics from dbStats in database %s", databaseName), zap.Error(err))
 		}
 
-		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, initializedMetrics, serverStatusMetrics, bson.M{"serverStatus": 1})
+		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, ilm, initializedMetrics, serverStatusMetrics, true, bson.M{"serverStatus": 1})
 		if err != nil {
 			r.logger.Error(fmt.Sprintf("Failed to collect mongoDB metrics from serverStatus in database %s", databaseName), zap.Error(err))
 		}
@@ -196,35 +169,144 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	return metrics.ResourceMetrics(), nil
 }
 
-func initializeMetrics(initializedMetrics map[string]pdata.Metric, ilm pdata.InstrumentationLibraryMetrics, requestedMetrics []mongoMetric) {
-	for _, requestedMetric := range requestedMetrics {
-		if _, ok := initializedMetrics[requestedMetric.metricDef.Name()]; !ok {
-			metric := ilm.Metrics().AppendEmpty()
-			requestedMetric.metricDef.Init(metric)
-			initializedMetrics[requestedMetric.metricDef.Name()] = metric
-		}
+func getOrInitializeMetric(initializedMetrics map[string]pdata.Metric, ilm pdata.InstrumentationLibraryMetrics, requestedMetric mongoMetric) pdata.Metric {
+	value, ok := initializedMetrics[requestedMetric.metricDef.Name()]
+	if !ok {
+		metric := ilm.Metrics().AppendEmpty()
+		requestedMetric.metricDef.Init(metric)
+		initializedMetrics[requestedMetric.metricDef.Name()] = metric
+		return metric
 	}
+
+	return value
 }
 
-func (r *mongodbScraper) runDatabaseCommandAndCollectMetrics(ctx context.Context, client *mongo.Client, databaseName string, now pdata.Timestamp, initializedMetrics map[string]pdata.Metric, metricsRequested []mongoMetric, command bson.M) error {
+func (r *mongodbScraper) collectSpecialMetrics(
+	ctx context.Context,
+	client *mongo.Client,
+	ilm pdata.InstrumentationLibraryMetrics,
+	now pdata.Timestamp,
+) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
+	defer cancel()
+	result := client.Database("admin").RunCommand(timeoutCtx, bson.M{"serverStatus": 1})
+
+	var document bson.M
+	err := result.Decode(&document)
+
+	//fmt.Printf("Result: %v\n", document)
+
+	if err != nil {
+		return err
+	}
+
+	// Collect Global Lock Wait Time
+
+	// Mongo version older than 3.0
+	path := []string{"globalLock", "totalTime"}
+	waitTime, err := getIntMetricValue(document, path)
+	if err == nil {
+		lockTimeMetric := ilm.Metrics().AppendEmpty()
+		metadata.M.MongodbGlobalLockHoldTime.Init(lockTimeMetric)
+		addIntDataPoint(lockTimeMetric.IntSum().DataPoints(), now, waitTime, pdata.NewStringMap())
+	} else {
+		// Assume mongoDB 3.0+ if the older style was not available
+		totalWaitTime := int64(0)
+		hasValue := false
+		for _, lockType := range []string{"W", "R", "r", "w"} {
+			path = []string{"locks", "Global", "timeAcquiringMicros", lockType}
+			waitTime, err := getIntMetricValue(document, path)
+			if err == nil {
+				totalWaitTime += int64(waitTime / 1000)
+				hasValue = true
+			}
+		}
+
+		if hasValue {
+			lockTimeMetric := ilm.Metrics().AppendEmpty()
+			metadata.M.MongodbGlobalLockHoldTime.Init(lockTimeMetric)
+			addIntDataPoint(lockTimeMetric.IntSum().DataPoints(), now, totalWaitTime, pdata.NewStringMap())
+		}
+	}
+
+	// Collect Cache Hits & Misses
+	canCalculateCacheHits := true
+
+	cacheMisses, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages read into cache"})
+	if err != nil {
+		r.logger.Error("Error while collecting mongodb cache misses metric", zap.Error(err))
+		canCalculateCacheHits = false
+	} else {
+		cacheMissesMetric := ilm.Metrics().AppendEmpty()
+		metadata.M.MongodbCacheMisses.Init(cacheMissesMetric)
+		addIntDataPoint(cacheMissesMetric.IntSum().DataPoints(), now, cacheMisses, pdata.NewStringMap())
+	}
+
+	totalCacheRequests, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages requested from the cache"})
+	if err != nil {
+		r.logger.Error("Error while collecting mongodb cache requests metric", zap.Error(err))
+		canCalculateCacheHits = false
+	}
+
+	if canCalculateCacheHits && totalCacheRequests > cacheMisses {
+		cacheHitsMetric := ilm.Metrics().AppendEmpty()
+		metadata.M.MongodbCacheHits.Init(cacheHitsMetric)
+		cacheHits := totalCacheRequests - cacheMisses
+		addIntDataPoint(cacheHitsMetric.IntSum().DataPoints(), now, cacheHits, pdata.NewStringMap())
+	}
+
+	// Collect Operations
+	var operationsMetric *pdata.Metric
+	for _, operation := range []string{"insert", "query", "update", "delete", "getmore", "command"} {
+		path := []string{"opcounters", operation}
+		count, err := getIntMetricValue(document, path)
+		if err != nil {
+			r.logger.Error("Error while collecting mongodb operations metric", zap.Error(err))
+		} else {
+			if operationsMetric == nil {
+				metric := ilm.Metrics().AppendEmpty()
+				operationsMetric = &metric
+				metadata.M.MongodbOperationCount.Init(*operationsMetric)
+			}
+
+			addIntDataPoint(operationsMetric.IntSum().DataPoints(), now, count, pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.Operation: operation}))
+		}
+	}
+
+	return nil
+}
+
+func (r *mongodbScraper) runDatabaseCommandAndCollectMetrics(
+	ctx context.Context,
+	client *mongo.Client,
+	databaseName string,
+	now pdata.Timestamp,
+	ilm pdata.InstrumentationLibraryMetrics,
+	initializedMetrics map[string]pdata.Metric,
+	metricsRequested []mongoMetric,
+	includeDatabaseNameLabel bool,
+	command bson.M,
+) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
 	result := client.Database(databaseName).RunCommand(timeoutCtx, command)
 
 	var document bson.M
 	err := result.Decode(&document)
-
 	if err != nil {
+		r.logger.Error("Error while collecting mongodb metric", zap.Error(err))
 		return err
 	}
 
 	for _, metricRequest := range metricsRequested {
-		metric := initializedMetrics[metricRequest.metricDef.Name()]
+		metric := getOrInitializeMetric(initializedMetrics, ilm, metricRequest)
 		labels := pdata.NewStringMap()
 		metricRequest.additionalLabels.CopyTo(labels)
-		labels.Insert(metadata.L.DatabaseName, databaseName)
+		if includeDatabaseNameLabel {
+			labels.Insert(metadata.L.DatabaseName, databaseName)
+		}
 
-		switch metricRequest.dataType {
+		switch metric.DataType() {
 		case pdata.MetricDataTypeIntGauge:
 			value, err := getIntMetricValue(document, metricRequest.path)
 			if err == nil {
