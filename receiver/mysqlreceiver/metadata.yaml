@@ -4,55 +4,42 @@ labels:
   buffer_pool_pages_state:
     description: The buffer pool pages types
     enum: [data, dirty, flushed, free, misc, total]
-labels:
   buffer_pool_operations_state:
     description: The buffer pool operations types
     enum: [read_ahead_rnd, read_ahead, read_ahead_evicted, read_requests, reads, wait_free, write_requests]
-labels:
   buffer_pool_size_state:
     description: The buffer pool size types
     enum: [data, dirty, size]
-labels:
   command_state:
     description: The command types
     enum: [execute, close, fetch, prepare, reset, send_long_data]
-labels:
   handler_state:
     description: The handler types
     enum: [commit, delete, discover, external_lock, mrr_init, prepare, read_first, read_key, read_last, read_next, read_prev, read_rnd, read_rnd_next, rollback, savepoint, savepoint_rollback, update, write]
-labels:
   double_writes_state:
     description: The doublewrite types
     enum: [pages_written, writes]
-labels:
   log_operations_state:
     description: The log operation types
     enum: [waits, write_requests, writes]
-labels:
   operations_state:
     description: The operation types
     enum: [fsyncs, reads, writes]
-labels:
   page_operations_state:
     description: The page operation types
     enum: [created, read, written]
-labels:
   row_locks_state:
     description: The row lock type
     enum: [waits, time]
-labels:
   row_operations_state:
     description: The row operation type
     enum: [deleted, inserted, read, updated]
-labels:
   locks_state:
     description: The table locks type
     enum: [immediate, waited]
-labels:
   sorts_state:
     description: The sort count type
     enum: [merge_passes, range, rows, scan]
-labels:
   threads_state:
     description: The thread count type
     enum: [cached, connected, created, running]
