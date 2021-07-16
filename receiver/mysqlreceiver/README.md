@@ -8,6 +8,10 @@ The MySQL receiver is designed to retrieve MySQL Global Status and InnoDB data f
 
 The MySQL `SHOW GLOBAL STATUS` and `information_schema.innodb_metrics` table contain information and statistics about a MySQL server status (see [https://dev.mysql.com/doc/refman/8.0/en/server-status-variables.html](https://dev.mysql.com/doc/refman/8.0/en/server-status-variables.html) and for details). The MySQL receiver extracts values from the results and converts them to open telemetry metrics. Details about the metrics produce by the MySQL receiver can be found in [metadata.yaml](metadata.yaml).
 
+## Prerequisites
+
+There are 2 queries that are used to collect metrics, `globalstatus` and `innodb_metrics`. There's a lot of overlap between them, and the `globalstatus` can collect all but the `buffer_pool_size` metric which requires the `innodb_metrics` query. The `innodb_metrics` query can be enabled by running [setup.sh](/receiver/mysqlreceiver/testdata/scripts/setup.sh) file which makes the database permission changes. The [Dockerfile.mysql](testdata/Dockerfile.mysql) reference to this file that is placed in a scripts directory.
+
 ## Configuration
 
 > :information_source: This receiver is in beta and configuration fields are subject to change.
