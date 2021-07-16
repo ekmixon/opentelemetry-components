@@ -27,11 +27,13 @@ GOFORMAT=goimports
 GOTIDY=go mod tidy
 
 # tool-related commands
+TOOLS_MOD_DIR := ./internal/tools
 .PHONY: install-tools
 install-tools:
-	$(GOINSTALL) golang.org/x/tools/cmd/goimports
-	$(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.40.1
-	$(GOINSTALL) github.com/client9/misspell/cmd/misspell
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) golang.org/x/tools/cmd/goimports
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.40.1
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/client9/misspell/cmd/misspell
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen
 
 # Default build target; making this should build for the current os/arch
 .PHONY: build
@@ -106,3 +108,8 @@ ci-check: check-fmt misspell lint test
 .PHONY: clean
 clean:
 	rm -rf $(OUTDIR)
+
+.PHONY: generate
+generate:
+	go generate ./...
+	git ls-files -m | grep generated_metrics.go | xargs -I {} sh -c 'echo "$$(tail -n +15 {})" > {}'

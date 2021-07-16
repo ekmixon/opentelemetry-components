@@ -305,20 +305,20 @@ var Labels = struct {
 	// ThreadsState (The thread count type)
 	ThreadsState string
 }{
-	"buffer_pool_operations_state",
-	"buffer_pool_pages_state",
-	"buffer_pool_size_state",
-	"command_state",
-	"double_writes_state",
-	"handler_state",
-	"locks_state",
-	"log_operations_state",
-	"operations_state",
-	"page_operations_state",
-	"row_locks_state",
-	"row_operations_state",
-	"sorts_state",
-	"threads_state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
+	"state",
 }
 
 // L contains the possible metric labels that can be used. L is an alias for
