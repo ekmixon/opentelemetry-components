@@ -5,9 +5,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 var _ client = (*fakeClient)(nil)
@@ -40,25 +37,8 @@ func (c *fakeClient) getGlobalStats() ([]*Stat, error) {
 	return readFile("global_stats")
 }
 
-func TestGlobalStats(t *testing.T) {
-	client := newFakeClient()
-	res, err := client.getGlobalStats()
-	require.Nil(t, err)
-	require.NotNil(t, res)
-	require.False(t, client.Closed())
-}
-
 func (c *fakeClient) getInnodbStats() ([]*Stat, error) {
 	return readFile("innodb_stats")
-}
-
-func TestInnodbStats(t *testing.T) {
-	client := newFakeClient()
-	res, err := client.getInnodbStats()
-	require.Nil(t, err)
-	require.NotNil(t, res)
-	require.False(t, client.Closed())
-
 }
 
 func (c *fakeClient) Closed() bool {
