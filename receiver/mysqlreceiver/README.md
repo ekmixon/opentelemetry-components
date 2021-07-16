@@ -22,6 +22,8 @@ The following settings are required to create a database connection:
 
 The following settings are optional:
 
+- `database`: The database name.
+
 - `collection_interval` (default = `10s`): This receiver runs on an interval.
 Each time it runs, it queries mysql, creates metrics, and sends them to the
 next consumer. The `collection_interval` configuration option tells this
@@ -37,7 +39,8 @@ receivers:
     collection_interval: 10s
     username: otel
     password: otel
-    endpoint: "localhost:3306"
+    database: otel
+    endpoint: localhost:3306
 ```
 
 The full list of settings exposed for this receiver are documented [here](./config.go)

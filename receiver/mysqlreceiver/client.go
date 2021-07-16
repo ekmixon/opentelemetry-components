@@ -25,11 +25,12 @@ var _ client = (*mySQLClient)(nil)
 type mySQLConfig struct {
 	username string
 	password string
+	database string
 	endpoint string
 }
 
 func newMySQLClient(conf mySQLConfig) (*mySQLClient, error) {
-	connStr := fmt.Sprintf("%s:%s@tcp(%s)/", conf.username, conf.password, conf.endpoint)
+	connStr := fmt.Sprintf("%s:%s@tcp(%s)/%s", conf.username, conf.password, conf.endpoint, conf.database)
 
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
