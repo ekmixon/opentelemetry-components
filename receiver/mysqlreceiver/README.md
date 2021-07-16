@@ -10,7 +10,7 @@ The MySQL `SHOW GLOBAL STATUS` and `information_schema.innodb_metrics` table con
 
 ## Prerequisites
 
-There are 2 queries that are used to collect metrics, `globalstatus` and `innodb_metrics`. There's a lot of overlap between them, and the `globalstatus` can collect all but the `buffer_pool_size` metric which requires the `innodb_metrics` query. The `innodb_metrics` query can be enabled by running [setup.sh](/receiver/mysqlreceiver/testdata/scripts/setup.sh) file which makes the database permission changes. The [Dockerfile.mysql](testdata/Dockerfile.mysql) reference to this file that is placed in a scripts directory.
+Collecting most metrics requires the ability to execute `SHOW GLOBAL STATUS`. The `buffer_pool_size` metric requires access to the `information_schema.innodb_metrics` table. Please refer to [setup.sh](/receiver/mysqlreceiver/testdata/scripts/setup.sh) for an example of how to configure these permissions. 
 
 ## Configuration
 
