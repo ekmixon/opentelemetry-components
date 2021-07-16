@@ -36,10 +36,6 @@ func (c *fakeClient) getInnodbStats() (map[string]string, error) {
 	return readFile("innodb_stats")
 }
 
-func (c *fakeClient) Closed() bool {
-	return false
-}
-
 func (c *fakeClient) Close() error {
 	return nil
 }
