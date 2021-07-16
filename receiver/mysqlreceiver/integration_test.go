@@ -363,18 +363,16 @@ func (suite *MysqlIntegrationSuite) TestStartStop() {
 		Endpoint: fmt.Sprintf("%s:3306", hostname),
 	})
 
-	// require scraper to connection to be open
+	// scraper is connected
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
-	require.False(t, sc.client.Closed())
 
-	// require scraper to connection to be closed
+	// scraper is closed
 	err = sc.shutdown(context.Background())
 	require.NoError(t, err)
-	require.True(t, sc.client.Closed())
 
-	// require scraper to produce no error when closed again
-	err = sc.shutdown(context.Background())
-	require.NoError(t, err)
-	require.True(t, sc.client.Closed())
+	// scraper scapes and produces an error because db is closed
+	_, err = sc.scrape(context.Background())
+	require.Error(t, err)
+	require.EqualError(t, err, "sql: database is closed")
 }

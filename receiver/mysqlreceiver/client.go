@@ -11,13 +11,11 @@ import (
 type client interface {
 	getGlobalStats() (map[string]string, error)
 	getInnodbStats() (map[string]string, error)
-	Closed() bool
 	Close() error
 }
 
 type mySQLClient struct {
 	client *sql.DB
-	closed bool
 }
 
 var _ client = (*mySQLClient)(nil)
@@ -72,11 +70,6 @@ func Query(c mySQLClient, query string) (map[string]string, error) {
 	return stats, nil
 }
 
-func (c *mySQLClient) Closed() bool {
-	return c.closed
-}
-
 func (c *mySQLClient) Close() error {
-	c.closed = true
 	return c.client.Close()
 }
