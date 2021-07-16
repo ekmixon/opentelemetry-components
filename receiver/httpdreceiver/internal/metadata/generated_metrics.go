@@ -97,7 +97,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.bytes")
 			metric.SetDescription("The number of bytes transferred by the HTTP server per second")
-			metric.SetUnit("By")
+			metric.SetUnit("By/s")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
@@ -115,7 +115,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.requests")
 			metric.SetDescription("The number of requests serviced by the HTTP server per second")
-			metric.SetUnit("1/s")
+			metric.SetUnit("/s")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
