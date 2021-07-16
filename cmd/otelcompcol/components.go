@@ -19,11 +19,8 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
-<<<<<<< HEAD
-	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
-=======
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
->>>>>>> master
+	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
 )
 
 // Get the factories for components we want to use.
