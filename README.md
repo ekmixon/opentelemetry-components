@@ -2,6 +2,17 @@
 
 This repository hosts components that may be imported into distributions of the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector).
 
+## Unique Components
+
+The following components are based in this repository:
+
+Receivers:
+- [httpd](/receiver/httpdreceiver/)
+
+Processors:
+- [normalizesums](/processor/normalizesumsprocessor/)
+
+
 ## Upstream Components
 
 Several components are included from the OpenTelemetry Collector and its Contrib variant. These are primarily included to facilitate development and testing of new components:
@@ -27,17 +38,6 @@ Exporters:
 Extensions:
 - [pprof](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/pprofextension)
 - [zpages](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension)
-
-
-## Additional Components
-
-The following components are based in this repository:
-
-Receivers:
-- [httpd](/receiver/httpdreceiver/)
-
-Processors:
-- [normalizesums](/processor/normalizesumsprocessor/)
 
 
 ## Development
