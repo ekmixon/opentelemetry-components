@@ -305,20 +305,20 @@ var Labels = struct {
 	// ThreadsState (The thread count type)
 	ThreadsState string
 }{
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
-	"state",
+	"operation",
+	"kind",
+	"kind",
+	"command",
+	"kind",
+	"kind",
+	"kind",
+	"operation",
+	"operation",
+	"operation",
+	"kind",
+	"operation",
+	"kind",
+	"kind",
 }
 
 // L contains the possible metric labels that can be used. L is an alias for
