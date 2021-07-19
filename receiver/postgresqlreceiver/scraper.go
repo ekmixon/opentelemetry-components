@@ -3,6 +3,7 @@ package postgresqlreceiver
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -10,7 +11,8 @@ import (
 )
 
 type postgreSQLScraper struct {
-	client client
+	client   client
+	stopOnce sync.Once
 
 	logger *zap.Logger
 	config *Config
@@ -31,7 +33,7 @@ func (m *postgreSQLScraper) start(_ context.Context, host component.Host) error 
 	client, err := newPostgreSQLClient(postgreSQLConfig{
 		username:     m.config.Username,
 		password:     m.config.Password,
-		databaseName: m.config.DatabaseName,
+		databaseName: m.config.Database,
 		endpoint:     m.config.Endpoint,
 	})
 	if err != nil {
@@ -43,12 +45,12 @@ func (m *postgreSQLScraper) start(_ context.Context, host component.Host) error 
 }
 
 // shutdown closes open connections.
-func (m *postgreSQLScraper) shutdown(context.Context) error {
-	if !m.client.Closed() {
-		m.logger.Info("gracefully shutdown")
-		return m.client.Close()
-	}
-	return nil
+func (p *postgreSQLScraper) shutdown(context.Context) error {
+	var err error
+	p.stopOnce.Do(func() {
+		err = p.client.Close()
+	})
+	return err
 }
 
 // scrape scrapes the mysql db metric stats, transforms them and labels them into a metric slices.

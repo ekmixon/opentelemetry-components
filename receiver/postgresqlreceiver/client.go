@@ -9,13 +9,11 @@ import (
 )
 
 type client interface {
-	Closed() bool
 	Close() error
 }
 
 type postgreSQLClient struct {
 	client *sql.DB
-	closed bool
 }
 
 var _ client = (*postgreSQLClient)(nil)
@@ -43,15 +41,6 @@ func newPostgreSQLClient(conf postgreSQLConfig) (*postgreSQLClient, error) {
 	}, nil
 }
 
-func (c *postgreSQLClient) Closed() bool {
-	return c.closed
-}
-
 func (c *postgreSQLClient) Close() error {
-	err := c.client.Close()
-	if err != nil {
-		return err
-	}
-	c.closed = true
-	return nil
+	return c.client.Close()
 }
