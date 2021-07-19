@@ -44,19 +44,19 @@ func TestScraperWithDatabase(t *testing.T) {
 			bufferPoolPagesMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPagesState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolPagesMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 6, len(bufferPoolPagesMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_pages state:data database:otel":    981,
-				"mysql.buffer_pool_pages state:dirty database:otel":   0,
-				"mysql.buffer_pool_pages state:flushed database:otel": 168,
-				"mysql.buffer_pool_pages state:free database:otel":    7207,
-				"mysql.buffer_pool_pages state:misc database:otel":    4,
-				"mysql.buffer_pool_pages state:total database:otel":   8192,
+				"mysql.buffer_pool_pages :data database:otel":    981,
+				"mysql.buffer_pool_pages :dirty database:otel":   0,
+				"mysql.buffer_pool_pages :flushed database:otel": 168,
+				"mysql.buffer_pool_pages :free database:otel":    7207,
+				"mysql.buffer_pool_pages :misc database:otel":    4,
+				"mysql.buffer_pool_pages :total database:otel":   8192,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -65,20 +65,20 @@ func TestScraperWithDatabase(t *testing.T) {
 			bufferPoolOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.buffer_pool_operations state:read_ahead database:otel":         0,
-				"mysql.buffer_pool_operations state:read_ahead_evicted database:otel": 0,
-				"mysql.buffer_pool_operations state:read_ahead_rnd database:otel":     0,
-				"mysql.buffer_pool_operations state:read_requests database:otel":      14837,
-				"mysql.buffer_pool_operations state:reads database:otel":              838,
-				"mysql.buffer_pool_operations state:wait_free database:otel":          0,
-				"mysql.buffer_pool_operations state:write_requests database:otel":     1669,
+				"mysql.buffer_pool_operations :read_ahead database:otel":         0,
+				"mysql.buffer_pool_operations :read_ahead_evicted database:otel": 0,
+				"mysql.buffer_pool_operations :read_ahead_rnd database:otel":     0,
+				"mysql.buffer_pool_operations :read_requests database:otel":      14837,
+				"mysql.buffer_pool_operations :reads database:otel":              838,
+				"mysql.buffer_pool_operations :wait_free database:otel":          0,
+				"mysql.buffer_pool_operations :write_requests database:otel":     1669,
 			}, bufferPoolOperationsMetrics)
 		case metadata.M.MysqlBufferPoolSize.Name():
 			dps := m.Gauge().DataPoints()
@@ -86,16 +86,16 @@ func TestScraperWithDatabase(t *testing.T) {
 			bufferPoolSizeMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSizeState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolSizeMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_size state:data database:otel":  16072704,
-				"mysql.buffer_pool_size state:dirty database:otel": 0,
-				"mysql.buffer_pool_size state:size database:otel":  134217728,
+				"mysql.buffer_pool_size :data database:otel":  16072704,
+				"mysql.buffer_pool_size :dirty database:otel": 0,
+				"mysql.buffer_pool_size :size database:otel":  134217728,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
 			dps := m.IntSum().DataPoints()
@@ -104,19 +104,19 @@ func TestScraperWithDatabase(t *testing.T) {
 			commandsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.CommandState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				commandsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 6, len(commandsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.commands state:close database:otel":          0,
-				"mysql.commands state:execute database:otel":        0,
-				"mysql.commands state:fetch database:otel":          0,
-				"mysql.commands state:prepare database:otel":        0,
-				"mysql.commands state:reset database:otel":          0,
-				"mysql.commands state:send_long_data database:otel": 0,
+				"mysql.commands :close database:otel":          0,
+				"mysql.commands :execute database:otel":        0,
+				"mysql.commands :fetch database:otel":          0,
+				"mysql.commands :prepare database:otel":        0,
+				"mysql.commands :reset database:otel":          0,
+				"mysql.commands :send_long_data database:otel": 0,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
 			dps := m.IntSum().DataPoints()
@@ -125,31 +125,31 @@ func TestScraperWithDatabase(t *testing.T) {
 			handlersMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.HandlerState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				handlersMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 18, len(handlersMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.handlers state:commit database:otel":             564,
-				"mysql.handlers state:delete database:otel":             0,
-				"mysql.handlers state:discover database:otel":           0,
-				"mysql.handlers state:lock database:otel":               7127,
-				"mysql.handlers state:mrr_init database:otel":           0,
-				"mysql.handlers state:prepare database:otel":            0,
-				"mysql.handlers state:read_first database:otel":         52,
-				"mysql.handlers state:read_key database:otel":           1680,
-				"mysql.handlers state:read_last database:otel":          0,
-				"mysql.handlers state:read_next database:otel":          3960,
-				"mysql.handlers state:read_prev database:otel":          0,
-				"mysql.handlers state:read_rnd database:otel":           0,
-				"mysql.handlers state:read_rnd_next database:otel":      505063,
-				"mysql.handlers state:rollback database:otel":           0,
-				"mysql.handlers state:savepoint database:otel":          0,
-				"mysql.handlers state:savepoint_rollback database:otel": 0,
-				"mysql.handlers state:update database:otel":             315,
-				"mysql.handlers state:write database:otel":              256734,
+				"mysql.handlers :commit database:otel":             564,
+				"mysql.handlers :delete database:otel":             0,
+				"mysql.handlers :discover database:otel":           0,
+				"mysql.handlers :lock database:otel":               7127,
+				"mysql.handlers :mrr_init database:otel":           0,
+				"mysql.handlers :prepare database:otel":            0,
+				"mysql.handlers :read_first database:otel":         52,
+				"mysql.handlers :read_key database:otel":           1680,
+				"mysql.handlers :read_last database:otel":          0,
+				"mysql.handlers :read_next database:otel":          3960,
+				"mysql.handlers :read_prev database:otel":          0,
+				"mysql.handlers :read_rnd database:otel":           0,
+				"mysql.handlers :read_rnd_next database:otel":      505063,
+				"mysql.handlers :rollback database:otel":           0,
+				"mysql.handlers :savepoint database:otel":          0,
+				"mysql.handlers :savepoint_rollback database:otel": 0,
+				"mysql.handlers :update database:otel":             315,
+				"mysql.handlers :write database:otel":              256734,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
 			dps := m.IntSum().DataPoints()
@@ -158,15 +158,15 @@ func TestScraperWithDatabase(t *testing.T) {
 			doubleWritesMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWritesState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				doubleWritesMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.double_writes state:writes database:otel":  8,
-				"mysql.double_writes state:written database:otel": 27,
+				"mysql.double_writes :writes database:otel":  8,
+				"mysql.double_writes :written database:otel": 27,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -175,16 +175,16 @@ func TestScraperWithDatabase(t *testing.T) {
 			logOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				logOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.log_operations state:requests database:otel": 646,
-				"mysql.log_operations state:waits database:otel":    0,
-				"mysql.log_operations state:writes database:otel":   14,
+				"mysql.log_operations :requests database:otel": 646,
+				"mysql.log_operations :waits database:otel":    0,
+				"mysql.log_operations :writes database:otel":   14,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -193,16 +193,16 @@ func TestScraperWithDatabase(t *testing.T) {
 			operationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.OperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				operationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(operationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.operations state:fsyncs database:otel": 46,
-				"mysql.operations state:reads database:otel":  860,
-				"mysql.operations state:writes database:otel": 215,
+				"mysql.operations :fsyncs database:otel": 46,
+				"mysql.operations :reads database:otel":  860,
+				"mysql.operations :writes database:otel": 215,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -211,16 +211,16 @@ func TestScraperWithDatabase(t *testing.T) {
 			pageOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				pageOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.page_operations state:created database:otel": 144,
-				"mysql.page_operations state:read database:otel":    837,
-				"mysql.page_operations state:written database:otel": 168,
+				"mysql.page_operations :created database:otel": 144,
+				"mysql.page_operations :read database:otel":    837,
+				"mysql.page_operations :written database:otel": 168,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
 			dps := m.IntSum().DataPoints()
@@ -229,15 +229,15 @@ func TestScraperWithDatabase(t *testing.T) {
 			rowLocksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocksState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				rowLocksMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.row_locks state:time database:otel":  0,
-				"mysql.row_locks state:waits database:otel": 0,
+				"mysql.row_locks :time database:otel":  0,
+				"mysql.row_locks :waits database:otel": 0,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -246,17 +246,17 @@ func TestScraperWithDatabase(t *testing.T) {
 			rowOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				rowOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.row_operations state:deleted database:otel":  0,
-				"mysql.row_operations state:inserted database:otel": 0,
-				"mysql.row_operations state:read database:otel":     0,
-				"mysql.row_operations state:updated database:otel":  0,
+				"mysql.row_operations :deleted database:otel":  0,
+				"mysql.row_operations :inserted database:otel": 0,
+				"mysql.row_operations :read database:otel":     0,
+				"mysql.row_operations :updated database:otel":  0,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
 			dps := m.IntSum().DataPoints()
@@ -265,15 +265,15 @@ func TestScraperWithDatabase(t *testing.T) {
 			locksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LocksState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				locksMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(locksMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.locks state:immediate database:otel": 521,
-				"mysql.locks state:waited database:otel":    0,
+				"mysql.locks :immediate database:otel": 521,
+				"mysql.locks :waited database:otel":    0,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
 			dps := m.IntSum().DataPoints()
@@ -282,17 +282,17 @@ func TestScraperWithDatabase(t *testing.T) {
 			sortsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.SortsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				sortsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(sortsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.sorts state:merge_passes database:otel": 0,
-				"mysql.sorts state:range database:otel":        0,
-				"mysql.sorts state:rows database:otel":         0,
-				"mysql.sorts state:scan database:otel":         0,
+				"mysql.sorts :merge_passes database:otel": 0,
+				"mysql.sorts :range database:otel":        0,
+				"mysql.sorts :rows database:otel":         0,
+				"mysql.sorts :scan database:otel":         0,
 			}, sortsMetrics)
 		case metadata.M.MysqlThreads.Name():
 			dps := m.Gauge().DataPoints()
@@ -300,17 +300,17 @@ func TestScraperWithDatabase(t *testing.T) {
 			threadsMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.ThreadsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				threadsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(threadsMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.threads state:cached database:otel":    0,
-				"mysql.threads state:connected database:otel": 1,
-				"mysql.threads state:created database:otel":   1,
-				"mysql.threads state:running database:otel":   2,
+				"mysql.threads :cached database:otel":    0,
+				"mysql.threads :connected database:otel": 1,
+				"mysql.threads :created database:otel":   1,
+				"mysql.threads :running database:otel":   2,
 			}, threadsMetrics)
 		}
 	}
@@ -348,19 +348,19 @@ func TestScraperNoDatabase(t *testing.T) {
 			bufferPoolPagesMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPagesState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolPagesMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 6, len(bufferPoolPagesMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_pages state:data database:_global":    981,
-				"mysql.buffer_pool_pages state:dirty database:_global":   0,
-				"mysql.buffer_pool_pages state:flushed database:_global": 168,
-				"mysql.buffer_pool_pages state:free database:_global":    7207,
-				"mysql.buffer_pool_pages state:misc database:_global":    4,
-				"mysql.buffer_pool_pages state:total database:_global":   8192,
+				"mysql.buffer_pool_pages :data database:_global":    981,
+				"mysql.buffer_pool_pages :dirty database:_global":   0,
+				"mysql.buffer_pool_pages :flushed database:_global": 168,
+				"mysql.buffer_pool_pages :free database:_global":    7207,
+				"mysql.buffer_pool_pages :misc database:_global":    4,
+				"mysql.buffer_pool_pages :total database:_global":   8192,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -369,20 +369,20 @@ func TestScraperNoDatabase(t *testing.T) {
 			bufferPoolOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.buffer_pool_operations state:read_ahead database:_global":         0,
-				"mysql.buffer_pool_operations state:read_ahead_evicted database:_global": 0,
-				"mysql.buffer_pool_operations state:read_ahead_rnd database:_global":     0,
-				"mysql.buffer_pool_operations state:read_requests database:_global":      14837,
-				"mysql.buffer_pool_operations state:reads database:_global":              838,
-				"mysql.buffer_pool_operations state:wait_free database:_global":          0,
-				"mysql.buffer_pool_operations state:write_requests database:_global":     1669,
+				"mysql.buffer_pool_operations :read_ahead database:_global":         0,
+				"mysql.buffer_pool_operations :read_ahead_evicted database:_global": 0,
+				"mysql.buffer_pool_operations :read_ahead_rnd database:_global":     0,
+				"mysql.buffer_pool_operations :read_requests database:_global":      14837,
+				"mysql.buffer_pool_operations :reads database:_global":              838,
+				"mysql.buffer_pool_operations :wait_free database:_global":          0,
+				"mysql.buffer_pool_operations :write_requests database:_global":     1669,
 			}, bufferPoolOperationsMetrics)
 		case metadata.M.MysqlBufferPoolSize.Name():
 			dps := m.Gauge().DataPoints()
@@ -390,16 +390,16 @@ func TestScraperNoDatabase(t *testing.T) {
 			bufferPoolSizeMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSizeState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				bufferPoolSizeMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_size state:data database:_global":  16072704,
-				"mysql.buffer_pool_size state:dirty database:_global": 0,
-				"mysql.buffer_pool_size state:size database:_global":  134217728,
+				"mysql.buffer_pool_size :data database:_global":  16072704,
+				"mysql.buffer_pool_size :dirty database:_global": 0,
+				"mysql.buffer_pool_size :size database:_global":  134217728,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
 			dps := m.IntSum().DataPoints()
@@ -408,19 +408,19 @@ func TestScraperNoDatabase(t *testing.T) {
 			commandsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.CommandState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				commandsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 6, len(commandsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.commands state:close database:_global":          0,
-				"mysql.commands state:execute database:_global":        0,
-				"mysql.commands state:fetch database:_global":          0,
-				"mysql.commands state:prepare database:_global":        0,
-				"mysql.commands state:reset database:_global":          0,
-				"mysql.commands state:send_long_data database:_global": 0,
+				"mysql.commands :close database:_global":          0,
+				"mysql.commands :execute database:_global":        0,
+				"mysql.commands :fetch database:_global":          0,
+				"mysql.commands :prepare database:_global":        0,
+				"mysql.commands :reset database:_global":          0,
+				"mysql.commands :send_long_data database:_global": 0,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
 			dps := m.IntSum().DataPoints()
@@ -429,31 +429,31 @@ func TestScraperNoDatabase(t *testing.T) {
 			handlersMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.HandlerState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				handlersMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 18, len(handlersMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.handlers state:commit database:_global":             564,
-				"mysql.handlers state:delete database:_global":             0,
-				"mysql.handlers state:discover database:_global":           0,
-				"mysql.handlers state:lock database:_global":               7127,
-				"mysql.handlers state:mrr_init database:_global":           0,
-				"mysql.handlers state:prepare database:_global":            0,
-				"mysql.handlers state:read_first database:_global":         52,
-				"mysql.handlers state:read_key database:_global":           1680,
-				"mysql.handlers state:read_last database:_global":          0,
-				"mysql.handlers state:read_next database:_global":          3960,
-				"mysql.handlers state:read_prev database:_global":          0,
-				"mysql.handlers state:read_rnd database:_global":           0,
-				"mysql.handlers state:read_rnd_next database:_global":      505063,
-				"mysql.handlers state:rollback database:_global":           0,
-				"mysql.handlers state:savepoint database:_global":          0,
-				"mysql.handlers state:savepoint_rollback database:_global": 0,
-				"mysql.handlers state:update database:_global":             315,
-				"mysql.handlers state:write database:_global":              256734,
+				"mysql.handlers :commit database:_global":             564,
+				"mysql.handlers :delete database:_global":             0,
+				"mysql.handlers :discover database:_global":           0,
+				"mysql.handlers :lock database:_global":               7127,
+				"mysql.handlers :mrr_init database:_global":           0,
+				"mysql.handlers :prepare database:_global":            0,
+				"mysql.handlers :read_first database:_global":         52,
+				"mysql.handlers :read_key database:_global":           1680,
+				"mysql.handlers :read_last database:_global":          0,
+				"mysql.handlers :read_next database:_global":          3960,
+				"mysql.handlers :read_prev database:_global":          0,
+				"mysql.handlers :read_rnd database:_global":           0,
+				"mysql.handlers :read_rnd_next database:_global":      505063,
+				"mysql.handlers :rollback database:_global":           0,
+				"mysql.handlers :savepoint database:_global":          0,
+				"mysql.handlers :savepoint_rollback database:_global": 0,
+				"mysql.handlers :update database:_global":             315,
+				"mysql.handlers :write database:_global":              256734,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
 			dps := m.IntSum().DataPoints()
@@ -462,15 +462,15 @@ func TestScraperNoDatabase(t *testing.T) {
 			doubleWritesMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWritesState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				doubleWritesMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.double_writes state:writes database:_global":  8,
-				"mysql.double_writes state:written database:_global": 27,
+				"mysql.double_writes :writes database:_global":  8,
+				"mysql.double_writes :written database:_global": 27,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -479,16 +479,16 @@ func TestScraperNoDatabase(t *testing.T) {
 			logOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				logOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.log_operations state:requests database:_global": 646,
-				"mysql.log_operations state:waits database:_global":    0,
-				"mysql.log_operations state:writes database:_global":   14,
+				"mysql.log_operations :requests database:_global": 646,
+				"mysql.log_operations :waits database:_global":    0,
+				"mysql.log_operations :writes database:_global":   14,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -497,16 +497,16 @@ func TestScraperNoDatabase(t *testing.T) {
 			operationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.OperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				operationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(operationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.operations state:fsyncs database:_global": 46,
-				"mysql.operations state:reads database:_global":  860,
-				"mysql.operations state:writes database:_global": 215,
+				"mysql.operations :fsyncs database:_global": 46,
+				"mysql.operations :reads database:_global":  860,
+				"mysql.operations :writes database:_global": 215,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -515,16 +515,16 @@ func TestScraperNoDatabase(t *testing.T) {
 			pageOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				pageOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.page_operations state:created database:_global": 144,
-				"mysql.page_operations state:read database:_global":    837,
-				"mysql.page_operations state:written database:_global": 168,
+				"mysql.page_operations :created database:_global": 144,
+				"mysql.page_operations :read database:_global":    837,
+				"mysql.page_operations :written database:_global": 168,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
 			dps := m.IntSum().DataPoints()
@@ -533,15 +533,15 @@ func TestScraperNoDatabase(t *testing.T) {
 			rowLocksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocksState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				rowLocksMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.row_locks state:time database:_global":  0,
-				"mysql.row_locks state:waits database:_global": 0,
+				"mysql.row_locks :time database:_global":  0,
+				"mysql.row_locks :waits database:_global": 0,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
 			dps := m.IntSum().DataPoints()
@@ -550,17 +550,17 @@ func TestScraperNoDatabase(t *testing.T) {
 			rowOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperationsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				rowOperationsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.row_operations state:deleted database:_global":  0,
-				"mysql.row_operations state:inserted database:_global": 0,
-				"mysql.row_operations state:read database:_global":     0,
-				"mysql.row_operations state:updated database:_global":  0,
+				"mysql.row_operations :deleted database:_global":  0,
+				"mysql.row_operations :inserted database:_global": 0,
+				"mysql.row_operations :read database:_global":     0,
+				"mysql.row_operations :updated database:_global":  0,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
 			dps := m.IntSum().DataPoints()
@@ -569,15 +569,15 @@ func TestScraperNoDatabase(t *testing.T) {
 			locksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LocksState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				locksMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 2, len(locksMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.locks state:immediate database:_global": 521,
-				"mysql.locks state:waited database:_global":    0,
+				"mysql.locks :immediate database:_global": 521,
+				"mysql.locks :waited database:_global":    0,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
 			dps := m.IntSum().DataPoints()
@@ -586,17 +586,17 @@ func TestScraperNoDatabase(t *testing.T) {
 			sortsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.SortsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				sortsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(sortsMetrics))
 			require.Equal(t, map[string]int64{
-				"mysql.sorts state:merge_passes database:_global": 0,
-				"mysql.sorts state:range database:_global":        0,
-				"mysql.sorts state:rows database:_global":         0,
-				"mysql.sorts state:scan database:_global":         0,
+				"mysql.sorts :merge_passes database:_global": 0,
+				"mysql.sorts :range database:_global":        0,
+				"mysql.sorts :rows database:_global":         0,
+				"mysql.sorts :scan database:_global":         0,
 			}, sortsMetrics)
 		case metadata.M.MysqlThreads.Name():
 			dps := m.Gauge().DataPoints()
@@ -604,17 +604,17 @@ func TestScraperNoDatabase(t *testing.T) {
 			threadsMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.ThreadsState)
+				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
-				label := fmt.Sprintf("%s state:%s database:%s", m.Name(), value_label, db_label)
+				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
 				threadsMetrics[label] = dp.Value()
 			}
 			require.Equal(t, 4, len(threadsMetrics))
 			require.Equal(t, map[string]float64{
-				"mysql.threads state:cached database:_global":    0,
-				"mysql.threads state:connected database:_global": 1,
-				"mysql.threads state:created database:_global":   1,
-				"mysql.threads state:running database:_global":   2,
+				"mysql.threads :cached database:_global":    0,
+				"mysql.threads :connected database:_global": 1,
+				"mysql.threads :created database:_global":   1,
+				"mysql.threads :running database:_global":   2,
 			}, threadsMetrics)
 		}
 	}

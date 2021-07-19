@@ -276,36 +276,36 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
-	// BufferPoolOperationsState (The buffer pool operations types)
-	BufferPoolOperationsState string
-	// BufferPoolPagesState (The buffer pool pages types)
-	BufferPoolPagesState string
-	// BufferPoolSizeState (The buffer pool size types)
-	BufferPoolSizeState string
-	// CommandState (The command types)
-	CommandState string
+	// BufferPoolOperations (The buffer pool operations types)
+	BufferPoolOperations string
+	// BufferPoolPages (The buffer pool pages types)
+	BufferPoolPages string
+	// BufferPoolSize (The buffer pool size types)
+	BufferPoolSize string
+	// Command (The command types)
+	Command string
 	// Database (The name of the database)
 	Database string
-	// DoubleWritesState (The doublewrite types)
-	DoubleWritesState string
-	// HandlerState (The handler types)
-	HandlerState string
-	// LocksState (The table locks type)
-	LocksState string
-	// LogOperationsState (The log operation types)
-	LogOperationsState string
-	// OperationsState (The operation types)
-	OperationsState string
-	// PageOperationsState (The page operation types)
-	PageOperationsState string
-	// RowLocksState (The row lock type)
-	RowLocksState string
-	// RowOperationsState (The row operation type)
-	RowOperationsState string
-	// SortsState (The sort count type)
-	SortsState string
-	// ThreadsState (The thread count type)
-	ThreadsState string
+	// DoubleWrites (The doublewrite types)
+	DoubleWrites string
+	// Handler (The handler types)
+	Handler string
+	// Locks (The table locks type)
+	Locks string
+	// LogOperations (The log operation types)
+	LogOperations string
+	// Operations (The operation types)
+	Operations string
+	// PageOperations (The page operation types)
+	PageOperations string
+	// RowLocks (The row lock type)
+	RowLocks string
+	// RowOperations (The row operation type)
+	RowOperations string
+	// Sorts (The sort count type)
+	Sorts string
+	// Threads (The thread count type)
+	Threads string
 }{
 	"operation",
 	"kind",
@@ -328,8 +328,8 @@ var Labels = struct {
 // Labels.
 var L = Labels
 
-// LabelBufferPoolOperationsState are the possible values that the label "buffer_pool_operations_state" can have.
-var LabelBufferPoolOperationsState = struct {
+// LabelBufferPoolOperations are the possible values that the label "buffer_pool_operations" can have.
+var LabelBufferPoolOperations = struct {
 	ReadAheadRnd     string
 	ReadAhead        string
 	ReadAheadEvicted string
@@ -347,8 +347,8 @@ var LabelBufferPoolOperationsState = struct {
 	"write_requests",
 }
 
-// LabelBufferPoolPagesState are the possible values that the label "buffer_pool_pages_state" can have.
-var LabelBufferPoolPagesState = struct {
+// LabelBufferPoolPages are the possible values that the label "buffer_pool_pages" can have.
+var LabelBufferPoolPages = struct {
 	Data    string
 	Dirty   string
 	Flushed string
@@ -364,8 +364,8 @@ var LabelBufferPoolPagesState = struct {
 	"total",
 }
 
-// LabelBufferPoolSizeState are the possible values that the label "buffer_pool_size_state" can have.
-var LabelBufferPoolSizeState = struct {
+// LabelBufferPoolSize are the possible values that the label "buffer_pool_size" can have.
+var LabelBufferPoolSize = struct {
 	Data  string
 	Dirty string
 	Size  string
@@ -375,8 +375,8 @@ var LabelBufferPoolSizeState = struct {
 	"size",
 }
 
-// LabelCommandState are the possible values that the label "command_state" can have.
-var LabelCommandState = struct {
+// LabelCommand are the possible values that the label "command" can have.
+var LabelCommand = struct {
 	Execute      string
 	Close        string
 	Fetch        string
@@ -392,8 +392,8 @@ var LabelCommandState = struct {
 	"send_long_data",
 }
 
-// LabelDoubleWritesState are the possible values that the label "double_writes_state" can have.
-var LabelDoubleWritesState = struct {
+// LabelDoubleWrites are the possible values that the label "double_writes" can have.
+var LabelDoubleWrites = struct {
 	PagesWritten string
 	Writes       string
 }{
@@ -401,8 +401,8 @@ var LabelDoubleWritesState = struct {
 	"writes",
 }
 
-// LabelHandlerState are the possible values that the label "handler_state" can have.
-var LabelHandlerState = struct {
+// LabelHandler are the possible values that the label "handler" can have.
+var LabelHandler = struct {
 	Commit            string
 	Delete            string
 	Discover          string
@@ -442,8 +442,8 @@ var LabelHandlerState = struct {
 	"write",
 }
 
-// LabelLocksState are the possible values that the label "locks_state" can have.
-var LabelLocksState = struct {
+// LabelLocks are the possible values that the label "locks" can have.
+var LabelLocks = struct {
 	Immediate string
 	Waited    string
 }{
@@ -451,8 +451,8 @@ var LabelLocksState = struct {
 	"waited",
 }
 
-// LabelLogOperationsState are the possible values that the label "log_operations_state" can have.
-var LabelLogOperationsState = struct {
+// LabelLogOperations are the possible values that the label "log_operations" can have.
+var LabelLogOperations = struct {
 	Waits         string
 	WriteRequests string
 	Writes        string
@@ -462,8 +462,8 @@ var LabelLogOperationsState = struct {
 	"writes",
 }
 
-// LabelOperationsState are the possible values that the label "operations_state" can have.
-var LabelOperationsState = struct {
+// LabelOperations are the possible values that the label "operations" can have.
+var LabelOperations = struct {
 	Fsyncs string
 	Reads  string
 	Writes string
@@ -473,8 +473,8 @@ var LabelOperationsState = struct {
 	"writes",
 }
 
-// LabelPageOperationsState are the possible values that the label "page_operations_state" can have.
-var LabelPageOperationsState = struct {
+// LabelPageOperations are the possible values that the label "page_operations" can have.
+var LabelPageOperations = struct {
 	Created string
 	Read    string
 	Written string
@@ -484,8 +484,8 @@ var LabelPageOperationsState = struct {
 	"written",
 }
 
-// LabelRowLocksState are the possible values that the label "row_locks_state" can have.
-var LabelRowLocksState = struct {
+// LabelRowLocks are the possible values that the label "row_locks" can have.
+var LabelRowLocks = struct {
 	Waits string
 	Time  string
 }{
@@ -493,8 +493,8 @@ var LabelRowLocksState = struct {
 	"time",
 }
 
-// LabelRowOperationsState are the possible values that the label "row_operations_state" can have.
-var LabelRowOperationsState = struct {
+// LabelRowOperations are the possible values that the label "row_operations" can have.
+var LabelRowOperations = struct {
 	Deleted  string
 	Inserted string
 	Read     string
@@ -506,8 +506,8 @@ var LabelRowOperationsState = struct {
 	"updated",
 }
 
-// LabelSortsState are the possible values that the label "sorts_state" can have.
-var LabelSortsState = struct {
+// LabelSorts are the possible values that the label "sorts" can have.
+var LabelSorts = struct {
 	MergePasses string
 	Range       string
 	Rows        string
@@ -519,8 +519,8 @@ var LabelSortsState = struct {
 	"scan",
 }
 
-// LabelThreadsState are the possible values that the label "threads_state" can have.
-var LabelThreadsState = struct {
+// LabelThreads are the possible values that the label "threads" can have.
+var LabelThreads = struct {
 	Cached    string
 	Connected string
 	Created   string

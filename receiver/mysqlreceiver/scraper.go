@@ -125,7 +125,7 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		switch k {
 		case "buffer_pool_size":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolSizeState, "size")
+				labels.Insert(metadata.L.BufferPoolSize, "size")
 				addToMetric(bufferPoolSize, labels, f, now)
 			}
 		}
@@ -150,358 +150,358 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		// buffer_pool_pages
 		case "Innodb_buffer_pool_pages_data":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "data")
+				labels.Insert(metadata.L.BufferPoolPages, "data")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_dirty":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "dirty")
+				labels.Insert(metadata.L.BufferPoolPages, "dirty")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_flushed":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "flushed")
+				labels.Insert(metadata.L.BufferPoolPages, "flushed")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_free":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "free")
+				labels.Insert(metadata.L.BufferPoolPages, "free")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_misc":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "misc")
+				labels.Insert(metadata.L.BufferPoolPages, "misc")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_total":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolPagesState, "total")
+				labels.Insert(metadata.L.BufferPoolPages, "total")
 				addToMetric(bufferPoolPages, labels, f, now)
 			}
 
 		// buffer_pool_operations
 		case "Innodb_buffer_pool_read_ahead_rnd":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "read_ahead_rnd")
+				labels.Insert(metadata.L.BufferPoolOperations, "read_ahead_rnd")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_read_ahead":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "read_ahead")
+				labels.Insert(metadata.L.BufferPoolOperations, "read_ahead")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_read_ahead_evicted":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "read_ahead_evicted")
+				labels.Insert(metadata.L.BufferPoolOperations, "read_ahead_evicted")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_read_requests":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "read_requests")
+				labels.Insert(metadata.L.BufferPoolOperations, "read_requests")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_reads":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "reads")
+				labels.Insert(metadata.L.BufferPoolOperations, "reads")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_wait_free":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "wait_free")
+				labels.Insert(metadata.L.BufferPoolOperations, "wait_free")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 		case "Innodb_buffer_pool_write_requests":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolOperationsState, "write_requests")
+				labels.Insert(metadata.L.BufferPoolOperations, "write_requests")
 				addToIntMetric(bufferPoolOperations, labels, i, now)
 			}
 
 		// buffer_pool_size
 		case "Innodb_buffer_pool_bytes_data":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolSizeState, "data")
+				labels.Insert(metadata.L.BufferPoolSize, "data")
 				addToMetric(bufferPoolSize, labels, f, now)
 			}
 		case "Innodb_buffer_pool_bytes_dirty":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.BufferPoolSizeState, "dirty")
+				labels.Insert(metadata.L.BufferPoolSize, "dirty")
 				addToMetric(bufferPoolSize, labels, f, now)
 			}
 
 		// commands
 		case "Com_stmt_execute":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "execute")
+				labels.Insert(metadata.L.Command, "execute")
 				addToIntMetric(commands, labels, i, now)
 			}
 		case "Com_stmt_close":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "close")
+				labels.Insert(metadata.L.Command, "close")
 				addToIntMetric(commands, labels, i, now)
 			}
 		case "Com_stmt_fetch":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "fetch")
+				labels.Insert(metadata.L.Command, "fetch")
 				addToIntMetric(commands, labels, i, now)
 			}
 		case "Com_stmt_prepare":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "prepare")
+				labels.Insert(metadata.L.Command, "prepare")
 				addToIntMetric(commands, labels, i, now)
 			}
 		case "Com_stmt_reset":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "reset")
+				labels.Insert(metadata.L.Command, "reset")
 				addToIntMetric(commands, labels, i, now)
 			}
 		case "Com_stmt_send_long_data":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.CommandState, "send_long_data")
+				labels.Insert(metadata.L.Command, "send_long_data")
 				addToIntMetric(commands, labels, i, now)
 			}
 
 		// handlers
 		case "Handler_commit":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "commit")
+				labels.Insert(metadata.L.Handler, "commit")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_delete":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "delete")
+				labels.Insert(metadata.L.Handler, "delete")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_discover":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "discover")
+				labels.Insert(metadata.L.Handler, "discover")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_external_lock":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "lock")
+				labels.Insert(metadata.L.Handler, "lock")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_mrr_init":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "mrr_init")
+				labels.Insert(metadata.L.Handler, "mrr_init")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_prepare":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "prepare")
+				labels.Insert(metadata.L.Handler, "prepare")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_first":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_first")
+				labels.Insert(metadata.L.Handler, "read_first")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_key":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_key")
+				labels.Insert(metadata.L.Handler, "read_key")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_last":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_last")
+				labels.Insert(metadata.L.Handler, "read_last")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_next":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_next")
+				labels.Insert(metadata.L.Handler, "read_next")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_prev":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_prev")
+				labels.Insert(metadata.L.Handler, "read_prev")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_rnd":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_rnd")
+				labels.Insert(metadata.L.Handler, "read_rnd")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_read_rnd_next":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "read_rnd_next")
+				labels.Insert(metadata.L.Handler, "read_rnd_next")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_rollback":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "rollback")
+				labels.Insert(metadata.L.Handler, "rollback")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_savepoint":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "savepoint")
+				labels.Insert(metadata.L.Handler, "savepoint")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_savepoint_rollback":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "savepoint_rollback")
+				labels.Insert(metadata.L.Handler, "savepoint_rollback")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_update":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "update")
+				labels.Insert(metadata.L.Handler, "update")
 				addToIntMetric(handlers, labels, i, now)
 			}
 		case "Handler_write":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.HandlerState, "write")
+				labels.Insert(metadata.L.Handler, "write")
 				addToIntMetric(handlers, labels, i, now)
 			}
 
 		// double_writes
 		case "Innodb_dblwr_pages_written":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.DoubleWritesState, "written")
+				labels.Insert(metadata.L.DoubleWrites, "written")
 				addToIntMetric(doubleWrites, labels, i, now)
 			}
 		case "Innodb_dblwr_writes":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.DoubleWritesState, "writes")
+				labels.Insert(metadata.L.DoubleWrites, "writes")
 				addToIntMetric(doubleWrites, labels, i, now)
 			}
 
 		// log_operations
 		case "Innodb_log_waits":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.LogOperationsState, "waits")
+				labels.Insert(metadata.L.LogOperations, "waits")
 				addToIntMetric(logOperations, labels, i, now)
 			}
 		case "Innodb_log_write_requests":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.LogOperationsState, "requests")
+				labels.Insert(metadata.L.LogOperations, "requests")
 				addToIntMetric(logOperations, labels, i, now)
 			}
 		case "Innodb_log_writes":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.LogOperationsState, "writes")
+				labels.Insert(metadata.L.LogOperations, "writes")
 				addToIntMetric(logOperations, labels, i, now)
 			}
 
 		// operations
 		case "Innodb_data_fsyncs":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.OperationsState, "fsyncs")
+				labels.Insert(metadata.L.Operations, "fsyncs")
 				addToIntMetric(operations, labels, i, now)
 			}
 		case "Innodb_data_reads":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.OperationsState, "reads")
+				labels.Insert(metadata.L.Operations, "reads")
 				addToIntMetric(operations, labels, i, now)
 			}
 		case "Innodb_data_writes":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.OperationsState, "writes")
+				labels.Insert(metadata.L.Operations, "writes")
 				addToIntMetric(operations, labels, i, now)
 			}
 
 		// page_operations
 		case "Innodb_pages_created":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.PageOperationsState, "created")
+				labels.Insert(metadata.L.PageOperations, "created")
 				addToIntMetric(pageOperations, labels, i, now)
 			}
 		case "Innodb_pages_read":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.PageOperationsState, "read")
+				labels.Insert(metadata.L.PageOperations, "read")
 				addToIntMetric(pageOperations, labels, i, now)
 			}
 		case "Innodb_pages_written":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.PageOperationsState, "written")
+				labels.Insert(metadata.L.PageOperations, "written")
 				addToIntMetric(pageOperations, labels, i, now)
 			}
 
 		// row_locks
 		case "Innodb_row_lock_waits":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowLocksState, "waits")
+				labels.Insert(metadata.L.RowLocks, "waits")
 				addToIntMetric(rowLocks, labels, i, now)
 			}
 		case "Innodb_row_lock_time":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowLocksState, "time")
+				labels.Insert(metadata.L.RowLocks, "time")
 				addToIntMetric(rowLocks, labels, i, now)
 			}
 
 		// row_operations
 		case "Innodb_rows_deleted":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowOperationsState, "deleted")
+				labels.Insert(metadata.L.RowOperations, "deleted")
 				addToIntMetric(rowOperations, labels, i, now)
 			}
 		case "Innodb_rows_inserted":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowOperationsState, "inserted")
+				labels.Insert(metadata.L.RowOperations, "inserted")
 				addToIntMetric(rowOperations, labels, i, now)
 			}
 		case "Innodb_rows_read":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowOperationsState, "read")
+				labels.Insert(metadata.L.RowOperations, "read")
 				addToIntMetric(rowOperations, labels, i, now)
 			}
 		case "Innodb_rows_updated":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.RowOperationsState, "updated")
+				labels.Insert(metadata.L.RowOperations, "updated")
 				addToIntMetric(rowOperations, labels, i, now)
 			}
 
 		// locks
 		case "Table_locks_immediate":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.LocksState, "immediate")
+				labels.Insert(metadata.L.Locks, "immediate")
 				addToIntMetric(locks, labels, i, now)
 			}
 		case "Table_locks_waited":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.LocksState, "waited")
+				labels.Insert(metadata.L.Locks, "waited")
 				addToIntMetric(locks, labels, i, now)
 			}
 
 		// sorts
 		case "Sort_merge_passes":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.SortsState, "merge_passes")
+				labels.Insert(metadata.L.Sorts, "merge_passes")
 				addToIntMetric(sorts, labels, i, now)
 			}
 		case "Sort_range":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.SortsState, "range")
+				labels.Insert(metadata.L.Sorts, "range")
 				addToIntMetric(sorts, labels, i, now)
 			}
 		case "Sort_rows":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.SortsState, "rows")
+				labels.Insert(metadata.L.Sorts, "rows")
 				addToIntMetric(sorts, labels, i, now)
 			}
 		case "Sort_scan":
 			if i, ok := m.parseInt(k, v); ok {
-				labels.Insert(metadata.L.SortsState, "scan")
+				labels.Insert(metadata.L.Sorts, "scan")
 				addToIntMetric(sorts, labels, i, now)
 			}
 
 		// threads
 		case "Threads_cached":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.ThreadsState, "cached")
+				labels.Insert(metadata.L.Threads, "cached")
 				addToMetric(threads, labels, f, now)
 			}
 		case "Threads_connected":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.ThreadsState, "connected")
+				labels.Insert(metadata.L.Threads, "connected")
 				addToMetric(threads, labels, f, now)
 			}
 		case "Threads_created":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.ThreadsState, "created")
+				labels.Insert(metadata.L.Threads, "created")
 				addToMetric(threads, labels, f, now)
 			}
 		case "Threads_running":
 			if f, ok := m.parseFloat(k, v); ok {
-				labels.Insert(metadata.L.ThreadsState, "running")
+				labels.Insert(metadata.L.Threads, "running")
 				addToMetric(threads, labels, f, now)
 			}
 		}
