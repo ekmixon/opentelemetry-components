@@ -35,7 +35,6 @@ func mongodbContainer(t *testing.T) testcontainers.Container {
 		Started:          true,
 	})
 	require.NoError(t, err)
-	time.Sleep(time.Second * 6)
 	return mongodb
 }
 

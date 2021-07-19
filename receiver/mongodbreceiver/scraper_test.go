@@ -5,7 +5,6 @@ import (
 	"net"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -32,9 +31,9 @@ func mongodbContainer(t *testing.T) testcontainers.Container {
 		Started:          true,
 	})
 	require.NoError(t, err)
-	time.Sleep(time.Second * 6)
 	return mongodb
 }
+
 func TestScraper(t *testing.T) {
 	container := mongodbContainer(t)
 	defer func() {
