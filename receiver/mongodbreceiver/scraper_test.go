@@ -3,20 +3,49 @@ package mongodbreceiver
 import (
 	"context"
 	"net"
+	"path"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.uber.org/zap"
 )
 
+func mongodbContainer(t *testing.T) testcontainers.Container {
+	ctx := context.Background()
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.mongodb",
+		},
+		ExposedPorts: []string{"37017:27017"},
+		WaitingFor:   wait.ForListeningPort("27017"),
+	}
+
+	require.NoError(t, req.Validate())
+
+	mongodb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Second * 6)
+	return mongodb
+}
 func TestScraper(t *testing.T) {
-	//cs := container.New(t)
-	//c := cs.StartImage("mongo:4.0.25-xenial", container.WithPortReady(27017))
+	container := mongodbContainer(t)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
 
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort("localhost", "27017")
+	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
 
 	user := "otel"
 	pass := "otel"
@@ -25,7 +54,7 @@ func TestScraper(t *testing.T) {
 
 	sc := newMongodbScraper(zap.NewNop(), cfg)
 
-	err := sc.Start(context.Background(), componenttest.NewNopHost())
+	err = sc.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	metrics, err := sc.Scrape(context.Background(), cfg.ID())
 	require.Nil(t, err)

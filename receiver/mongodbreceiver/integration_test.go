@@ -13,15 +13,43 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/model/pdata"
+
+	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver/internal/metadata"
 )
 
+func mongodbContainer(t *testing.T) testcontainers.Container {
+	ctx := context.Background()
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.mongodb",
+		},
+		ExposedPorts: []string{"37017:27017"},
+		WaitingFor:   wait.ForListeningPort("27017"),
+	}
+
+	require.NoError(t, req.Validate())
+
+	mongodb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Second * 6)
+	return mongodb
+}
+
 func TestIntegration(t *testing.T) {
-	// cs := container.New(t)
-	// c := cs.StartImage("mongodb:1.6-alpine", container.WithPortReady(27017))
+	container := mongodbContainer(t)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
 
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort("localhost", "27017")
+	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
 
 	user := "otel"
 	pass := "otel"
