@@ -47,6 +47,10 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
 
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	scraper := newMongodbScraper(params.Logger, cfg)
 
 	return scraperhelper.NewScraperControllerReceiver(

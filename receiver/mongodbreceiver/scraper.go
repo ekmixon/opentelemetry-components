@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -329,11 +330,7 @@ func (r *mongodbScraper) runDatabaseCommandAndCollectMetrics(
 
 func (r *mongodbScraper) initClient(ctx context.Context) (*mongo.Client, error) {
 	authentication := ""
-	if r.config.User != nil && r.config.Password == nil {
-		return nil, errors.New("user provided without password")
-	} else if r.config.User == nil && r.config.Password != nil {
-		return nil, errors.New("password provided without user")
-	} else if r.config.User != nil && r.config.Password != nil {
+	if r.config.User != nil && r.config.Password != nil {
 		authentication = fmt.Sprintf("%s:%s@", *r.config.User, *r.config.Password)
 	}
 
@@ -359,7 +356,7 @@ func getIntMetricValue(document bson.M, path []string) (int64, error) {
 		case int64:
 			return v, nil
 		case string:
-			return parseInt(v)
+			return strconv.ParseInt(v, 10, 64)
 		default:
 			return 0, fmt.Errorf("unexpected type found when parsing int: %v", reflect.TypeOf(value))
 		}
@@ -380,7 +377,7 @@ func getDoubleMetricValue(document bson.M, path []string) (float64, error) {
 		case float64:
 			return v, nil
 		case string:
-			return parseFloat(v)
+			return strconv.ParseFloat(v, 64)
 		default:
 			return 0, fmt.Errorf("unexpected type found when parsing double: %v", reflect.TypeOf(value))
 		}
