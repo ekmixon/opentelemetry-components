@@ -181,8 +181,6 @@ func (r *mongodbScraper) collectSpecialMetrics(
 	var document bson.M
 	err := result.Decode(&document)
 
-	//fmt.Printf("Result: %v\n", document)
-
 	if err != nil {
 		return err
 	}
