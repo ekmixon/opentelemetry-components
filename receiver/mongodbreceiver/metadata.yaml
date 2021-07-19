@@ -5,8 +5,19 @@ labels:
     description: The name of a database
   memory_type:
     description: The type of memory used
+    enum:
+      - resident
+      - virtual
+      - mapped
+      - mappedWithJournal
   operation:
     description: The mongoDB operation being counted
+      - insert
+      - query
+      - update
+      - delete
+      - getmore
+      - command
 
 metrics:
   mongodb.cache_hits:
