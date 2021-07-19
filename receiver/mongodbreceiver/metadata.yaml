@@ -12,6 +12,7 @@ labels:
       - mappedWithJournal
   operation:
     description: The mongoDB operation being counted
+    enum:
       - insert
       - query
       - update

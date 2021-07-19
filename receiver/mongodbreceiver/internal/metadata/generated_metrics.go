@@ -253,7 +253,7 @@ var Labels = struct {
 	DatabaseName string
 	// MemoryType (The type of memory used)
 	MemoryType string
-	// Operation (The mongoDB operation being counted - insert - query - update - delete - getmore - command)
+	// Operation (The mongoDB operation being counted)
 	Operation string
 }{
 	"database_name",
@@ -276,4 +276,21 @@ var LabelMemoryType = struct {
 	"virtual",
 	"mapped",
 	"mappedWithJournal",
+}
+
+// LabelOperation are the possible values that the label "operation" can have.
+var LabelOperation = struct {
+	Insert  string
+	Query   string
+	Update  string
+	Delete  string
+	Getmore string
+	Command string
+}{
+	"insert",
+	"query",
+	"update",
+	"delete",
+	"getmore",
+	"command",
 }
