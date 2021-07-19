@@ -242,7 +242,14 @@ func (r *mongodbScraper) collectSpecialMetrics(
 
 	// Collect Operations
 	var operationsMetric *pdata.Metric
-	for _, operation := range []string{"insert", "query", "update", "delete", "getmore", "command"} {
+	for _, operation := range []string{
+		metadata.LabelOperation.Insert,
+		metadata.LabelOperation.Query,
+		metadata.LabelOperation.Update,
+		metadata.LabelOperation.Delete,
+		metadata.LabelOperation.Getmore,
+		metadata.LabelOperation.Command,
+	} {
 		path := []string{"opcounters", operation}
 		count, err := getIntMetricValue(document, path)
 		if err != nil {
