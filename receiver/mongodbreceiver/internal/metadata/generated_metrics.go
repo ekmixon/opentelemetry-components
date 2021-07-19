@@ -264,3 +264,33 @@ var Labels = struct {
 // L contains the possible metric labels that can be used. L is an alias for
 // Labels.
 var L = Labels
+
+// LabelMemoryType are the possible values that the label "memory_type" can have.
+var LabelMemoryType = struct {
+	Resident          string
+	Virtual           string
+	Mapped            string
+	MappedWithJournal string
+}{
+	"resident",
+	"virtual",
+	"mapped",
+	"mappedWithJournal",
+}
+
+// LabelOperation are the possible values that the label "operation" can have.
+var LabelOperation = struct {
+	Insert  string
+	Query   string
+	Update  string
+	Delete  string
+	Getmore string
+	Command string
+}{
+	"insert",
+	"query",
+	"update",
+	"delete",
+	"getmore",
+	"command",
+}

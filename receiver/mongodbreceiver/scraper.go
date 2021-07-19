@@ -77,22 +77,22 @@ var serverStatusMetrics []mongoMetric = []mongoMetric{
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "resident"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "resident"}),
+		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "virtual"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "virtual"}),
+		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mapped"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "mapped"}),
+		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped}),
 	},
 	mongoMetric{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mappedWithJournal"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: "mappedWithJournal"}),
+		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal}),
 	},
 }
 
@@ -242,7 +242,14 @@ func (r *mongodbScraper) collectSpecialMetrics(
 
 	// Collect Operations
 	var operationsMetric *pdata.Metric
-	for _, operation := range []string{"insert", "query", "update", "delete", "getmore", "command"} {
+	for _, operation := range []string{
+		metadata.LabelOperation.Insert,
+		metadata.LabelOperation.Query,
+		metadata.LabelOperation.Update,
+		metadata.LabelOperation.Delete,
+		metadata.LabelOperation.Getmore,
+		metadata.LabelOperation.Command,
+	} {
 		path := []string{"opcounters", operation}
 		count, err := getIntMetricValue(document, path)
 		if err != nil {
