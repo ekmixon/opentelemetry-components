@@ -26,7 +26,7 @@ labels:
 metrics:
   httpd.uptime:
     description: The amount of time that the server has been running in seconds
-    unit: /s
+    unit: s
     data:
       type: int sum
       monotonic: true
@@ -52,7 +52,7 @@ metrics:
     labels: []
   httpd.bytes:
     description: The number of bytes transferred by the HTTP server per second
-    unit: By
+    unit: By/s
     data:
       type: gauge
     labels: []
