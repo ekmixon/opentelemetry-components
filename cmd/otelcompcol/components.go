@@ -20,6 +20,7 @@ import (
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
 )
 
@@ -33,6 +34,7 @@ func components() (component.Factories, error) {
 		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
 		mysqlreceiver.NewFactory(),
+		mongodbreceiver.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
