@@ -1,0 +1,99 @@
+name: postgresql
+
+labels:
+  database:
+    description: The name of the database.
+  table:
+    value: table
+    description: The table name and schema name.
+    enum: [ schemaname, relname ]
+  blocks_read:
+    value: source
+    description: The number of total blocks read from the database.
+    enum: [ heap_read heap_hit, idx_read, idx_hit, toast_read, toast_hit, tidx_read, tidx_hit ]  
+  blocks_read_by_table:
+    value: table
+    description: The number of blocks read by table.
+    enum: [ heap_read heap_hit, idx_read, idx_hit, toast_read, toast_hit, tidx_read, tidx_hit ]
+  commits: # no values?
+    description: The number of commits.
+    enum: [ xact_commit ]
+  db_size:
+    description: The database disk usage.
+    enum: [ db_size ]
+  backends:
+    description: The number of backends.
+    enum: [ count ]
+  db_rows:
+    # value: # not sure
+    description: The number of rows in the database.
+    enum: [ ins, upd, del, hot_upd ]
+  db_rows_by_table:
+    value: table
+    description: The number of rows in the database by table.
+    enum: [ ins, upd, del, hot_upd ]
+  db_rows_state:
+    value: state
+    description: The database state (either 'dead' or 'live').
+    enum: [ live, dead ]
+  db_rows_state_by_table:
+    value: state # can I combine these together?
+    description: The database state (either 'dead' or 'live') by table.
+    enum: [ live, dead ]
+  operations:
+    value: operation 
+    description: The number of database row operations.
+    enum: [ seq, seq_tup_read, idx, idx_tup_fetch ]
+  operations_by_table:
+    value: operation # maybe operation table?
+    description: The number of database row operations by table.
+    enum: [ seq, seq_tup_read, idx, idx_tup_fetch ]
+  rollbacks: # no value?
+    description: The number of rollbacks.
+    enum: [ xact_rollback]
+
+
+metrics:
+  postgresql.blocks_read
+    units: 1
+    data:
+      type: int sum
+      monotonic: true
+      aggregation: cumulative
+    labels: [ database, table, blocks_read, blocks_read_by_table ] # not sure if table should be here. Only block_read by table needs the table category
+  postgresql.commits
+    units: 1
+    data:
+      type: int sum
+      monotonic: true
+      aggregation: cumulative
+    labels: [ database, commits ]
+  postgresql.db_size
+    units: By
+    data:
+      type: gauge
+    labels: [ database, db_size ]
+  postgresql.backends
+    units: 1
+    data:
+      type: gauge
+    labels: [ database, backends ]
+  postgresql.db_rows
+    units: 1
+    data:
+      type: gauge
+    labels: [ database, table, db_rows, db_rows_by_table, db_rows_state, db_rows_state_by_table ]
+  postgresql.operations
+    units: 1
+    data:
+      type: int sum
+      monotonic: true
+      aggregation: cumulative
+    labels: [ database, table, operations, operations_by_table ]
+  postgresql.rollbacks
+    units: 1
+    data:
+      type: gauge
+      monotonic: true
+      aggregation: cumulative
+    labels: [ database, rollbacks ]
