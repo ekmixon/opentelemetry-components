@@ -8,6 +8,8 @@ The following components are based in this repository:
 
 Receivers:
 - [httpd](/receiver/httpdreceiver/)
+- [mysql](/receiver/mysqlreceiver/)
+- [mongodb](/receiver/mongodbreceiver/)
 
 Processors:
 - [normalizesums](/processor/normalizesumsprocessor/)

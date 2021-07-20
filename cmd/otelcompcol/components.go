@@ -21,6 +21,7 @@ import (
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
 )
 
 // Get the factories for components we want to use.
@@ -32,6 +33,7 @@ func components() (component.Factories, error) {
 		hostmetricsreceiver.NewFactory(),
 		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
+		mysqlreceiver.NewFactory(),
 		mongodbreceiver.NewFactory(),
 	)
 	if err != nil {
