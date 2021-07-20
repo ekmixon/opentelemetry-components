@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
+	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver"
 )
 
@@ -29,8 +31,10 @@ func components() (component.Factories, error) {
 
 	receivers, err := component.MakeReceiverFactoryMap(
 		hostmetricsreceiver.NewFactory(),
+		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
 		postgresqlreceiver.NewFactory(),
+		mongodbreceiver.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
