@@ -171,13 +171,13 @@ var M = Metrics
 var Labels = struct {
 	// Database (The name of the database.)
 	Database string
-	// Operation (The postgres row operations count.)
+	// Operation (The database operation.)
 	Operation string
-	// Source (The source type.)
+	// Source (The block read source type.)
 	Source string
-	// State (Tuple (row) state either dead or live)
+	// State (The tuple (row) state either dead or live)
 	State string
-	// Table (The scehma name followed by the table name.)
+	// Table (The schema name followed by the table name.)
 	Table string
 }{
 	"database",
