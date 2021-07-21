@@ -1,0 +1,10 @@
+FROM rabbitmq:3-management
+
+ENV RABBITMQ_DEFAULT_USER=dev
+ENV RABBITMQ_DEFAULT_PASS=dev
+ENV RABBITMQ_DEFAULT_VHOST=dev
+
+RUN apt-get update && apt-get install curl -y
+
+COPY scripts/setup.sh /setup.sh
+RUN chmod +x /setup.sh

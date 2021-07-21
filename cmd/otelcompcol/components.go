@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/processor/resourceprocessor"
 	"go.opentelemetry.io/collector/receiver/hostmetricsreceiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
+	"go.opentelemetry.io/collector/receiver/rabbitmqreceiver"
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
@@ -35,6 +36,7 @@ func components() (component.Factories, error) {
 		otlpreceiver.NewFactory(),
 		mysqlreceiver.NewFactory(),
 		mongodbreceiver.NewFactory(),
+		rabbitmqreceiver.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
