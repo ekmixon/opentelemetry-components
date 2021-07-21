@@ -10,6 +10,8 @@ Receivers:
 - [httpd](/receiver/httpdreceiver/)
 - [mysql](/receiver/mysqlreceiver/)
 - [mongodb](/receiver/mongodbreceiver/)
+- [rabbitmq](/receiver/rabbitmqreceiver/)
+
 
 Processors:
 - [normalizesums](/processor/normalizesumsprocessor/)
