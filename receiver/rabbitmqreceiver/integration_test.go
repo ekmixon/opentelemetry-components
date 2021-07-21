@@ -50,7 +50,10 @@ func rabbitmqContainer(t *testing.T) testcontainers.Container {
 func (suite *RabbitMQIntegrationSuite) TestRabbitMQScraperHappyPath() {
 	t := suite.T()
 	rabbitmq := rabbitmqContainer(t)
-	defer rabbitmq.Terminate(context.Background())
+	defer func() {
+		err := rabbitmq.Terminate(context.Background())
+		require.NoError(t, err)
+	}()
 	hostname, err := rabbitmq.Host(context.Background())
 	require.NoError(t, err)
 

@@ -17,12 +17,12 @@ import (
 	"go.opentelemetry.io/collector/processor/resourceprocessor"
 	"go.opentelemetry.io/collector/receiver/hostmetricsreceiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/collector/receiver/rabbitmqreceiver"
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver"
 )
 
 // Get the factories for components we want to use.
