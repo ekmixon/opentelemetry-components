@@ -54,12 +54,12 @@ func (c *fakeClient) getDatabaseRowsByTable() ([]*MetricStat, error) {
 	metricStats := []*MetricStat{}
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table1",
+		table:    "public.table1",
 		stats:    map[string]string{"live": "7", "dead": "8"},
 	})
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table2",
+		table:    "public.table2",
 		stats:    map[string]string{"live": "9", "dead": "10"},
 	})
 	return metricStats, nil
@@ -86,7 +86,7 @@ func (c *fakeClient) getBlocksReadByTable() ([]*MetricStat, error) {
 	metricStats := []*MetricStat{}
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table1",
+		table:    "public.table1",
 		stats: map[string]string{
 			"heap_read":  "19",
 			"heap_hit":   "20",
@@ -100,7 +100,7 @@ func (c *fakeClient) getBlocksReadByTable() ([]*MetricStat, error) {
 	})
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table2",
+		table:    "public.table2",
 		stats: map[string]string{
 			"heap_read":  "27",
 			"heap_hit":   "28",
@@ -132,7 +132,7 @@ func (c *fakeClient) getOperationsByTable() ([]*MetricStat, error) {
 	metricStats := []*MetricStat{}
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table1",
+		table:    "public.table1",
 		stats: map[string]string{
 			"seq":           "39",
 			"seq_tup_read":  "40",
@@ -142,7 +142,7 @@ func (c *fakeClient) getOperationsByTable() ([]*MetricStat, error) {
 	})
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
-		table:    "table2",
+		table:    "public.table2",
 		stats: map[string]string{
 			"seq":           "43",
 			"seq_tup_read":  "44",
