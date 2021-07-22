@@ -68,7 +68,8 @@ func (suite *RabbitMQIntegrationSuite) TestRabbitMQScraperHappyPath() {
 		Username: "dev",
 	}
 
-	sc := newRabbitMQScraper(zap.NewNop(), cfg)
+	sc, err := newRabbitMQScraper(zap.NewNop(), cfg)
+	require.NoError(t, err)
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	rms, err := sc.scrape(context.Background())

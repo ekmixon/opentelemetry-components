@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -21,14 +22,26 @@ type rabbitmqScraper struct {
 	cfg        *Config
 }
 
+func (r *rabbitmqScraper) logValueError(err error, metric string) {
+	if err != nil {
+		r.logger.Info(
+			err.Error(),
+			zap.String("metric", metric),
+		)
+	}
+}
+
 func newRabbitMQScraper(
 	logger *zap.Logger,
 	cfg *Config,
-) *rabbitmqScraper {
+) (*rabbitmqScraper, error) {
+	if cfg.Endpoint == "" || cfg.Password == "" || cfg.Username == "" {
+		return nil, fmt.Errorf("missing required rabbitmq receiver fields")
+	}
 	return &rabbitmqScraper{
 		logger: logger,
 		cfg:    cfg,
-	}
+	}, nil
 }
 
 func (r *rabbitmqScraper) start(_ context.Context, host component.Host) error {
@@ -43,24 +56,6 @@ func (r *rabbitmqScraper) start(_ context.Context, host component.Host) error {
 func basicAuth(username, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func getValFromBody(keys []string, body map[string]interface{}) (interface{}, bool) {
-	var currentValue interface{} = body
-
-	for _, key := range keys {
-		currentBody, ok := currentValue.(map[string]interface{})
-		if !ok {
-			return nil, false
-		}
-
-		currentValue, ok = currentBody[key]
-		if !ok {
-			return nil, false
-		}
-	}
-
-	return currentValue, true
 }
 
 func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
@@ -98,60 +93,92 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 	numMessagesMetric := initMetric(ilm.Metrics(), metadata.M.RabbitmqNumMessages).Gauge().DataPoints()
 
 	for _, v := range bodyParsed {
-		queue, _ := v.(map[string]interface{})
+		queue, ok := v.(map[string]interface{})
+		if !ok {
+			r.logger.Info("could not parse queue as map")
+			break
+		}
 		labels := pdata.NewStringMap()
 
-		queueName, ok := getValFromBody([]string{"name"}, queue)
-		r.isOK(ok, "could not get queue name from body")
-		queueNameStr, ok := queueName.(string)
-		r.isOK(ok, "could not parse queue name as string")
-		labels.Upsert(metadata.L.Queue, queueNameStr)
+		queueName, ok := queue["name"].(string)
+		if !ok {
+			r.logValueError(err, "could not get queue name from body")
+			break
+		}
+		labels.Upsert(metadata.L.Queue, queueName)
 
-		publishRateInter, ok := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
-		r.isOK(ok, "could not get publish_rate from body")
-		publishRateVal, ok := r.parseFloat("publish_rate", publishRateInter)
-		r.isOK(ok, "could not parse publish_rate as a float")
-		addToMetric(publishRateMetric, labels, publishRateVal, now)
+		val, err := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
+		if err != nil {
+			r.logValueError(err, "publish_rate")
+		} else {
+			addToMetric(publishRateMetric, labels, val, now)
+		}
 
-		deliveryRateInter, ok := getValFromBody([]string{"message_stats", "deliver_details", "rate"}, queue)
-		r.isOK(ok, "could not get delivery_rate from body")
-		deliveryRateVal, ok := r.parseFloat("delivery_rate", deliveryRateInter)
-		r.isOK(ok, "could not parse delivery_rate as a float")
-		addToMetric(deliveryRateMetric, labels, deliveryRateVal, now)
+		val, err = getValFromBody([]string{"message_stats", "deliver_details", "rate"}, queue)
+		if err != nil {
+			r.logValueError(err, "delivery_rate")
+		} else {
+			addToMetric(deliveryRateMetric, labels, val, now)
+		}
 
-		consumersInter, ok := getValFromBody([]string{"consumers"}, queue)
-		r.isOK(ok, "could not get consumers from body")
-		consumersVal, ok := r.parseFloat("consumers", consumersInter)
-		r.isOK(ok, "could not parse consumers as a float")
-		addToMetric(consumersMetric, labels, consumersVal, now)
+		val, err = getValFromBody([]string{"consumers"}, queue)
+		if err != nil {
+			r.logValueError(err, "consumers")
+		} else {
+			addToMetric(consumersMetric, labels, val, now)
+		}
 
-		numMessagesInter, ok := getValFromBody([]string{"messages"}, queue)
-		r.isOK(ok, "could not get messages from body")
-		numMessagesVal, ok := r.parseFloat("num_messages - messages", numMessagesInter)
-		labels.Upsert(metadata.L.State, "total")
-		r.isOK(ok, "could not parse messages as a float")
-		addToMetric(numMessagesMetric, labels, numMessagesVal, now)
+		val, err = getValFromBody([]string{"messages"}, queue)
+		if err != nil {
+			r.logValueError(err, "num_messages state:total")
+		} else {
+			labels.Upsert(metadata.L.State, "total")
+			addToMetric(numMessagesMetric, labels, val, now)
+		}
 
-		numMessagesInter, ok = getValFromBody([]string{"messages_unacknowledged"}, queue)
-		r.isOK(ok, "could not get messages_unacknowledged from body")
-		numMessagesVal, ok = r.parseFloat("num_messages - messages_unacknowledged", numMessagesInter)
-		r.isOK(ok, "could not parse messages_unacknowledged as a float")
-		labels.Upsert(metadata.L.State, "unacknowledged")
-		addToMetric(numMessagesMetric, labels, numMessagesVal, now)
+		val, err = getValFromBody([]string{"messages_unacknowledged"}, queue)
+		if err != nil {
+			r.logValueError(err, "num_messages state:unacknowledged")
+		} else {
+			labels.Upsert(metadata.L.State, "unacknowledged")
+			addToMetric(numMessagesMetric, labels, val, now)
+		}
 
-		numMessagesInter, ok = getValFromBody([]string{"messages_ready"}, queue)
-		r.isOK(ok, "could not get messages_ready from body")
-		numMessagesVal, ok = r.parseFloat("num_messages - ready", numMessagesInter)
-		r.isOK(ok, "could not parse messages_ready as a float")
-		labels.Upsert(metadata.L.State, "ready")
-		addToMetric(numMessagesMetric, labels, numMessagesVal, now)
+		val, err = getValFromBody([]string{"messages_ready"}, queue)
+		if err != nil {
+			r.logValueError(err, "num_messages state:ready")
+		} else {
+			labels.Upsert(metadata.L.State, "ready")
+			addToMetric(numMessagesMetric, labels, val, now)
+		}
 	}
 
 	return metrics.ResourceMetrics(), nil
 }
 
+func getValFromBody(keys []string, body map[string]interface{}) (float64, error) {
+	var currentValue interface{} = body
+
+	for _, key := range keys {
+		currentBody, ok := currentValue.(map[string]interface{})
+		if !ok {
+			return 0, fmt.Errorf("could not find key in body")
+		}
+
+		currentValue, ok = currentBody[key]
+		if !ok {
+			return 0, fmt.Errorf("could not find key in body")
+		}
+	}
+	floatVal, ok := parseFloat(currentValue)
+	if !ok {
+		return 0, fmt.Errorf("could not parse value as float")
+	}
+	return floatVal, nil
+}
+
 // parseFloat converts string to float64.
-func (r *rabbitmqScraper) parseFloat(key string, value interface{}) (float64, bool) {
+func parseFloat(value interface{}) (float64, bool) {
 	switch f := value.(type) {
 	case float64:
 		return f, true
@@ -164,29 +191,11 @@ func (r *rabbitmqScraper) parseFloat(key string, value interface{}) (float64, bo
 	case string:
 		fConv, err := strconv.ParseFloat(f, 64)
 		if err != nil {
-			r.logInvalid("float", key, f)
 			return 0, false
 		}
 		return fConv, true
 	}
 	return 0, false
-}
-
-func (r *rabbitmqScraper) logInvalid(expectedType, key, value string) {
-	r.logger.Info(
-		"invalid value",
-		zap.String("expectedType", expectedType),
-		zap.String("key", key),
-		zap.String("value", value),
-	)
-}
-
-func (r *rabbitmqScraper) isOK(ok bool, message string) {
-	if !ok {
-		r.logger.Info(
-			message,
-		)
-	}
 }
 
 func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {

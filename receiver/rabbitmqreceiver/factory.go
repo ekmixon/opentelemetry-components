@@ -47,7 +47,10 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
 
-	ns := newRabbitMQScraper(params.Logger, cfg)
+	ns, err := newRabbitMQScraper(params.Logger, cfg)
+	if err != nil {
+		return nil, err
+	}
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start))
 
 	return scraperhelper.NewScraperControllerReceiver(
