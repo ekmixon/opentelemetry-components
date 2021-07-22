@@ -17,7 +17,7 @@ import (
 )
 
 func TestScraper(t *testing.T) {
-	f, err := ioutil.ReadFile("exampleAPICall.json")
+	f, err := ioutil.ReadFile("./testdata/exampleAPICall.json")
 	require.NoError(t, err)
 	rabbitmqMock := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/api/queues" {
