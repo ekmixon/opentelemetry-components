@@ -249,7 +249,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 				labels := pdata.NewStringMap()
 				labels.Insert(metadata.L.Database, table.database)
 				labels.Insert(metadata.L.Table, table.table)
-				labels.Insert(metadata.L.Source, k)
+				labels.Insert(metadata.L.Operation, k)
 				addToIntMetric(operations, labels, i, now)
 			}
 		}
