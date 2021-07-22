@@ -60,6 +60,7 @@ func createMetricsReceiver(
 const (
 	ErrNoUsername = "invalid config: missing username"
 	ErrNoPassword = "invalid config: missing password"
+	ErrNoDatabase = "invalid config: missing database"
 	ErrNoEndpoint = "invalid config: missing endpoint"
 )
 
@@ -69,6 +70,9 @@ func validateConfig(cfg *Config) error {
 	}
 	if cfg.Password == "" {
 		return errors.New(ErrNoPassword)
+	}
+	if cfg.Database == "" {
+		return errors.New(ErrNoDatabase)
 	}
 	if cfg.Endpoint == "" {
 		return errors.New(ErrNoEndpoint)
