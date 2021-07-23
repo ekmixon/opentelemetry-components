@@ -30,15 +30,15 @@ type postgreSQLClient struct {
 var _ client = (*postgreSQLClient)(nil)
 
 type postgreSQLConfig struct {
-	username     string
-	password     string
-	databaseName string
-	endpoint     string
+	username string
+	password string
+	database string
+	endpoint string
 }
 
 func newPostgreSQLClient(conf postgreSQLConfig) (*postgreSQLClient, error) {
 	endpoint := strings.Split(conf.endpoint, ":")
-	connStr := fmt.Sprintf("port=%s host=%s user=%s password=%s dbname=%s sslmode=disable", endpoint[1], endpoint[0], conf.username, conf.password, conf.databaseName)
+	connStr := fmt.Sprintf("port=%s host=%s user=%s password=%s dbname=%s sslmode=disable", endpoint[1], endpoint[0], conf.username, conf.password, conf.database)
 
 	conn, err := pq.NewConnector(connStr)
 	if err != nil {
@@ -49,7 +49,7 @@ func newPostgreSQLClient(conf postgreSQLConfig) (*postgreSQLClient, error) {
 
 	return &postgreSQLClient{
 		client:   db,
-		database: conf.databaseName,
+		database: conf.database,
 	}, nil
 }
 

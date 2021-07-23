@@ -35,10 +35,10 @@ func newPostgreSQLScraper(
 // start starts the scraper by initializing the db client connection.
 func (p *postgreSQLScraper) start(_ context.Context, host component.Host) error {
 	client, err := newPostgreSQLClient(postgreSQLConfig{
-		username:     p.config.Username,
-		password:     p.config.Password,
-		databaseName: p.config.Database,
-		endpoint:     p.config.Endpoint,
+		username: p.config.Username,
+		password: p.config.Password,
+		database: p.config.Database,
+		endpoint: p.config.Endpoint,
 	})
 	if err != nil {
 		return err
