@@ -6,13 +6,14 @@ import (
 	"path"
 	"testing"
 
-	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.uber.org/zap"
+
+	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver/internal/metadata"
 )
 
 func postgresqlContainer(t *testing.T) testcontainers.Container {
@@ -212,4 +213,35 @@ func (suite *PostgreSQLIntegrationSuite) TestHappyPath() {
 			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
 		}
 	}
+}
+
+func (suite *PostgreSQLIntegrationSuite) TestStartStop() {
+	t := suite.T()
+	container := postgresqlContainer(t)
+	defer func() {
+		err := container.Terminate(context.Background())
+		require.NoError(t, err)
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	sc := newPostgreSQLScraper(zap.NewNop(), &Config{
+		Username: "otel",
+		Password: "otel",
+		Database: "otel",
+		Endpoint: fmt.Sprintf("%s:5432", hostname),
+	})
+
+	// scraper is connected
+	err = sc.start(context.Background(), componenttest.NewNopHost())
+	require.NoError(t, err)
+
+	// scraper is closed
+	err = sc.shutdown(context.Background())
+	require.NoError(t, err)
+
+	// scraper scapes and produces an error because db is closed
+	_, err = sc.scrape(context.Background())
+	require.Error(t, err)
+	require.EqualError(t, err, "sql: database is closed")
 }
