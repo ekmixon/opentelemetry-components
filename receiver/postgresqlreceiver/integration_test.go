@@ -148,7 +148,7 @@ func (suite *PostgreSQLIntegrationSuite) TestHappyPath() {
 			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, true)
 			require.Equal(t, "postgresql.backends otel true", label)
 
-		case metadata.M.PostgresqlDbRows.Name():
+		case metadata.M.PostgresqlRows.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 6, dps.Len())
 
@@ -163,12 +163,12 @@ func (suite *PostgreSQLIntegrationSuite) TestHappyPath() {
 			}
 			require.Equal(t, 6, len(metrics))
 			require.Equal(t, map[string]bool{
-				"postgresql.db_rows otel _global live":       true,
-				"postgresql.db_rows otel _global dead":       true,
-				"postgresql.db_rows otel public.table1 live": true,
-				"postgresql.db_rows otel public.table1 dead": true,
-				"postgresql.db_rows otel public.table2 live": true,
-				"postgresql.db_rows otel public.table2 dead": true,
+				"postgresql.rows otel _global live":       true,
+				"postgresql.rows otel _global dead":       true,
+				"postgresql.rows otel public.table1 live": true,
+				"postgresql.rows otel public.table1 dead": true,
+				"postgresql.rows otel public.table2 live": true,
+				"postgresql.rows otel public.table2 dead": true,
 			}, metrics)
 
 		case metadata.M.PostgresqlOperations.Name():
@@ -240,8 +240,54 @@ func (suite *PostgreSQLIntegrationSuite) TestStartStop() {
 	err = sc.shutdown(context.Background())
 	require.NoError(t, err)
 
-	// scraper scapes and produces an error because db is closed
-	_, err = sc.scrape(context.Background())
-	require.Error(t, err)
-	require.EqualError(t, err, "sql: database is closed")
+	// scraper scapes without a db connection and collect 0 metrics
+	rms, err := sc.scrape(context.Background())
+	require.Nil(t, err)
+	require.Equal(t, 1, rms.Len())
+
+	rm := rms.At(0)
+
+	ilms := rm.InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+
+	ilm := ilms.At(0)
+	ms := ilm.Metrics()
+
+	require.Equal(t, len(metadata.M.Names()), ms.Len())
+
+	for i := 0; i < ms.Len(); i++ {
+		m := ms.At(i)
+		switch m.Name() {
+		case metadata.M.PostgresqlBlocksRead.Name():
+			dps := m.IntSum().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlCommits.Name():
+			dps := m.IntSum().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlDbSize.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlBackends.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlRows.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlOperations.Name():
+			dps := m.IntSum().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		case metadata.M.PostgresqlRollbacks.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 0, dps.Len())
+
+		default:
+			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
+		}
+	}
 }

@@ -12,7 +12,7 @@ labels:
     description: The database operation.
     enum: [ seq, seq_tup_read, idx, idx_tup_fetch ]
   state:
-    description: The tuple (row) state either dead or live
+    description: The tuple (row) state.
     enum: [ dead, live ]
 
 
@@ -45,7 +45,7 @@ metrics:
     data:
       type: gauge
     labels: [ database ]
-  postgresql.db_rows:
+  postgresql.rows:
     description: The number of rows in the database.
     units: 1
     data:

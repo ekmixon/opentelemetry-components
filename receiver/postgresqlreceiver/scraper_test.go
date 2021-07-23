@@ -100,7 +100,7 @@ func TestScraper(t *testing.T) {
 			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, dp.Value())
 			require.Equal(t, "postgresql.backends otel 3", label)
 
-		case metadata.M.PostgresqlDbRows.Name():
+		case metadata.M.PostgresqlRows.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 6, dps.Len())
 
@@ -115,12 +115,12 @@ func TestScraper(t *testing.T) {
 			}
 			require.Equal(t, 6, len(metrics))
 			require.Equal(t, map[string]float64{
-				"postgresql.db_rows otel _global live":       5,
-				"postgresql.db_rows otel _global dead":       6,
-				"postgresql.db_rows otel public.table1 live": 7,
-				"postgresql.db_rows otel public.table1 dead": 8,
-				"postgresql.db_rows otel public.table2 live": 9,
-				"postgresql.db_rows otel public.table2 dead": 10,
+				"postgresql.rows otel _global live":       5,
+				"postgresql.rows otel _global dead":       6,
+				"postgresql.rows otel public.table1 live": 7,
+				"postgresql.rows otel public.table1 dead": 8,
+				"postgresql.rows otel public.table2 live": 9,
+				"postgresql.rows otel public.table2 dead": 10,
 			}, metrics)
 
 		case metadata.M.PostgresqlOperations.Name():

@@ -44,10 +44,10 @@ type metricStruct struct {
 	PostgresqlBackends   MetricIntf
 	PostgresqlBlocksRead MetricIntf
 	PostgresqlCommits    MetricIntf
-	PostgresqlDbRows     MetricIntf
 	PostgresqlDbSize     MetricIntf
 	PostgresqlOperations MetricIntf
 	PostgresqlRollbacks  MetricIntf
+	PostgresqlRows       MetricIntf
 }
 
 // Names returns a list of all the metric name strings.
@@ -56,10 +56,10 @@ func (m *metricStruct) Names() []string {
 		"postgresql.backends",
 		"postgresql.blocks_read",
 		"postgresql.commits",
-		"postgresql.db_rows",
 		"postgresql.db_size",
 		"postgresql.operations",
 		"postgresql.rollbacks",
+		"postgresql.rows",
 	}
 }
 
@@ -67,10 +67,10 @@ var metricsByName = map[string]MetricIntf{
 	"postgresql.backends":    Metrics.PostgresqlBackends,
 	"postgresql.blocks_read": Metrics.PostgresqlBlocksRead,
 	"postgresql.commits":     Metrics.PostgresqlCommits,
-	"postgresql.db_rows":     Metrics.PostgresqlDbRows,
 	"postgresql.db_size":     Metrics.PostgresqlDbSize,
 	"postgresql.operations":  Metrics.PostgresqlOperations,
 	"postgresql.rollbacks":   Metrics.PostgresqlRollbacks,
+	"postgresql.rows":        Metrics.PostgresqlRows,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -82,10 +82,10 @@ func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 		Metrics.PostgresqlBackends.Name():   Metrics.PostgresqlBackends.Init,
 		Metrics.PostgresqlBlocksRead.Name(): Metrics.PostgresqlBlocksRead.Init,
 		Metrics.PostgresqlCommits.Name():    Metrics.PostgresqlCommits.Init,
-		Metrics.PostgresqlDbRows.Name():     Metrics.PostgresqlDbRows.Init,
 		Metrics.PostgresqlDbSize.Name():     Metrics.PostgresqlDbSize.Init,
 		Metrics.PostgresqlOperations.Name(): Metrics.PostgresqlOperations.Init,
 		Metrics.PostgresqlRollbacks.Name():  Metrics.PostgresqlRollbacks.Init,
+		Metrics.PostgresqlRows.Name():       Metrics.PostgresqlRows.Init,
 	}
 }
 
@@ -124,15 +124,6 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"postgresql.db_rows",
-		func(metric pdata.Metric) {
-			metric.SetName("postgresql.db_rows")
-			metric.SetDescription("The number of rows in the database.")
-			metric.SetUnit("")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
-	&metricImpl{
 		"postgresql.db_size",
 		func(metric pdata.Metric) {
 			metric.SetName("postgresql.db_size")
@@ -161,6 +152,15 @@ var Metrics = &metricStruct{
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
+	&metricImpl{
+		"postgresql.rows",
+		func(metric pdata.Metric) {
+			metric.SetName("postgresql.rows")
+			metric.SetDescription("The number of rows in the database.")
+			metric.SetUnit("")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
 }
 
 // M contains a set of methods for each metric that help with
@@ -175,7 +175,7 @@ var Labels = struct {
 	Operation string
 	// Source (The block read source type.)
 	Source string
-	// State (The tuple (row) state either dead or live)
+	// State (The tuple (row) state.)
 	State string
 	// Table (The schema name followed by the table name.)
 	Table string
