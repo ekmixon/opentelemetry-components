@@ -84,7 +84,7 @@ func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, valu
 	}
 }
 
-// scrape scrapes the mysql db metric stats, transforms them and labels them into a metric slices.
+// scrape scrapes the metric stats, transforms them and labels them into a metric slices.
 func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
 
 	if p.client == nil {
@@ -94,7 +94,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 	// metric initialization
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
-	ilm.InstrumentationLibrary().SetName("otel/mysql")
+	ilm.InstrumentationLibrary().SetName("otel/postgresql")
 	now := pdata.TimestampFromTime(time.Now())
 
 	blocks_read := initMetric(ilm.Metrics(), metadata.M.PostgresqlBlocksRead).IntSum().DataPoints()
