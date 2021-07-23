@@ -14,8 +14,6 @@ Collecting metrics requires the ability to call `/api/queues`.  Please refer to 
 
 ## Configuration
 
-> :information_source: This receiver is in beta and configuration fields are subject to change.
-
 RabbitMQ receiver supports RabbitMQ version 3.8 and above.
 
 The following settings are required to create a database connection:

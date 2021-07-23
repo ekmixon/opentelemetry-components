@@ -22,22 +22,10 @@ type rabbitmqScraper struct {
 	cfg        *Config
 }
 
-func (r *rabbitmqScraper) logValueError(err error, metric string) {
-	if err != nil {
-		r.logger.Info(
-			err.Error(),
-			zap.String("metric", metric),
-		)
-	}
-}
-
 func newRabbitMQScraper(
 	logger *zap.Logger,
 	cfg *Config,
 ) (*rabbitmqScraper, error) {
-	if cfg.Endpoint == "" || cfg.Password == "" || cfg.Username == "" {
-		return nil, fmt.Errorf("missing required rabbitmq receiver fields")
-	}
 	return &rabbitmqScraper{
 		logger: logger,
 		cfg:    cfg,
@@ -102,35 +90,49 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 
 		queueName, ok := queue["name"].(string)
 		if !ok {
-			r.logValueError(err, "could not get queue name from body")
+			r.logger.Info(
+				"could not parse queue name from body",
+			)
 			break
 		}
 		labels.Upsert(metadata.L.Queue, queueName)
 
 		val, err := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
 		if err != nil {
-			r.logValueError(err, "publish_rate")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "publish_rate"),
+			)
 		} else {
 			addToMetric(publishRateMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"message_stats", "deliver_details", "rate"}, queue)
 		if err != nil {
-			r.logValueError(err, "delivery_rate")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "delivery_rate"),
+			)
 		} else {
 			addToMetric(deliveryRateMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"consumers"}, queue)
 		if err != nil {
-			r.logValueError(err, "consumers")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "consumers"),
+			)
 		} else {
 			addToMetric(consumersMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages"}, queue)
 		if err != nil {
-			r.logValueError(err, "num_messages state:total")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "num_messages state:total"),
+			)
 		} else {
 			labels.Upsert(metadata.L.State, "total")
 			addToMetric(numMessagesMetric, labels, val, now)
@@ -138,7 +140,10 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 
 		val, err = getValFromBody([]string{"messages_unacknowledged"}, queue)
 		if err != nil {
-			r.logValueError(err, "num_messages state:unacknowledged")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "num_messages state:unacknowledged"),
+			)
 		} else {
 			labels.Upsert(metadata.L.State, "unacknowledged")
 			addToMetric(numMessagesMetric, labels, val, now)
@@ -146,7 +151,10 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 
 		val, err = getValFromBody([]string{"messages_ready"}, queue)
 		if err != nil {
-			r.logValueError(err, "num_messages state:ready")
+			r.logger.Info(
+				err.Error(),
+				zap.String("metric", "num_messages state:ready"),
+			)
 		} else {
 			labels.Upsert(metadata.L.State, "ready")
 			addToMetric(numMessagesMetric, labels, val, now)
