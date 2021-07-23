@@ -10,8 +10,6 @@ The PostgreSQL receiver uses PostgreSQL's statistics collector to collect inform
 
 ## Configuration
 
-> :information_source: This receiver is in beta and configuration fields are subject to change.
-
 PostgreSQL receiver supports PostgreSQL version 9.6
 
 The following settings are required to create a database connection:

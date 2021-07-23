@@ -4,7 +4,9 @@ package postgresqlreceiver
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"net/url"
+	"regexp"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -12,6 +14,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -41,7 +44,7 @@ func createMetricsReceiver(
 	consumer consumer.Metrics,
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
-	err := validateConfig(cfg)
+	err := cfg.Validate()
 	if err != nil {
 		return nil, err
 	}
@@ -56,26 +59,25 @@ func createMetricsReceiver(
 	)
 }
 
-// Errors for missing required config parameters.
-const (
-	ErrNoUsername = "invalid config: missing username"
-	ErrNoPassword = "invalid config: missing password"
-	ErrNoDatabase = "invalid config: missing database"
-	ErrNoEndpoint = "invalid config: missing endpoint"
-)
+func (cfg *Config) Validate() error {
+	var errs []error
+	var validPort = regexp.MustCompile(`(:\d+)`)
 
-func validateConfig(cfg *Config) error {
 	if cfg.Username == "" {
-		return errors.New(ErrNoUsername)
+		errs = append(errs, fmt.Errorf("missing required field 'username'"))
 	}
 	if cfg.Password == "" {
-		return errors.New(ErrNoPassword)
+		errs = append(errs, fmt.Errorf("missing required field 'password'"))
 	}
 	if cfg.Database == "" {
-		return errors.New(ErrNoDatabase)
+		errs = append(errs, fmt.Errorf("missing required field 'database'"))
 	}
 	if cfg.Endpoint == "" {
-		return errors.New(ErrNoEndpoint)
+		errs = append(errs, fmt.Errorf("missing required field 'endpoint'"))
+	} else if _, err := url.Parse(cfg.Endpoint); err != nil {
+		errs = append(errs, fmt.Errorf("invalid url specified in field 'endpoint'"))
+	} else if !validPort.MatchString(cfg.Endpoint) {
+		errs = append(errs, fmt.Errorf("invalid port specified in field 'endpoint'"))
 	}
-	return nil
+	return multierr.Combine(errs...)
 }
