@@ -83,14 +83,6 @@ func TestCreateMetricsReceiver(t *testing.T) {
 			endpoint:    "localhost:",
 			expectedErr: "invalid port specified in field 'endpoint'",
 		},
-		{
-			desc:        "missing colon in port",
-			username:    "otel",
-			password:    "otel",
-			database:    "otel",
-			endpoint:    "localhost5432",
-			expectedErr: "invalid port specified in field 'endpoint'",
-		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
