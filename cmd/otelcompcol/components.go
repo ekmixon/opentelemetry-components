@@ -22,6 +22,7 @@ import (
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver"
 )
 
@@ -34,6 +35,7 @@ func components() (component.Factories, error) {
 		hostmetricsreceiver.NewFactory(),
 		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
+		postgresqlreceiver.NewFactory(),
 		mysqlreceiver.NewFactory(),
 		mongodbreceiver.NewFactory(),
 		rabbitmqreceiver.NewFactory(),
