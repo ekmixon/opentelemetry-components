@@ -26,6 +26,9 @@ func newRabbitMQScraper(
 	logger *zap.Logger,
 	cfg *Config,
 ) (*rabbitmqScraper, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	return &rabbitmqScraper{
 		logger: logger,
 		cfg:    cfg,
