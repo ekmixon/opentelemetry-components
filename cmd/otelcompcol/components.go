@@ -22,6 +22,7 @@ import (
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver"
 )
 
 // Get the factories for components we want to use.
@@ -33,6 +34,7 @@ func components() (component.Factories, error) {
 		hostmetricsreceiver.NewFactory(),
 		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
+		postgresqlreceiver.NewFactory(),
 		mysqlreceiver.NewFactory(),
 		mongodbreceiver.NewFactory(),
 	)

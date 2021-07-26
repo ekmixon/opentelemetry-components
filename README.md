@@ -10,6 +10,7 @@ Receivers:
 - [httpd](/receiver/httpdreceiver/)
 - [mysql](/receiver/mysqlreceiver/)
 - [mongodb](/receiver/mongodbreceiver/)
+- [postgresql](/receiver/postgresqlreceiver/)
 
 Processors:
 - [normalizesums](/processor/normalizesumsprocessor/)
