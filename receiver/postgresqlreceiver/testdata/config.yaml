@@ -9,6 +9,7 @@ receivers:
 processors:
 
 exporters:
+  logging:
     loglevel: debug
 
 service:
