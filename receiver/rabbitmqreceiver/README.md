@@ -4,7 +4,7 @@ The RabbitMQ receiver is designed to retrieve RabbitMQ queue stats from a single
 
 > :construction: This receiver is in beta and configuration fields are subject to change.
 
-## Details
+## Details 
 
 RabbitMQ stats are pulled using `/api/queues` which returns an array of queues with the applicable metrics for each queue (see [https://www.rabbitmq.com/monitoring.html](https://www.rabbitmq.com/monitoring.html) for details). The RabbitMQ receiver extracts values from the results and converts them to open telemetry metrics. Details about the metrics produce by the RabbitMQ receiver can be found in [metadata.yaml](metadata.yaml).
 
