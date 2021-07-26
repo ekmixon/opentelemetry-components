@@ -86,7 +86,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 	for _, v := range bodyParsed {
 		queue, ok := v.(map[string]interface{})
 		if !ok {
-			r.logger.Info("could not parse queue as map")
+			r.logger.Info("rabbitMQ api response format did not meet expectations")
 			break
 		}
 		labels := pdata.NewStringMap()
