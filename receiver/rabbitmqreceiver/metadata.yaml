@@ -5,6 +5,10 @@ labels:
     description: The rabbit queue name.
   state:
     description: The message state.
+    enumerate:
+    - unacknowledged
+    - ready
+    - total
 
 metrics:
   rabbitmq.consumers:
