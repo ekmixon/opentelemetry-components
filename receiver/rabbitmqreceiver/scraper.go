@@ -93,9 +93,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 
 		queueName, ok := queue["name"].(string)
 		if !ok {
-			r.logger.Info(
-				"could not parse queue name from body",
-			)
+			r.logger.Info("could not parse queue name from body")
 			break
 		}
 		labels.Upsert(metadata.L.Queue, queueName)
