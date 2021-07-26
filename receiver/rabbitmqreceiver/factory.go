@@ -46,7 +46,9 @@ func createMetricsReceiver(
 	consumer consumer.Metrics,
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
-
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	ns, err := newRabbitMQScraper(params.Logger, cfg)
 	if err != nil {
 		return nil, err
