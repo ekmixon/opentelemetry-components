@@ -1,20 +1,19 @@
 receivers:
   rabbitmq:
-    collection_interval: 10s
-    username: otel
-    password: otel
     endpoint: localhost:3306
+    username: otel
+    password: $RABBITMQ_PASSWORD
+    collection_interval: 10s
 
 processors:
-
+  nop:
 
 exporters:
-  logging:   
-    loglevel: debug
+  nop:
 
 service:
   pipelines:
     metrics:
      receivers: [rabbitmq]
-     processors: []
-     exporters: [logging]
+     processors: [nop]
+     exporters: [nop]
