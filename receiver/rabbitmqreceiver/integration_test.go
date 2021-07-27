@@ -48,11 +48,11 @@ func rabbitmqContainer(t *testing.T) (testcontainers.Container, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create container")
 	}
-	code, err := rabbitmq.Exec(context.Background(), []string{"/setup.sh"})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute 'setup.sh'")
-	}
-	require.Equal(t, 0, code)
+	// code, err := rabbitmq.Exec(context.Background(), []string{"/setup.sh"})
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "failed to execute 'setup.sh'")
+	// }
+	// require.Equal(t, 0, code)
 	time.Sleep(time.Second * 6)
 	return rabbitmq, nil
 }
