@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -25,7 +26,7 @@ func TestRabbitMQIntegration(t *testing.T) {
 	suite.Run(t, new(RabbitMQIntegrationSuite))
 }
 
-func rabbitmqContainer(t *testing.T) testcontainers.Container {
+func rabbitmqContainer(t *testing.T) (testcontainers.Container, error) {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -36,23 +37,30 @@ func rabbitmqContainer(t *testing.T) testcontainers.Container {
 		WaitingFor:   wait.ForListeningPort("15672"),
 	}
 
-	require.NoError(t, req.Validate())
+	if err := req.Validate(); err != nil {
+		return nil, errors.Wrap(err, "failed to validate request")
+	}
 
 	rabbitmq, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
-	require.NoError(t, err)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create container")
+	}
 	code, err := rabbitmq.Exec(context.Background(), []string{"/setup.sh"})
-	require.NoError(t, err)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute 'setup.sh'")
+	}
 	require.Equal(t, 0, code)
 	time.Sleep(time.Second * 6)
-	return rabbitmq
+	return rabbitmq, nil
 }
 
 func (suite *RabbitMQIntegrationSuite) TestRabbitMQScraperHappyPath() {
 	t := suite.T()
-	rabbitmq := rabbitmqContainer(t)
+	rabbitmq, err := rabbitmqContainer(t)
+	require.NoError(t, err)
 	defer func() {
 		err := rabbitmq.Terminate(context.Background())
 		require.NoError(t, err)
