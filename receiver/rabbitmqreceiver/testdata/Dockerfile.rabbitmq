@@ -1,4 +1,4 @@
-FROM rabbitmq:3-management
+FROM rabbitmq:3.8.19-management
 
 ENV RABBITMQ_DEFAULT_USER=dev
 ENV RABBITMQ_DEFAULT_PASS=dev
