@@ -6,6 +6,7 @@ require (
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/lib/pq v1.2.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.30.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.30.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.30.0
@@ -14,7 +15,7 @@ require (
 	go.mongodb.org/mongo-driver v1.6.0
 	go.opentelemetry.io/collector v0.30.0
 	go.opentelemetry.io/collector/model v0.30.0
-	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.18.1
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 )
