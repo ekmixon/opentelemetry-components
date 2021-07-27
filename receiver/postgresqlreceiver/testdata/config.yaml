@@ -1,20 +1,20 @@
 receivers:
   postgresql:
-    collection_interval: 10s
-    username: otel
-    password: otel
-    database: otel
     endpoint: 127.0.0.1:5432
+    username: otel
+    password: $POSTGRESQL_PASSWORD
+    database: otel
+    collection_interval: 10s
 
 processors:
+  nop:
 
 exporters:
-  logging:
-    loglevel: debug
+  nop:
 
 service:
   pipelines:
     metrics:
      receivers: [postgresql]
-     processors:
-     exporters: [logging]
+     processors: [nop]
+     exporters: [nop]
