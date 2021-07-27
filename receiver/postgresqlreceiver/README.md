@@ -26,7 +26,7 @@ The following settings are optional:
 ```yaml
 receivers:
   postgresql:
-    endpoint: 127.0.0.1:5432
+    endpoint: localhost:5432
     username: otel
     password: $POSTGRESQL_PASSWORD
     database: otel
