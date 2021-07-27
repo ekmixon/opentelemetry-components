@@ -14,6 +14,11 @@ func TestComponents(t *testing.T) {
 	// Receivers
 	require.NotNil(t, factories.Receivers["hostmetrics"])
 	require.NotNil(t, factories.Receivers["otlp"])
+	require.NotNil(t, factories.Receivers["rabbitmq"])
+	require.NotNil(t, factories.Receivers["mysql"])
+	require.NotNil(t, factories.Receivers["postgresql"])
+	require.NotNil(t, factories.Receivers["mongodb"])
+	require.NotNil(t, factories.Receivers["httpd"])
 
 	// Processors
 	require.NotNil(t, factories.Processors["attributes"])
