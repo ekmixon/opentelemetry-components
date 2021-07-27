@@ -73,7 +73,6 @@ func (suite *RabbitMQIntegrationSuite) TestRabbitMQScraperHappyPath() {
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	rms, err := sc.scrape(context.Background())
-
 	require.NoError(t, err)
 
 	require.Equal(t, 1, rms.Len())
