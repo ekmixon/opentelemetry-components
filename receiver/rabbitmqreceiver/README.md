@@ -31,3 +31,10 @@ receivers:
     username: otel
     password: $RABBITMQ_PASSWORD
     collection_interval: 10s
+```
+
+The full list of settings exposed for this receiver are documented [here](./config.go) with detailed sample configurations [here](./testdata/config.yaml).
+
+## Metrics
+
+Details about the metrics produced by this receiver can be found in [metadata.yaml](./metadata.yaml)
