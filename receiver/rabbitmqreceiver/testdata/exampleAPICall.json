@@ -1,0 +1,18 @@
+[
+   {
+      "consumers":1,
+      "memory":460736,
+      "message_stats":{
+         "deliver_details":{
+            "rate":1.4
+         },
+         "publish_details":{
+            "rate":1.0
+         }
+      },
+      "messages":7,
+      "messages_ready":6,
+      "messages_unacknowledged":1,
+      "name":"webq1"
+   }
+]

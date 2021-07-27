@@ -23,6 +23,7 @@ import (
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver"
+	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver"
 )
 
 // Get the factories for components we want to use.
@@ -37,6 +38,7 @@ func components() (component.Factories, error) {
 		postgresqlreceiver.NewFactory(),
 		mysqlreceiver.NewFactory(),
 		mongodbreceiver.NewFactory(),
+		rabbitmqreceiver.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)

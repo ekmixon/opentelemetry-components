@@ -33,7 +33,7 @@ install-tools:
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) golang.org/x/tools/cmd/goimports
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.40.1
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/client9/misspell/cmd/misspell
-	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen@v0.30.0
 
 # Default build target; making this should build for the current os/arch
 .PHONY: build
