@@ -43,6 +43,9 @@ func rabbitmqContainer(t *testing.T) testcontainers.Container {
 		Started:          true,
 	})
 	require.NoError(t, err)
+	code, err := rabbitmq.Exec(context.Background(), []string{"/setup.sh"})
+	require.NoError(t, err)
+	require.Equal(t, 0, code)
 	time.Sleep(time.Second * 6)
 	return rabbitmq
 }
