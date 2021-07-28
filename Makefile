@@ -21,7 +21,7 @@ MISSPELL=$(GOPATH)/bin/misspell
 GOBUILDEXTRAENV=GO111MODULE=on CGO_ENABLED=0
 GOBUILD=go build
 GOINSTALL=go install
-GOTEST=go test
+GOTEST=go test -vet off -count 1 -timeout 3m
 GOTOOL=go tool
 GOFORMAT=goimports
 GOTIDY=go mod tidy
@@ -75,11 +75,20 @@ misspell-fix:
 
 .PHONY: test
 test:
-	$(GOTEST) -vet off -race ./...
+	$(GOTEST) -race ./...
 
 .PHONY: test-with-cover
 test-with-cover:
-	$(GOTEST) -vet off -cover cover.out ./...
+	$(GOTEST) -coverprofile=cover.out ./...
+	$(GOTOOL) cover -html=cover.out -o cover.html
+
+.PHONY: test-integration
+test-integration:
+	$(GOTEST) -tags=integration -race ./...
+
+.PHONY: test-integration-with-cover
+test-integration-with-cover:
+	$(GOTEST) -tags=integration -coverprofile=cover.out ./...
 	$(GOTOOL) cover -html=cover.out -o cover.html
 
 .PHONY: check-fmt
@@ -103,7 +112,7 @@ tidy:
 
 # This target performs all checks that CI will do (excluding the build itself)
 .PHONY: ci-check
-ci-check: check-fmt misspell lint test
+ci-check: check-fmt misspell lint test-integration
 
 .PHONY: clean
 clean:
