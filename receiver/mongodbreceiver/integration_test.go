@@ -5,41 +5,17 @@ package mongodbreceiver
 import (
 	"context"
 	"net"
-	"path"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/model/pdata"
 
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver/internal/metadata"
 )
-
-func mongodbContainer(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
-		FromDockerfile: testcontainers.FromDockerfile{
-			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.mongodb",
-		},
-		ExposedPorts: []string{"37017:27017"},
-		WaitingFor:   wait.ForListeningPort("27017"),
-	}
-
-	require.NoError(t, req.Validate())
-
-	mongodb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-	return mongodb
-}
 
 func TestIntegration(t *testing.T) {
 	container := mongodbContainer(t)
@@ -52,11 +28,8 @@ func TestIntegration(t *testing.T) {
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
 	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
-
-	user := "otel"
-	pass := "otel"
-	cfg.User = &user
-	cfg.Password = &pass
+	cfg.Username = "otel"
+	cfg.Password = "otel"
 
 	consumer := new(consumertest.MetricsSink)
 
@@ -66,7 +39,7 @@ func TestIntegration(t *testing.T) {
 
 	require.Eventuallyf(t, func() bool {
 		return len(consumer.AllMetrics()) > 0
-	}, 15*time.Second, 1*time.Second, "failed to receive more than 0 metrics")
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
 
 	md := consumer.AllMetrics()[0]
 

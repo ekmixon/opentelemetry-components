@@ -335,8 +335,8 @@ func (r *mongodbScraper) runDatabaseCommandAndCollectMetrics(
 
 func (r *mongodbScraper) initClient(ctx context.Context) (*mongo.Client, error) {
 	authentication := ""
-	if r.config.User != nil && r.config.Password != nil {
-		authentication = fmt.Sprintf("%s:%s@", *r.config.User, *r.config.Password)
+	if r.config.Username != "" && r.config.Password != "" {
+		authentication = fmt.Sprintf("%s:%s@", r.config.Username, r.config.Password)
 	}
 
 	uri := fmt.Sprintf("mongodb://%s%s", authentication, r.config.Endpoint)

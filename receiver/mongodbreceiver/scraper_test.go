@@ -37,7 +37,8 @@ func mongodbContainer(t *testing.T) testcontainers.Container {
 func TestScraper(t *testing.T) {
 	container := mongodbContainer(t)
 	defer func() {
-		require.NoError(t, container.Terminate(context.Background()))
+		err := container.Terminate(context.Background())
+		require.NoError(t, err)
 	}()
 	hostname, err := container.Host(context.Background())
 	require.NoError(t, err)
@@ -45,11 +46,8 @@ func TestScraper(t *testing.T) {
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
 	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
-
-	user := "otel"
-	pass := "otel"
-	cfg.User = &user
-	cfg.Password = &pass
+	cfg.Username = "otel"
+	cfg.Password = "otel"
 
 	sc := newMongodbScraper(zap.NewNop(), cfg)
 

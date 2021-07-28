@@ -18,7 +18,7 @@ The following settings are required:
 - `endpoint` (default: `localhost:27017`): The hostname/IP address and port of the mongodb instance
 
 The following settings are optional:
-- `user`: If authentication is required, the user can be provided here.
+- `username`: If authentication is required, the user can be provided here.
 - `password`: If authentication is required, the password can be provided here.
 - `collection_interval` (default = `10s`): This receiver collects metrics on an interval. This value must be a string readable by Golang's [time.ParseDuration](https://pkg.go.dev/time#ParseDuration). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, `h`.
 
@@ -28,7 +28,7 @@ The following settings are optional:
 receivers:
   mongodb:
     endpoint: localhost:27017
-    user: otel
+    username: otel
     password: $MONGODB_PASSWORD
     collection_interval: 10s
 ```

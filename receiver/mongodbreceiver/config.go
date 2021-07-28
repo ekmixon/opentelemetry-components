@@ -11,17 +11,16 @@ import (
 type Config struct {
 	scraperhelper.ScraperControllerSettings `mapstructure:",squash"`
 	confignet.TCPAddr                       `mapstructure:",squash"`
-	User                                    *string       `mapstructure:"user"`
-	Password                                *string       `mapstructure:"password"`
+	Username                                string        `mapstructure:"username"`
+	Password                                string        `mapstructure:"password"`
 	Timeout                                 time.Duration `mapstructure:"timeout"`
 }
 
 func (c *Config) Validate() error {
-	if c.User != nil && c == nil {
+	if c.Username != "" && c.Password == "" {
 		return errors.New("user provided without password")
-	} else if c.User == nil && c.Password != nil {
+	} else if c.Username == "" && c.Password != "" {
 		return errors.New("password provided without user")
 	}
-
 	return nil
 }

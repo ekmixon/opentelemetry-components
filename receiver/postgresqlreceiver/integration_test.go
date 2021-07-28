@@ -5,6 +5,7 @@ package postgresqlreceiver
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"testing"
 
@@ -51,8 +52,7 @@ func (suite *PostgreSQLIntegrationSuite) TestHappyPath() {
 	t := suite.T()
 	container := postgresqlContainer(t)
 	defer func() {
-		err := container.Terminate(context.Background())
-		require.NoError(t, err)
+		require.NoError(t, container.Terminate(context.Background()))
 	}()
 	hostname, err := container.Host(context.Background())
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func (suite *PostgreSQLIntegrationSuite) TestHappyPath() {
 		Username: "otel",
 		Password: "otel",
 		Database: "otel",
-		Endpoint: fmt.Sprintf("%s:5432", hostname),
+		Endpoint: net.JoinHostPort(hostname, "5432"),
 	})
 
 	err = sc.start(context.Background(), componenttest.NewNopHost())
