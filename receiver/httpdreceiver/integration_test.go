@@ -5,7 +5,10 @@ package httpdreceiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +32,49 @@ func TestHttpdIntegration(t *testing.T) {
 	suite.Run(t, new(HttpdIntegrationSuite))
 }
 
+type waitStrategy struct{}
+
+func (ws waitStrategy) WaitUntilReady(ctx context.Context, st wait.StrategyTarget) error {
+	if err := wait.ForListeningPort("80").WaitUntilReady(ctx, st); err != nil {
+		return err
+	}
+
+	hostname, err := st.Host(ctx)
+	if err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(5 * time.Second):
+			return fmt.Errorf("server startup problem")
+		case <-time.After(100 * time.Millisecond):
+			resp, err := http.Get(fmt.Sprintf("http://%s:8080/server-status?auto", hostname))
+			if err != nil {
+				continue
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				continue
+			}
+
+			if resp.Body.Close() != nil {
+				continue
+			}
+
+			// The server needs a moment to generate some stats
+			if strings.Contains(string(body), "ReqPerSec") {
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
 func httpdContainer(t *testing.T) testcontainers.Container {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
@@ -37,7 +83,7 @@ func httpdContainer(t *testing.T) testcontainers.Container {
 			Dockerfile: "Dockerfile.httpd",
 		},
 		ExposedPorts: []string{"8080:80"},
-		WaitingFor:   wait.ForListeningPort("80"),
+		WaitingFor:   waitStrategy{},
 	}
 
 	require.NoError(t, req.Validate())
@@ -47,7 +93,6 @@ func httpdContainer(t *testing.T) testcontainers.Container {
 		Started:          true,
 	})
 	require.NoError(t, err)
-	time.Sleep(time.Second * 6)
 	return httpd
 }
 
