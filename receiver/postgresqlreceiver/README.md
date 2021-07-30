@@ -1,6 +1,6 @@
 # PostgreSQL Receiver
 
-This receiver queries PostgreSQL's statistics collector [https://www.postgresql.org/docs/9.6/monitoring-stats.html](https://www.postgresql.org/docs/9.6/monitoring-stats.html).
+This receiver queries the PostgreSQL [statistics collector](https://www.postgresql.org/docs/9.6/monitoring-stats.html).
 
 Supported pipeline types: `metrics`
 
