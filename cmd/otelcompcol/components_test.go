@@ -19,6 +19,7 @@ func TestComponents(t *testing.T) {
 	require.NotNil(t, factories.Receivers["postgresql"])
 	require.NotNil(t, factories.Receivers["mongodb"])
 	require.NotNil(t, factories.Receivers["httpd"])
+	require.NotNil(t, factories.Receivers["elasticsearch"])
 
 	// Processors
 	require.NotNil(t, factories.Processors["attributes"])
