@@ -17,10 +17,9 @@ import (
 )
 
 type httpdScraper struct {
+	logger     *zap.Logger
+	cfg        *Config
 	httpClient *http.Client
-
-	logger *zap.Logger
-	cfg    *Config
 }
 
 func newHttpdScraper(
@@ -39,7 +38,6 @@ func (r *httpdScraper) start(_ context.Context, host component.Host) error {
 		return err
 	}
 	r.httpClient = httpClient
-
 	return nil
 }
 
@@ -49,19 +47,19 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToMetric(metric pdata.DoubleDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
 }
 
-func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
@@ -83,13 +81,13 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	ilm.InstrumentationLibrary().SetName("otel/httpd")
 	now := pdata.TimestampFromTime(time.Now())
 
-	uptime := initMetric(ilm.Metrics(), metadata.M.HttpdUptime).IntSum().DataPoints()
-	connections := initMetric(ilm.Metrics(), metadata.M.HttpdCurrentConnections).IntGauge().DataPoints()
-	workers := initMetric(ilm.Metrics(), metadata.M.HttpdWorkers).IntGauge().DataPoints()
+	uptime := initMetric(ilm.Metrics(), metadata.M.HttpdUptime).Sum().DataPoints()
+	connections := initMetric(ilm.Metrics(), metadata.M.HttpdCurrentConnections).Gauge().DataPoints()
+	workers := initMetric(ilm.Metrics(), metadata.M.HttpdWorkers).Gauge().DataPoints()
 	requests := initMetric(ilm.Metrics(), metadata.M.HttpdRequests).Gauge().DataPoints()
 	bytes := initMetric(ilm.Metrics(), metadata.M.HttpdBytes).Gauge().DataPoints()
-	traffic := initMetric(ilm.Metrics(), metadata.M.HttpdTraffic).IntSum().DataPoints()
-	scoreboard := initMetric(ilm.Metrics(), metadata.M.HttpdScoreboard).IntGauge().DataPoints()
+	traffic := initMetric(ilm.Metrics(), metadata.M.HttpdTraffic).Sum().DataPoints()
+	scoreboard := initMetric(ilm.Metrics(), metadata.M.HttpdScoreboard).Gauge().DataPoints()
 
 	for metricKey, metricValue := range parseStats(stats) {
 		labels := pdata.NewStringMap()
@@ -114,11 +112,11 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 			}
 		case "ReqPerSec":
 			if f, ok := r.parseFloat(metricKey, metricValue); ok {
-				addToMetric(requests, labels, f, now)
+				addToDoubleMetric(requests, labels, f, now)
 			}
 		case "BytesPerSec":
 			if f, ok := r.parseFloat(metricKey, metricValue); ok {
-				addToMetric(bytes, labels, f, now)
+				addToDoubleMetric(bytes, labels, f, now)
 			}
 		case "Total Accesses":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {

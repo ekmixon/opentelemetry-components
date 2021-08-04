@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"path"
 	"strings"
@@ -13,71 +14,48 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/model/pdata"
 
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver/internal/metadata"
 )
 
-type HttpdIntegrationSuite struct {
-	suite.Suite
-}
-
 func TestHttpdIntegration(t *testing.T) {
-	suite.Run(t, new(HttpdIntegrationSuite))
+	container := getContainer(t, containerRequest2_4)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = fmt.Sprintf("http://%s/server-status?auto", net.JoinHostPort(hostname, "8080"))
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateResult(t, metrics)
 }
 
-type waitStrategy struct{}
-
-func (ws waitStrategy) WaitUntilReady(ctx context.Context, st wait.StrategyTarget) error {
-	if err := wait.ForListeningPort("80").WaitUntilReady(ctx, st); err != nil {
-		return err
-	}
-
-	hostname, err := st.Host(ctx)
-	if err != nil {
-		return err
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(5 * time.Second):
-			return fmt.Errorf("server startup problem")
-		case <-time.After(100 * time.Millisecond):
-			resp, err := http.Get(fmt.Sprintf("http://%s:8080/server-status?auto", hostname))
-			if err != nil {
-				continue
-			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				continue
-			}
-
-			if resp.Body.Close() != nil {
-				continue
-			}
-
-			// The server needs a moment to generate some stats
-			if strings.Contains(string(body), "ReqPerSec") {
-				return nil
-			}
-		}
-	}
-
-	return nil
-}
-
-func httpdContainer(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
+var (
+	containerRequest2_4 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.httpd",
@@ -85,63 +63,34 @@ func httpdContainer(t *testing.T) testcontainers.Container {
 		ExposedPorts: []string{"8080:80"},
 		WaitingFor:   waitStrategy{},
 	}
+)
 
+func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontainers.Container {
 	require.NoError(t, req.Validate())
-
-	httpd, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	container, err := testcontainers.GenericContainer(
+		context.Background(),
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
 	require.NoError(t, err)
-	return httpd
+	return container
 }
 
-func (suite *HttpdIntegrationSuite) TestHttpdScraperHappyPath() {
-	t := suite.T()
-	httpd := httpdContainer(t)
-	defer func() {
-		require.NoError(t, httpd.Terminate(context.Background()))
-	}()
-	hostname, err := httpd.Host(context.Background())
-	require.NoError(t, err)
+func validateResult(t *testing.T, metrics pdata.MetricSlice) {
+	require.EqualValues(t, 7, metrics.Len())
 
-	cfg := &Config{
-		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-			CollectionInterval: 100 * time.Millisecond,
-		},
-		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: fmt.Sprintf("http://%s:8080/server-status?auto", hostname),
-		},
-	}
-
-	sc := newHttpdScraper(zap.NewNop(), cfg)
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
-
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.EqualValues(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.EqualValues(t, 7, ms.Len())
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
+	for i := 0; i < metrics.Len(); i++ {
+		m := metrics.At(i)
 
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
 		case metadata.M.HttpdCurrentConnections.Name():
-			require.Equal(t, 1, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 		case metadata.M.HttpdWorkers.Name():
-			require.Equal(t, 2, m.IntGauge().DataPoints().Len())
-			dps := m.IntGauge().DataPoints()
+			require.Equal(t, 2, m.Gauge().DataPoints().Len())
+			dps := m.Gauge().DataPoints()
 			present := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
@@ -161,10 +110,10 @@ func (suite *HttpdIntegrationSuite) TestHttpdScraperHappyPath() {
 		case metadata.M.HttpdBytes.Name():
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 		case metadata.M.HttpdTraffic.Name():
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
-			require.True(t, m.IntSum().IsMonotonic())
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.True(t, m.Sum().IsMonotonic())
 		case metadata.M.HttpdScoreboard.Name():
-			dps := m.IntGauge().DataPoints()
+			dps := m.Gauge().DataPoints()
 			require.Equal(t, 11, dps.Len())
 			present := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -204,4 +153,47 @@ func (suite *HttpdIntegrationSuite) TestHttpdScraperHappyPath() {
 
 	}
 
+}
+
+type waitStrategy struct{}
+
+func (ws waitStrategy) WaitUntilReady(ctx context.Context, st wait.StrategyTarget) error {
+	if err := wait.ForListeningPort("80").
+		WithStartupTimeout(2*time.Minute).
+		WaitUntilReady(ctx, st); err != nil {
+		return err
+	}
+
+	hostname, err := st.Host(ctx)
+	if err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(5 * time.Second):
+			return fmt.Errorf("server startup problem")
+		case <-time.After(100 * time.Millisecond):
+			resp, err := http.Get(fmt.Sprintf("http://%s:8080/server-status?auto", hostname))
+			if err != nil {
+				continue
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				continue
+			}
+
+			if resp.Body.Close() != nil {
+				continue
+			}
+
+			// The server needs a moment to generate some stats
+			if strings.Contains(string(body), "ReqPerSec") {
+				return nil
+			}
+		}
+	}
 }

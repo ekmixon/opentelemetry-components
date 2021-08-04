@@ -102,7 +102,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "publish_rate"),
 			)
 		} else {
-			addToMetric(publishRateMetric, labels, val, now)
+			addToDoubleMetric(publishRateMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"message_stats", "deliver_details", "rate"}, queue)
@@ -112,7 +112,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "delivery_rate"),
 			)
 		} else {
-			addToMetric(deliveryRateMetric, labels, val, now)
+			addToDoubleMetric(deliveryRateMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"consumers"}, queue)
@@ -122,7 +122,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "consumers"),
 			)
 		} else {
-			addToMetric(consumersMetric, labels, val, now)
+			addToDoubleMetric(consumersMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages"}, queue)
@@ -133,7 +133,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			)
 		} else {
 			labels.Upsert(metadata.L.State, "total")
-			addToMetric(numMessagesMetric, labels, val, now)
+			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages_unacknowledged"}, queue)
@@ -144,7 +144,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			)
 		} else {
 			labels.Upsert(metadata.L.State, "unacknowledged")
-			addToMetric(numMessagesMetric, labels, val, now)
+			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages_ready"}, queue)
@@ -155,7 +155,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			)
 		} else {
 			labels.Upsert(metadata.L.State, "ready")
-			addToMetric(numMessagesMetric, labels, val, now)
+			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 	}
 
@@ -210,10 +210,10 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToMetric(metric pdata.DoubleDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}

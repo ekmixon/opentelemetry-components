@@ -5,97 +5,85 @@ package rabbitmqreceiver
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/model/pdata"
+
+	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver/internal/metadata"
 )
 
-type RabbitMQIntegrationSuite struct {
-	suite.Suite
+func TestRabbitMQScraperHappyPath(t *testing.T) {
+	container := getContainer(t, containerRequest3_8)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "15672"))
+	cfg.Password = "dev"
+	cfg.Username = "dev"
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateResult(t, metrics)
 }
 
-func TestRabbitMQIntegration(t *testing.T) {
-	suite.Run(t, new(RabbitMQIntegrationSuite))
-}
-
-func rabbitmqContainer(t *testing.T) (testcontainers.Container, error) {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
+var (
+	containerRequest3_8 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.rabbitmq",
 		},
 		ExposedPorts: []string{"15672:15672"},
-		WaitingFor:   wait.ForListeningPort("15672"),
+		WaitingFor: wait.ForListeningPort("15672").
+			WithStartupTimeout(2 * time.Minute),
 	}
+)
 
-	if err := req.Validate(); err != nil {
-		return nil, errors.Wrap(err, "failed to validate request")
-	}
+func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontainers.Container {
+	require.NoError(t, req.Validate())
+	container, err := testcontainers.GenericContainer(
+		context.Background(),
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+	require.NoError(t, err)
 
-	rabbitmq, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create container")
-	}
-	code, err := rabbitmq.Exec(context.Background(), []string{"/setup.sh"})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute 'setup.sh'")
-	}
-	require.Equal(t, 126, code)
-	time.Sleep(time.Second * 6)
-	return rabbitmq, nil
+	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
+	require.NoError(t, err)
+	require.Equal(t, 0, code)
+	time.Sleep(time.Second * 6) // TODO customize wait.Strategy
+	return container
 }
 
-func (suite *RabbitMQIntegrationSuite) TestRabbitMQScraperHappyPath() {
-	t := suite.T()
-	rabbitmq, err := rabbitmqContainer(t)
-	require.NoError(t, err)
-	defer func() {
-		err := rabbitmq.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := rabbitmq.Host(context.Background())
-	require.NoError(t, err)
+func validateResult(t *testing.T, metrics pdata.MetricSlice) {
+	require.Equal(t, len(metadata.M.Names()), metrics.Len())
 
-	cfg := &Config{
-		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-			CollectionInterval: 100 * time.Millisecond,
-		},
-		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: fmt.Sprintf("http://%s:15672", hostname),
-		},
-		Password: "dev",
-		Username: "dev",
-	}
-
-	sc, err := newRabbitMQScraper(zap.NewNop(), cfg)
-	require.NoError(t, err)
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.NoError(t, err)
-
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, 4, ms.Len())
+	// TODO thorough validation
 }

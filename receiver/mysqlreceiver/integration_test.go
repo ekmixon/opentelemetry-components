@@ -5,85 +5,122 @@ package mysqlreceiver
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 
 	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver/internal/metadata"
 )
 
-func mysqlContainer(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
+func TestMysqlIntegrationNoDatabase(t *testing.T) {
+	container := getContainer(t, containerRequest8_0)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = net.JoinHostPort(hostname, "3306")
+	cfg.Username = "otel"
+	cfg.Password = "otel"
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateNoDatabaseResult(t, metrics)
+}
+
+func TestMysqlIntegrationWithDatabase(t *testing.T) {
+	container := getContainer(t, containerRequest8_0)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = fmt.Sprintf("%s:3306", hostname)
+	cfg.Username = "otel"
+	cfg.Password = "otel"
+	cfg.Database = "otel"
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateWithDatabaseResult(t, metrics)
+}
+
+var (
+	containerRequest8_0 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.mysql",
 		},
 		ExposedPorts: []string{"3306:3306"},
-		WaitingFor:   wait.ForListeningPort("3306"),
+		WaitingFor: wait.ForListeningPort("3306").
+			WithStartupTimeout(2 * time.Minute),
 	}
-	require.NoError(t, req.Validate())
+)
 
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontainers.Container {
+	require.NoError(t, req.Validate())
+	container, err := testcontainers.GenericContainer(
+		context.Background(),
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
 	require.NoError(t, err)
 
 	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
 	require.NoError(t, err)
 	require.Equal(t, 0, code)
-
 	return container
 }
 
-type MysqlIntegrationSuite struct {
-	suite.Suite
-}
+func validateNoDatabaseResult(t *testing.T, metrics pdata.MetricSlice) {
+	require.Equal(t, len(metadata.M.Names()), metrics.Len())
 
-func TestMysqlIntegration(t *testing.T) {
-	suite.Run(t, new(MysqlIntegrationSuite))
-}
-
-func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
-	t := suite.T()
-	container := mysqlContainer(t)
-	defer func() {
-		err := container.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
-
-	sc := newMySQLScraper(zap.NewNop(), &Config{
-		Username: "otel",
-		Password: "otel",
-		Endpoint: fmt.Sprintf("%s:3306", hostname),
-	})
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
-	require.Equal(t, 1, rms.Len())
-
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
+	for i := 0; i < metrics.Len(); i++ {
+		m := metrics.At(i)
 		switch m.Name() {
 		case metadata.M.MysqlBufferPoolPages.Name():
 			dps := m.Gauge().DataPoints()
@@ -105,8 +142,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.buffer_pool_pages :total database:_global":   true,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 7, dps.Len())
 			bufferPoolOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -144,8 +181,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.buffer_pool_size :size database:_global":  true,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 6, dps.Len())
 			commandsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -165,8 +202,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.commands :send_long_data database:_global": true,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 18, dps.Len())
 			handlersMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -198,8 +235,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.handlers :write database:_global":              true,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			doubleWritesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -215,8 +252,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.double_writes :written database:_global": true,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			logOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -233,8 +270,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.log_operations :writes database:_global":   true,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			operationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -251,8 +288,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.operations :writes database:_global": true,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			pageOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -269,8 +306,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.page_operations :written database:_global": true,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			rowLocksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -286,8 +323,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.row_locks :waits database:_global": true,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			rowOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -305,8 +342,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.row_operations :updated database:_global":  true,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			locksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -322,8 +359,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 				"mysql.locks :waited database:_global":    true,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			sortsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -362,40 +399,11 @@ func (suite *MysqlIntegrationSuite) TestHappyPathNoDatabase() {
 	}
 }
 
-func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
-	t := suite.T()
-	container := mysqlContainer(t)
-	defer func() {
-		err := container.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
+func validateWithDatabaseResult(t *testing.T, metrics pdata.MetricSlice) {
+	require.Equal(t, len(metadata.M.Names()), metrics.Len())
 
-	sc := newMySQLScraper(zap.NewNop(), &Config{
-		Username: "otel",
-		Password: "otel",
-		Database: "otel",
-		Endpoint: fmt.Sprintf("%s:3306", hostname),
-	})
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
-	require.Equal(t, 1, rms.Len())
-
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
+	for i := 0; i < metrics.Len(); i++ {
+		m := metrics.At(i)
 		switch m.Name() {
 		case metadata.M.MysqlBufferPoolPages.Name():
 			dps := m.Gauge().DataPoints()
@@ -417,8 +425,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.buffer_pool_pages :total database:otel":   true,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 7, dps.Len())
 			bufferPoolOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -456,8 +464,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.buffer_pool_size :size database:otel":  true,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 6, dps.Len())
 			commandsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -477,8 +485,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.commands :send_long_data database:otel": true,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 18, dps.Len())
 			handlersMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -510,8 +518,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.handlers :write database:otel":              true,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			doubleWritesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -527,8 +535,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.double_writes :written database:otel": true,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			logOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -545,8 +553,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.log_operations :writes database:otel":   true,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			operationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -563,8 +571,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.operations :writes database:otel": true,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			pageOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -581,8 +589,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.page_operations :written database:otel": true,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			rowLocksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -598,8 +606,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.row_locks :waits database:otel": true,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			rowOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -617,8 +625,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.row_operations :updated database:otel":  true,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			locksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -634,8 +642,8 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 				"mysql.locks :waited database:otel":    true,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			sortsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -674,12 +682,10 @@ func (suite *MysqlIntegrationSuite) TestHappyPathWithDatabase() {
 	}
 }
 
-func (suite *MysqlIntegrationSuite) TestStartStop() {
-	t := suite.T()
-	container := mysqlContainer(t)
+func TestMySQLStartStop(t *testing.T) {
+	container := getContainer(t, containerRequest8_0)
 	defer func() {
-		err := container.Terminate(context.Background())
-		require.NoError(t, err)
+		require.NoError(t, container.Terminate(context.Background()))
 	}()
 	hostname, err := container.Host(context.Background())
 	require.NoError(t, err)

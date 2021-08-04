@@ -28,7 +28,7 @@ metrics:
     description: The amount of time that the server has been running in seconds
     unit: s
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: []
@@ -36,13 +36,13 @@ metrics:
     description: The number of active connections currently attached to the HTTP server
     unit: connections
     data:
-      type: int gauge
+      type: gauge
     labels: []
   httpd.workers:
     description: The number of workers currently attached to the HTTP server
     unit: connections
     data:
-      type: int gauge
+      type: gauge
     labels: [workers_state]
   httpd.requests:
     description: The number of requests serviced by the HTTP server per second
@@ -60,7 +60,7 @@ metrics:
     description: Total HTTP server traffic
     unit: connections
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: []
@@ -68,5 +68,5 @@ metrics:
     description: Apache HTTP server scoreboard values
     unit: scoreboard
     data:
-      type: int gauge
+      type: gauge
     labels: [scoreboard_state]

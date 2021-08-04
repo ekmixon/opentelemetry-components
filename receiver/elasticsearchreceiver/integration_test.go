@@ -5,146 +5,117 @@ package elasticsearchreceiver
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
-type ElasticSearchIntegrationSuite struct {
-	suite.Suite
+func TestElasticSearch7_8(t *testing.T) {
+	container := getContainer(t, containerRequest7_8)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "9200"))
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateResult(t, metrics)
 }
 
-func TestElasticSearchIntegration(t *testing.T) {
-	suite.Run(t, new(ElasticSearchIntegrationSuite))
+func TestElasticSearch7_13(t *testing.T) {
+	container := getContainer(t, containerRequest7_13)
+	defer func() {
+		require.NoError(t, container.Terminate(context.Background()))
+	}()
+	hostname, err := container.Host(context.Background())
+	require.NoError(t, err)
+
+	f := NewFactory()
+	cfg := f.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "9200"))
+
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	metrics := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	validateResult(t, metrics)
 }
 
-func elasticsearchContainer_7_8(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
+var (
+	containerRequest7_8 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.elasticsearch_7.8",
 		},
 		ExposedPorts: []string{"9200:9200"},
-		WaitingFor:   wait.ForListeningPort("9200"),
+		WaitingFor: wait.ForListeningPort("9200").
+			WithStartupTimeout(2 * time.Minute),
 	}
-
-	require.NoError(t, req.Validate())
-
-	elasticsearch, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-	time.Sleep(time.Second * 6)
-	return elasticsearch
-}
-
-func elasticsearchContainer_7_13(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
+	containerRequest7_13 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.elasticsearch_7.13",
 		},
 		ExposedPorts: []string{"9200:9200"},
-		WaitingFor:   wait.ForListeningPort("9200"),
+		WaitingFor: wait.ForListeningPort("9200").
+			WithStartupTimeout(2 * time.Minute),
 	}
+)
 
+func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontainers.Container {
 	require.NoError(t, req.Validate())
-
-	elasticsearch, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	container, err := testcontainers.GenericContainer(
+		context.Background(),
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
 	require.NoError(t, err)
-	time.Sleep(time.Second * 6)
-	return elasticsearch
+	time.Sleep(time.Second * 6) // TODO custom wait.Strategy
+	return container
 }
 
-func (suite *ElasticSearchIntegrationSuite) TestElasticSearchScraperHappyPath7_8() {
-	t := suite.T()
-	elasticsearch := elasticsearchContainer_7_8(t)
-	defer func() {
-		err := elasticsearch.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := elasticsearch.Host(context.Background())
-	require.NoError(t, err)
+func validateResult(t *testing.T, metrics pdata.MetricSlice) {
+	require.Equal(t, 17, metrics.Len())
 
-	cfg := &Config{
-		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-			CollectionInterval: 100 * time.Millisecond,
-		},
-		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: fmt.Sprintf("http://%s:9200", hostname),
-		},
-	}
-
-	sc, err := newElasticSearchScraper(zap.NewNop(), cfg)
-	require.NoError(t, err)
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-
-	require.NoError(t, err)
-
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, 17, ms.Len())
-}
-
-func (suite *ElasticSearchIntegrationSuite) TestElasticSearchScraperHappyPath7_13() {
-	t := suite.T()
-	elasticsearch := elasticsearchContainer_7_13(t)
-	defer func() {
-		err := elasticsearch.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := elasticsearch.Host(context.Background())
-	require.NoError(t, err)
-
-	cfg := &Config{
-		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-			CollectionInterval: 100 * time.Millisecond,
-		},
-		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: fmt.Sprintf("http://%s:9200", hostname),
-		},
-	}
-
-	sc, err := newElasticSearchScraper(zap.NewNop(), cfg)
-	require.NoError(t, err)
-	err = sc.start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-
-	require.NoError(t, err)
-
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, 17, ms.Len())
+	// TODO thorough validation
 }

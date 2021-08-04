@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.opentelemetry.io/collector/model/pdata"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
@@ -24,75 +22,87 @@ type mongodbScraper struct {
 	config *Config
 }
 
+type numberType int
+
+const (
+	integer numberType = iota
+	double
+)
+
 type mongoMetric struct {
-	metricDef        metadata.MetricIntf
-	path             []string
-	additionalLabels pdata.StringMap
+	metricDef     metadata.MetricIntf
+	path          []string
+	staticLabels  map[string]string
+	dataPointType numberType
 }
 
 var dbStatsMetrics []mongoMetric = []mongoMetric{
 	mongoMetric{
-		metricDef:        metadata.M.MongodbCollections,
-		path:             []string{"collections"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbCollections,
+		path:          []string{"collections"},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbDataSize,
-		path:             []string{"dataSize"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbDataSize,
+		path:          []string{"dataSize"},
+		dataPointType: double,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbExtents,
-		path:             []string{"numExtents"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbExtents,
+		path:          []string{"numExtents"},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbIndexSize,
-		path:             []string{"indexSize"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbIndexSize,
+		path:          []string{"indexSize"},
+		dataPointType: double,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbIndexes,
-		path:             []string{"indexes"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbIndexes,
+		path:          []string{"indexes"},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbObjects,
-		path:             []string{"objects"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbObjects,
+		path:          []string{"objects"},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbStorageSize,
-		path:             []string{"storageSize"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbStorageSize,
+		path:          []string{"storageSize"},
+		dataPointType: double,
 	},
 }
 
 var serverStatusMetrics []mongoMetric = []mongoMetric{
 	mongoMetric{
-		metricDef:        metadata.M.MongodbConnections,
-		path:             []string{"connections", "current"},
-		additionalLabels: pdata.NewStringMap(),
+		metricDef:     metadata.M.MongodbConnections,
+		path:          []string{"connections", "current"},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbMemoryUsage,
-		path:             []string{"mem", "resident"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident}),
+		metricDef:     metadata.M.MongodbMemoryUsage,
+		path:          []string{"mem", "resident"},
+		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbMemoryUsage,
-		path:             []string{"mem", "virtual"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual}),
+		metricDef:     metadata.M.MongodbMemoryUsage,
+		path:          []string{"mem", "virtual"},
+		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbMemoryUsage,
-		path:             []string{"mem", "mapped"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped}),
+		metricDef:     metadata.M.MongodbMemoryUsage,
+		path:          []string{"mem", "mapped"},
+		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped},
+		dataPointType: integer,
 	},
 	mongoMetric{
-		metricDef:        metadata.M.MongodbMemoryUsage,
-		path:             []string{"mem", "mappedWithJournal"},
-		additionalLabels: pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal}),
+		metricDef:     metadata.M.MongodbMemoryUsage,
+		path:          []string{"mem", "mappedWithJournal"},
+		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal},
+		dataPointType: integer,
 	},
 }
 
@@ -110,7 +120,7 @@ func newMongodbScraper(
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
 	// Init client in scrape method in case there are transient errors in the
 	// constructor.
-	client, err := r.initClient(ctx)
+	client, err := r.initClient(ctx, r.logger, r.config.Timeout)
 	if err != nil {
 		r.logger.Error("Failed to connect to mongodb", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, err
@@ -122,85 +132,58 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		}
 	}()
 
-	now := pdata.TimestampFromTime(time.Now())
 	metrics := pdata.NewMetrics()
 	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
+	mm := newMetricManager(r.logger, ilm)
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
-	databaseNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
+	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
-		r.logger.Error("Failed to fetch mongodb database names", zap.Error(err))
+		r.logger.Error("fetch database names", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	err = r.collectSpecialMetrics(ctx, client, ilm, now)
+	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
-		r.logger.Error("Failed to collect mongoDB metrics from serverStatus in admin", zap.Error(err))
+		r.logger.Error("query serverStatus in admin", zap.Error(err))
+	} else {
+		r.parseSpecialMetrics(ctx, mm, serverStatus)
 	}
 
-	initializedMetrics := map[string]pdata.Metric{}
-	for _, databaseName := range databaseNames {
-		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, ilm, initializedMetrics, dbStatsMetrics, true, bson.M{"dbStats": 1})
+	for _, dbName := range dbNames {
+		dbStats, err := client.query(ctx, dbName, bson.M{"dbStats": 1})
 		if err != nil {
-			r.logger.Error(fmt.Sprintf("Failed to collect mongoDB metrics from dbStats in database %s", databaseName), zap.Error(err))
+			r.logger.Error("collect dbStats metric", zap.Error(err), zap.String("database", dbName))
+		} else {
+			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
 		}
 
-		err = r.runDatabaseCommandAndCollectMetrics(ctx, client, databaseName, now, ilm, initializedMetrics, serverStatusMetrics, true, bson.M{"serverStatus": 1})
+		serverStatus, err := client.query(ctx, dbName, bson.M{"serverStatus": 1})
 		if err != nil {
-			r.logger.Error(fmt.Sprintf("Failed to collect mongoDB metrics from serverStatus in database %s", databaseName), zap.Error(err))
+			r.logger.Error("collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
+		} else {
+			r.parseDatabaseMetrics(ctx, mm, dbName, serverStatusMetrics, serverStatus)
 		}
 	}
 
 	return metrics.ResourceMetrics(), nil
 }
 
-func getOrInitializeMetric(initializedMetrics map[string]pdata.Metric, ilm pdata.InstrumentationLibraryMetrics, requestedMetric mongoMetric) pdata.Metric {
-	value, ok := initializedMetrics[requestedMetric.metricDef.Name()]
-	if !ok {
-		metric := ilm.Metrics().AppendEmpty()
-		requestedMetric.metricDef.Init(metric)
-		initializedMetrics[requestedMetric.metricDef.Name()] = metric
-		return metric
-	}
-
-	return value
-}
-
-func (r *mongodbScraper) collectSpecialMetrics(
-	ctx context.Context,
-	client *mongo.Client,
-	ilm pdata.InstrumentationLibraryMetrics,
-	now pdata.Timestamp,
-) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
-	defer cancel()
-	result := client.Database("admin").RunCommand(timeoutCtx, bson.M{"serverStatus": 1})
-
-	var document bson.M
-	err := result.Decode(&document)
-
-	if err != nil {
-		return err
-	}
-
+func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricManager, document bson.M) {
 	// Collect Global Lock Wait Time
 
 	// Mongo version older than 3.0
-	path := []string{"globalLock", "totalTime"}
-	waitTime, err := getIntMetricValue(document, path)
+	waitTime, err := getIntMetricValue(document, []string{"globalLock", "totalTime"})
 	if err == nil {
-		lockTimeMetric := ilm.Metrics().AppendEmpty()
-		metadata.M.MongodbGlobalLockHoldTime.Init(lockTimeMetric)
-		addIntDataPoint(lockTimeMetric.IntSum().DataPoints(), now, waitTime, pdata.NewStringMap())
+		mm.addIntDataPoint(metadata.M.MongodbGlobalLockHoldTime, waitTime, pdata.NewStringMap())
 	} else {
 		// Assume mongoDB 3.0+ if the older style was not available
 		totalWaitTime := int64(0)
 		hasValue := false
 		for _, lockType := range []string{"W", "R", "r", "w"} {
-			path = []string{"locks", "Global", "timeAcquiringMicros", lockType}
-			waitTime, err := getIntMetricValue(document, path)
+			waitTime, err := getIntMetricValue(document, []string{"locks", "Global", "timeAcquiringMicros", lockType})
 			if err == nil {
 				totalWaitTime += int64(waitTime / 1000)
 				hasValue = true
@@ -208,9 +191,7 @@ func (r *mongodbScraper) collectSpecialMetrics(
 		}
 
 		if hasValue {
-			lockTimeMetric := ilm.Metrics().AppendEmpty()
-			metadata.M.MongodbGlobalLockHoldTime.Init(lockTimeMetric)
-			addIntDataPoint(lockTimeMetric.IntSum().DataPoints(), now, totalWaitTime, pdata.NewStringMap())
+			mm.addIntDataPoint(metadata.M.MongodbGlobalLockHoldTime, totalWaitTime, pdata.NewStringMap())
 		}
 	}
 
@@ -219,29 +200,24 @@ func (r *mongodbScraper) collectSpecialMetrics(
 
 	cacheMisses, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages read into cache"})
 	if err != nil {
-		r.logger.Error("Error while collecting mongodb cache misses metric", zap.Error(err))
+		r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
 		canCalculateCacheHits = false
 	} else {
-		cacheMissesMetric := ilm.Metrics().AppendEmpty()
-		metadata.M.MongodbCacheMisses.Init(cacheMissesMetric)
-		addIntDataPoint(cacheMissesMetric.IntSum().DataPoints(), now, cacheMisses, pdata.NewStringMap())
+		mm.addIntDataPoint(metadata.M.MongodbCacheMisses, cacheMisses, pdata.NewStringMap())
 	}
 
 	totalCacheRequests, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages requested from the cache"})
 	if err != nil {
-		r.logger.Error("Error while collecting mongodb cache requests metric", zap.Error(err))
+		r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheHits.Name()))
 		canCalculateCacheHits = false
 	}
 
 	if canCalculateCacheHits && totalCacheRequests > cacheMisses {
-		cacheHitsMetric := ilm.Metrics().AppendEmpty()
-		metadata.M.MongodbCacheHits.Init(cacheHitsMetric)
 		cacheHits := totalCacheRequests - cacheMisses
-		addIntDataPoint(cacheHitsMetric.IntSum().DataPoints(), now, cacheHits, pdata.NewStringMap())
+		mm.addIntDataPoint(metadata.M.MongodbCacheHits, cacheHits, pdata.NewStringMap())
 	}
 
 	// Collect Operations
-	var operationsMetric *pdata.Metric
 	for _, operation := range []string{
 		metadata.LabelOperation.Insert,
 		metadata.LabelOperation.Query,
@@ -250,101 +226,48 @@ func (r *mongodbScraper) collectSpecialMetrics(
 		metadata.LabelOperation.Getmore,
 		metadata.LabelOperation.Command,
 	} {
-		path := []string{"opcounters", operation}
-		count, err := getIntMetricValue(document, path)
+		count, err := getIntMetricValue(document, []string{"opcounters", operation})
 		if err != nil {
-			r.logger.Error("Error while collecting mongodb operations metric", zap.Error(err))
+			r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbOperationCount.Name()))
 		} else {
-			if operationsMetric == nil {
-				metric := ilm.Metrics().AppendEmpty()
-				operationsMetric = &metric
-				metadata.M.MongodbOperationCount.Init(*operationsMetric)
-			}
-
-			addIntDataPoint(operationsMetric.IntSum().DataPoints(), now, count, pdata.NewStringMap().InitFromMap(map[string]string{metadata.L.Operation: operation}))
+			labels := pdata.NewStringMap()
+			labels.Insert(metadata.L.Operation, operation)
+			mm.addIntDataPoint(metadata.M.MongodbOperationCount, count, labels)
 		}
 	}
-
-	return nil
 }
 
-func (r *mongodbScraper) runDatabaseCommandAndCollectMetrics(
+func (r *mongodbScraper) parseDatabaseMetrics(
 	ctx context.Context,
-	client *mongo.Client,
+	mm *metricManager,
 	databaseName string,
-	now pdata.Timestamp,
-	ilm pdata.InstrumentationLibraryMetrics,
-	initializedMetrics map[string]pdata.Metric,
 	metricsRequested []mongoMetric,
-	includeDatabaseNameLabel bool,
-	command bson.M,
-) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
-	defer cancel()
-	result := client.Database(databaseName).RunCommand(timeoutCtx, command)
-
-	var document bson.M
-	err := result.Decode(&document)
-	if err != nil {
-		r.logger.Error("Error while collecting mongodb metric", zap.Error(err))
-		return err
-	}
-
+	document bson.M,
+) {
 	for _, metricRequest := range metricsRequested {
-		metric := getOrInitializeMetric(initializedMetrics, ilm, metricRequest)
 		labels := pdata.NewStringMap()
-		metricRequest.additionalLabels.CopyTo(labels)
-		if includeDatabaseNameLabel {
-			labels.Insert(metadata.L.DatabaseName, databaseName)
+		labels.Insert(metadata.L.DatabaseName, databaseName)
+		for k, v := range metricRequest.staticLabels {
+			labels.Insert(k, v)
 		}
 
-		switch metric.DataType() {
-		case pdata.MetricDataTypeIntGauge:
+		switch metricRequest.dataPointType {
+		case integer:
 			value, err := getIntMetricValue(document, metricRequest.path)
-			if err == nil {
-				addIntDataPoint(metric.IntGauge().DataPoints(), now, value, labels)
-			} else {
-				r.logger.Error("Failed to collect mongodb metric", zap.Error(err))
+			if err != nil {
+				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				continue
 			}
-		case pdata.MetricDataTypeIntSum:
-			value, err := getIntMetricValue(document, metricRequest.path)
-			if err == nil {
-				addIntDataPoint(metric.IntSum().DataPoints(), now, value, labels)
-			} else {
-				r.logger.Error("Failed to collect mongodb metric", zap.Error(err))
-			}
-		case pdata.MetricDataTypeSum:
+			mm.addIntDataPoint(metricRequest.metricDef, value, labels)
+		case double:
 			value, err := getDoubleMetricValue(document, metricRequest.path)
-			if err == nil {
-				addDoubleDataPoint(metric.Sum().DataPoints(), now, value, labels)
-			} else {
-				r.logger.Error("Failed to collect mongodb metric", zap.Error(err))
+			if err != nil {
+				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				continue
 			}
-		case pdata.MetricDataTypeGauge:
-			value, err := getDoubleMetricValue(document, metricRequest.path)
-			if err == nil {
-				addDoubleDataPoint(metric.Gauge().DataPoints(), now, value, labels)
-			} else {
-				r.logger.Error("Failed to collect mongodb metric", zap.Error(err))
-			}
+			mm.addDoubleDataPoint(metricRequest.metricDef, value, labels)
 		}
 	}
-
-	return nil
-}
-
-func (r *mongodbScraper) initClient(ctx context.Context) (*mongo.Client, error) {
-	authentication := ""
-	if r.config.Username != "" && r.config.Password != "" {
-		authentication = fmt.Sprintf("%s:%s@", r.config.Username, r.config.Password)
-	}
-
-	uri := fmt.Sprintf("mongodb://%s%s", authentication, r.config.Endpoint)
-
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
-	defer cancel()
-
-	return mongo.Connect(timeoutCtx, options.Client().ApplyURI(uri))
 }
 
 func getIntMetricValue(document bson.M, path []string) (int64, error) {
@@ -391,16 +314,54 @@ func getDoubleMetricValue(document bson.M, path []string) (float64, error) {
 	}
 }
 
-func addIntDataPoint(slice pdata.IntDataPointSlice, now pdata.Timestamp, value int64, labels pdata.StringMap) {
-	dp := slice.AppendEmpty()
-	dp.SetTimestamp(now)
-	dp.SetValue(value)
-	labels.CopyTo(dp.LabelsMap())
+type metricManager struct {
+	logger             *zap.Logger
+	ilm                pdata.InstrumentationLibraryMetrics
+	initializedMetrics map[string]pdata.Metric
+	now                pdata.Timestamp
 }
 
-func addDoubleDataPoint(slice pdata.DoubleDataPointSlice, now pdata.Timestamp, value float64, labels pdata.StringMap) {
-	dp := slice.AppendEmpty()
-	dp.SetTimestamp(now)
-	dp.SetValue(value)
-	labels.CopyTo(dp.LabelsMap())
+func newMetricManager(logger *zap.Logger, ilm pdata.InstrumentationLibraryMetrics) *metricManager {
+	return &metricManager{
+		logger:             logger,
+		ilm:                ilm,
+		initializedMetrics: map[string]pdata.Metric{},
+		now:                pdata.TimestampFromTime(time.Now()),
+	}
+}
+
+func (m *metricManager) addIntDataPoint(metricDef metadata.MetricIntf, value int64, labels pdata.StringMap) {
+	dataPoints := m.getOrInit(metricDef)
+	dataPoint := dataPoints.AppendEmpty()
+	dataPoint.SetTimestamp(m.now)
+	dataPoint.SetIntVal(value)
+	labels.CopyTo(dataPoint.LabelsMap())
+}
+
+func (m *metricManager) addDoubleDataPoint(metricDef metadata.MetricIntf, value float64, labels pdata.StringMap) {
+	dataPoints := m.getOrInit(metricDef)
+	dataPoint := dataPoints.AppendEmpty()
+	dataPoint.SetTimestamp(m.now)
+	dataPoint.SetDoubleVal(value)
+	labels.CopyTo(dataPoint.LabelsMap())
+}
+
+func (m *metricManager) getOrInit(metricDef metadata.MetricIntf) pdata.NumberDataPointSlice {
+	metric, ok := m.initializedMetrics[metricDef.Name()]
+	if !ok {
+		metric = m.ilm.Metrics().AppendEmpty()
+		metricDef.Init(metric)
+		m.initializedMetrics[metricDef.Name()] = metric
+	}
+
+	if metric.DataType() == pdata.MetricDataTypeSum {
+		return metric.Sum().DataPoints()
+	}
+
+	if metric.DataType() == pdata.MetricDataTypeGauge {
+		return metric.Gauge().DataPoints()
+	}
+
+	m.logger.Error("unknown type", zap.String("metric", metricDef.Name()))
+	return pdata.NewNumberDataPointSlice()
 }

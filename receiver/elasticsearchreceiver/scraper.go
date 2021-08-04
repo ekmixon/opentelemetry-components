@@ -43,7 +43,7 @@ func (r *elasticsearchScraper) start(_ context.Context, host component.Host) err
 	return nil
 }
 
-func (r *elasticsearchScraper) processFloatMetric(keys []string, body map[string]interface{}, metric pdata.DoubleDataPointSlice, labels pdata.StringMap) {
+func (r *elasticsearchScraper) processFloatMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
 	floatVal, err := getFloatFromBody(keys, body)
 	if err != nil {
 		r.logger.Info(err.Error())
@@ -52,7 +52,7 @@ func (r *elasticsearchScraper) processFloatMetric(keys []string, body map[string
 	}
 }
 
-func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.IntDataPointSlice, labels pdata.StringMap) {
+func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
 	intVal, err := getIntFromBody(keys, body)
 	if err != nil {
 		r.logger.Info(err.Error())
@@ -109,10 +109,10 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	}
 
 	cacheMemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCacheMemoryUsage).Gauge().DataPoints()
-	evictionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchEvictions).IntSum().DataPoints()
-	GCCollectionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollection).IntSum().DataPoints()
+	evictionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchEvictions).Sum().DataPoints()
+	GCCollectionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollection).Sum().DataPoints()
 	MemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchMemoryUsage).Gauge().DataPoints()
-	NetworkMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchNetwork).IntSum().DataPoints()
+	NetworkMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchNetwork).Sum().DataPoints()
 	CurrentDocsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCurrentDocuments).Gauge().DataPoints()
 	DataNodesMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchDataNodes).Gauge().DataPoints()
 	HTTPConnsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchHTTPConnections).Gauge().DataPoints()
@@ -120,8 +120,8 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	OpenFilesMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchOpenFiles).Gauge().DataPoints()
 	ServerConnsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchServerConnections).Gauge().DataPoints()
 	ShardsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchShards).Gauge().DataPoints()
-	OperationsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchOperations).IntSum().DataPoints()
-	OperationTimeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchOperationTime).IntSum().DataPoints()
+	OperationsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchOperations).Sum().DataPoints()
+	OperationTimeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchOperationTime).Sum().DataPoints()
 	peakThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchPeakThreads).Gauge().DataPoints()
 	storageSizeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchStorageSize).Gauge().DataPoints()
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
@@ -326,19 +326,19 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToMetric(metric pdata.DoubleDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+func addToMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
 }
 
-func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}

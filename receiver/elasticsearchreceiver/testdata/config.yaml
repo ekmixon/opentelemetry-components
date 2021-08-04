@@ -1,0 +1,19 @@
+receivers:
+  elasticsearch:
+    endpoint: localhost:9200
+    username: otel
+    password: password
+    collection_interval: 10s
+
+processors:
+  nop:
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [elasticsearch]
+      processors: [nop]
+      exporters: [nop]

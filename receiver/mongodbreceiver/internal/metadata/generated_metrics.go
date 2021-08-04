@@ -122,9 +122,9 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.cache_hits")
 			metric.SetDescription("The number of cache hits")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -133,9 +133,9 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.cache_misses")
 			metric.SetDescription("The number of cache misses")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -144,7 +144,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.collections")
 			metric.SetDescription("The number of collections")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -153,7 +153,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.connections")
 			metric.SetDescription("The number of active server connections")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -171,7 +171,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.extents")
 			metric.SetDescription("The number of extents")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -180,9 +180,9 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.global_lock_hold_time")
 			metric.SetDescription("The time the global lock has been held")
 			metric.SetUnit("ms")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -200,7 +200,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.indexes")
 			metric.SetDescription("The number of indexes")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -209,7 +209,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.memory_usage")
 			metric.SetDescription("The amount of memory used")
 			metric.SetUnit("By")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -218,7 +218,7 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.objects")
 			metric.SetDescription("The number of objects")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -227,9 +227,9 @@ var Metrics = &metricStruct{
 			metric.SetName("mongodb.operation_count")
 			metric.SetDescription("The number of operations executed")
 			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{

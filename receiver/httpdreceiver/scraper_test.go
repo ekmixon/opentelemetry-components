@@ -64,24 +64,24 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 		m := ms.At(i)
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
-			dps := m.IntSum().DataPoints()
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
-			require.True(t, m.IntSum().IsMonotonic())
-			require.EqualValues(t, 410, dps.At(0).Value())
+			dps := m.Sum().DataPoints()
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.True(t, m.Sum().IsMonotonic())
+			require.EqualValues(t, 410, dps.At(0).IntVal())
 		case metadata.M.HttpdCurrentConnections.Name():
-			dps := m.IntGauge().DataPoints()
+			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())
-			require.EqualValues(t, 110, dps.At(0).Value())
+			require.EqualValues(t, 110, dps.At(0).IntVal())
 		case metadata.M.HttpdWorkers.Name():
-			dps := m.IntGauge().DataPoints()
-			require.Equal(t, 2, m.IntGauge().DataPoints().Len())
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, m.Gauge().DataPoints().Len())
 
 			workerMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				state, _ := dp.LabelsMap().Get(metadata.L.WorkersState)
 				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				workerMetrics[label] = int(dp.Value())
+				workerMetrics[label] = int(dp.IntVal())
 			}
 
 			require.Equal(t, 2, len(workerMetrics))
@@ -98,19 +98,19 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.EqualValues(t, 1129490, dps.At(0).Value())
 		case metadata.M.HttpdTraffic.Name():
-			dps := m.IntSum().DataPoints()
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
-			require.True(t, m.IntSum().IsMonotonic())
-			require.EqualValues(t, 14169, dps.At(0).Value())
+			dps := m.Sum().DataPoints()
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.True(t, m.Sum().IsMonotonic())
+			require.EqualValues(t, 14169, dps.At(0).IntVal())
 		case metadata.M.HttpdScoreboard.Name():
-			dps := m.IntGauge().DataPoints()
+			dps := m.Gauge().DataPoints()
 			require.Equal(t, 11, dps.Len())
 			scoreboardMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				state, _ := dp.LabelsMap().Get(metadata.L.ScoreboardState)
 				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				scoreboardMetrics[label] = int(dp.Value())
+				scoreboardMetrics[label] = int(dp.IntVal())
 			}
 			require.Equal(t, 11, len(scoreboardMetrics))
 			require.Equal(t, map[string]int{

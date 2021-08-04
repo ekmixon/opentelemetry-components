@@ -5,6 +5,7 @@ import (
 	"net"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -21,7 +22,8 @@ func mongodbContainer(t *testing.T) testcontainers.Container {
 			Dockerfile: "Dockerfile.mongodb",
 		},
 		ExposedPorts: []string{"37017:27017"},
-		WaitingFor:   wait.ForListeningPort("27017"),
+		WaitingFor: wait.ForListeningPort("27017").
+			WithStartupTimeout(2 * time.Minute),
 	}
 
 	require.NoError(t, req.Validate())
@@ -71,31 +73,31 @@ func TestScraper(t *testing.T) {
 		m := ms.At(i)
 		switch m.Name() {
 		case "mongodb.collections":
-			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.data_size":
 			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.extents":
-			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.index_size":
 			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.indexes":
-			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.objects":
-			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.storage_size":
 			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.connections":
-			require.Equal(t, 3, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 3, m.Gauge().DataPoints().Len())
 		case "mongodb.memory_usage":
-			require.Equal(t, 12, m.IntGauge().DataPoints().Len())
+			require.Equal(t, 12, m.Gauge().DataPoints().Len())
 		case "mongodb.global_lock_hold_time":
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
 		case "mongodb.cache_misses":
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
 		case "mongodb.cache_hits":
-			require.Equal(t, 1, m.IntSum().DataPoints().Len())
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
 		case "mongodb.operation_count":
-			require.Equal(t, 6, m.IntSum().DataPoints().Len())
+			require.Equal(t, 6, m.Sum().DataPoints().Len())
 		default:
 			t.Errorf("Incorrect name or untracked metric name %s", m.Name())
 		}

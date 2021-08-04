@@ -64,21 +64,21 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-// addToMetric adds and labels a double gauge datapoint to a metricslice.
-func addToMetric(metric pdata.DoubleDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+// addToDoubleMetric adds and labels a double gauge datapoint to a metricslice.
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
 }
 
 // addToIntMetric adds and labels a int sum datapoint to metricslice.
-func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
@@ -97,12 +97,12 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 	ilm.InstrumentationLibrary().SetName("otel/postgresql")
 	now := pdata.TimestampFromTime(time.Now())
 
-	blocks_read := initMetric(ilm.Metrics(), metadata.M.PostgresqlBlocksRead).IntSum().DataPoints()
-	commits := initMetric(ilm.Metrics(), metadata.M.PostgresqlCommits).IntSum().DataPoints()
+	blocks_read := initMetric(ilm.Metrics(), metadata.M.PostgresqlBlocksRead).Sum().DataPoints()
+	commits := initMetric(ilm.Metrics(), metadata.M.PostgresqlCommits).Sum().DataPoints()
 	databaseSize := initMetric(ilm.Metrics(), metadata.M.PostgresqlDbSize).Gauge().DataPoints()
 	backends := initMetric(ilm.Metrics(), metadata.M.PostgresqlBackends).Gauge().DataPoints()
 	databaseRows := initMetric(ilm.Metrics(), metadata.M.PostgresqlRows).Gauge().DataPoints()
-	operations := initMetric(ilm.Metrics(), metadata.M.PostgresqlOperations).IntSum().DataPoints()
+	operations := initMetric(ilm.Metrics(), metadata.M.PostgresqlOperations).Sum().DataPoints()
 	rollbacks := initMetric(ilm.Metrics(), metadata.M.PostgresqlRollbacks).Gauge().DataPoints()
 
 	// blocks read query
@@ -162,7 +162,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 			labels := pdata.NewStringMap()
 			if f, ok := p.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Database, databaseSizeMetric.database)
-				addToMetric(databaseSize, labels, f, now)
+				addToDoubleMetric(databaseSize, labels, f, now)
 			}
 		}
 	}
@@ -176,7 +176,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 			labels := pdata.NewStringMap()
 			if f, ok := p.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Database, backendsMetric.database)
-				addToMetric(backends, labels, f, now)
+				addToDoubleMetric(backends, labels, f, now)
 			}
 		}
 	}
@@ -192,7 +192,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 				labels.Insert(metadata.L.Database, databaseRowsMetric.database)
 				labels.Insert(metadata.L.Table, databaseRowsMetric.table)
 				labels.Insert(metadata.L.State, k)
-				addToMetric(databaseRows, labels, f, now)
+				addToDoubleMetric(databaseRows, labels, f, now)
 			}
 		}
 	}
@@ -209,7 +209,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 					labels.Insert(metadata.L.Database, table.database)
 					labels.Insert(metadata.L.Table, table.table)
 					labels.Insert(metadata.L.State, k)
-					addToMetric(databaseRows, labels, f, now)
+					addToDoubleMetric(databaseRows, labels, f, now)
 				}
 			}
 		}
@@ -258,7 +258,7 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 			labels := pdata.NewStringMap()
 			if f, ok := p.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Database, rollbacksMetric.database)
-				addToMetric(rollbacks, labels, f, now)
+				addToDoubleMetric(rollbacks, labels, f, now)
 			}
 		}
 	}

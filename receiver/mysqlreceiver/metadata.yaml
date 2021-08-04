@@ -71,7 +71,7 @@ metrics:
     description: Buffer pool operation count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, buffer_pool_operations]
@@ -85,7 +85,7 @@ metrics:
     description: MySQL command count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, command]
@@ -93,7 +93,7 @@ metrics:
     description: MySQL handler count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, handler]
@@ -101,7 +101,7 @@ metrics:
     description: InnoDB doublewrite buffer count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, double_writes]
@@ -109,7 +109,7 @@ metrics:
     description: InndoDB log operation count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, log_operations]
@@ -117,7 +117,7 @@ metrics:
     description: InndoDB operation count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, operations]
@@ -125,7 +125,7 @@ metrics:
     description: InndoDB page operation count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, page_operations]
@@ -133,7 +133,7 @@ metrics:
     description: InndoDB row lock count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, row_locks]
@@ -141,7 +141,7 @@ metrics:
     description: InndoDB row operation count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, row_operations]
@@ -149,7 +149,7 @@ metrics:
     description: MySQL lock count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, locks]
@@ -157,7 +157,7 @@ metrics:
     description: MySQL sort count
     unit: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [database, sorts]

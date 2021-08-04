@@ -21,7 +21,7 @@ MISSPELL=$(GOPATH)/bin/misspell
 GOBUILDEXTRAENV=GO111MODULE=on CGO_ENABLED=0
 GOBUILD=go build
 GOINSTALL=go install
-GOTEST=go test -vet off -count 1 -timeout 3m
+GOTEST=go test -count 1 -timeout 10m
 GOTOOL=go tool
 GOFORMAT=goimports
 GOTIDY=go mod tidy
@@ -33,7 +33,7 @@ install-tools:
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) golang.org/x/tools/cmd/goimports
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.40.1
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/client9/misspell/cmd/misspell
-	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen@v0.30.0
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen@v0.31.0
 
 # Default build target; making this should build for the current os/arch
 .PHONY: build
@@ -60,6 +60,10 @@ arm64_linux:
 .PHONY: amd64_windows
 amd64_windows:
 	GOOS=windows GOARCH=amd64 $(MAKE) build
+
+.PHONY: vet
+vet:
+	go vet -tags=integration ./...
 
 .PHONY: lint
 lint:
@@ -119,6 +123,6 @@ clean:
 	rm -rf $(OUTDIR)
 
 .PHONY: generate
-generate:
+generate: install-tools
 	go generate ./...
 	git ls-files -m | grep generated_metrics.go | xargs -I {} sh -c 'echo "$$(tail -n +15 {})" > {}'

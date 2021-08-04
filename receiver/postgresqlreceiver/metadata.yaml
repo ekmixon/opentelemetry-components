@@ -21,7 +21,7 @@ metrics:
     description: The number of blocks read.
     units: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [ database, table, source ]
@@ -29,7 +29,7 @@ metrics:
     description: The number of commits.
     units: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [ database ]
@@ -55,7 +55,7 @@ metrics:
     description: The number of db row operations.
     units: 1
     data:
-      type: int sum
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [ database, table, operation ]

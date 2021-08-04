@@ -14,8 +14,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.11.1
 	go.mongodb.org/mongo-driver v1.6.0
-	go.opentelemetry.io/collector v0.30.0
-	go.opentelemetry.io/collector/model v0.30.0
+	go.opentelemetry.io/collector v0.31.0
+	go.opentelemetry.io/collector/model v0.31.0
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.18.1
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c

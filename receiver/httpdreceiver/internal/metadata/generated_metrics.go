@@ -107,7 +107,7 @@ var Metrics = &metricStruct{
 			metric.SetName("httpd.current_connections")
 			metric.SetDescription("The number of active connections currently attached to the HTTP server")
 			metric.SetUnit("connections")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -125,7 +125,7 @@ var Metrics = &metricStruct{
 			metric.SetName("httpd.scoreboard")
 			metric.SetDescription("Apache HTTP server scoreboard values")
 			metric.SetUnit("scoreboard")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
@@ -134,9 +134,9 @@ var Metrics = &metricStruct{
 			metric.SetName("httpd.traffic")
 			metric.SetDescription("Total HTTP server traffic")
 			metric.SetUnit("connections")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -145,9 +145,9 @@ var Metrics = &metricStruct{
 			metric.SetName("httpd.uptime")
 			metric.SetDescription("The amount of time that the server has been running in seconds")
 			metric.SetUnit("s")
-			metric.SetDataType(pdata.MetricDataTypeIntSum)
-			metric.IntSum().SetIsMonotonic(true)
-			metric.IntSum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -156,7 +156,7 @@ var Metrics = &metricStruct{
 			metric.SetName("httpd.workers")
 			metric.SetDescription("The number of workers currently attached to the HTTP server")
 			metric.SetUnit("connections")
-			metric.SetDataType(pdata.MetricDataTypeIntGauge)
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 }

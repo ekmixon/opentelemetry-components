@@ -156,44 +156,44 @@ func TestScraper(t *testing.T) {
 					metricValues[label] = dp.Value()
 				}
 			}
-		case pdata.MetricDataTypeIntSum:
-			m.IntSum().DataPoints()
-			dps := m.IntSum().DataPoints()
+		case pdata.MetricDataTypeSum:
+			m.Sum().DataPoints()
+			dps := m.Sum().DataPoints()
 			switch name {
 			case "elasticsearch.evictions":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.CacheName)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.gc_collection":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.GcType)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.network":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.Direction)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.operations":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.Operation)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.operation_time":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.Operation)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			}
 		}

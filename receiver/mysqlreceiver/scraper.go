@@ -64,21 +64,21 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-// addToMetric adds and labels a double gauge datapoint to a metricslice.
-func addToMetric(metric pdata.DoubleDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+// addToDoubleMetric adds and labels a double gauge datapoint to a metricslice.
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
 }
 
 // addToIntMetric adds and labels a int sum datapoint to metricslice.
-func addToIntMetric(metric pdata.IntDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
-	dataPoint.SetValue(value)
+	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
 		labels.CopyTo(dataPoint.LabelsMap())
 	}
@@ -98,18 +98,18 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	now := pdata.TimestampFromTime(time.Now())
 
 	bufferPoolPages := initMetric(ilm.Metrics(), metadata.M.MysqlBufferPoolPages).Gauge().DataPoints()
-	bufferPoolOperations := initMetric(ilm.Metrics(), metadata.M.MysqlBufferPoolOperations).IntSum().DataPoints()
+	bufferPoolOperations := initMetric(ilm.Metrics(), metadata.M.MysqlBufferPoolOperations).Sum().DataPoints()
 	bufferPoolSize := initMetric(ilm.Metrics(), metadata.M.MysqlBufferPoolSize).Gauge().DataPoints()
-	commands := initMetric(ilm.Metrics(), metadata.M.MysqlCommands).IntSum().DataPoints()
-	handlers := initMetric(ilm.Metrics(), metadata.M.MysqlHandlers).IntSum().DataPoints()
-	doubleWrites := initMetric(ilm.Metrics(), metadata.M.MysqlDoubleWrites).IntSum().DataPoints()
-	logOperations := initMetric(ilm.Metrics(), metadata.M.MysqlLogOperations).IntSum().DataPoints()
-	operations := initMetric(ilm.Metrics(), metadata.M.MysqlOperations).IntSum().DataPoints()
-	pageOperations := initMetric(ilm.Metrics(), metadata.M.MysqlPageOperations).IntSum().DataPoints()
-	rowLocks := initMetric(ilm.Metrics(), metadata.M.MysqlRowLocks).IntSum().DataPoints()
-	rowOperations := initMetric(ilm.Metrics(), metadata.M.MysqlRowOperations).IntSum().DataPoints()
-	locks := initMetric(ilm.Metrics(), metadata.M.MysqlLocks).IntSum().DataPoints()
-	sorts := initMetric(ilm.Metrics(), metadata.M.MysqlSorts).IntSum().DataPoints()
+	commands := initMetric(ilm.Metrics(), metadata.M.MysqlCommands).Sum().DataPoints()
+	handlers := initMetric(ilm.Metrics(), metadata.M.MysqlHandlers).Sum().DataPoints()
+	doubleWrites := initMetric(ilm.Metrics(), metadata.M.MysqlDoubleWrites).Sum().DataPoints()
+	logOperations := initMetric(ilm.Metrics(), metadata.M.MysqlLogOperations).Sum().DataPoints()
+	operations := initMetric(ilm.Metrics(), metadata.M.MysqlOperations).Sum().DataPoints()
+	pageOperations := initMetric(ilm.Metrics(), metadata.M.MysqlPageOperations).Sum().DataPoints()
+	rowLocks := initMetric(ilm.Metrics(), metadata.M.MysqlRowLocks).Sum().DataPoints()
+	rowOperations := initMetric(ilm.Metrics(), metadata.M.MysqlRowOperations).Sum().DataPoints()
+	locks := initMetric(ilm.Metrics(), metadata.M.MysqlLocks).Sum().DataPoints()
+	sorts := initMetric(ilm.Metrics(), metadata.M.MysqlSorts).Sum().DataPoints()
 	threads := initMetric(ilm.Metrics(), metadata.M.MysqlThreads).Gauge().DataPoints()
 
 	databaseName := m.config.Database
@@ -126,7 +126,7 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "buffer_pool_size":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolSize, "size")
-				addToMetric(bufferPoolSize, labels, f, now)
+				addToDoubleMetric(bufferPoolSize, labels, f, now)
 			}
 		}
 	}
@@ -151,32 +151,32 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_buffer_pool_pages_data":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "data")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_dirty":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "dirty")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_flushed":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "flushed")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_free":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "free")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_misc":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "misc")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 		case "Innodb_buffer_pool_pages_total":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolPages, "total")
-				addToMetric(bufferPoolPages, labels, f, now)
+				addToDoubleMetric(bufferPoolPages, labels, f, now)
 			}
 
 		// buffer_pool_operations
@@ -220,12 +220,12 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Innodb_buffer_pool_bytes_data":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolSize, "data")
-				addToMetric(bufferPoolSize, labels, f, now)
+				addToDoubleMetric(bufferPoolSize, labels, f, now)
 			}
 		case "Innodb_buffer_pool_bytes_dirty":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.BufferPoolSize, "dirty")
-				addToMetric(bufferPoolSize, labels, f, now)
+				addToDoubleMetric(bufferPoolSize, labels, f, now)
 			}
 
 		// commands
@@ -487,22 +487,22 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Threads_cached":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Threads, "cached")
-				addToMetric(threads, labels, f, now)
+				addToDoubleMetric(threads, labels, f, now)
 			}
 		case "Threads_connected":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Threads, "connected")
-				addToMetric(threads, labels, f, now)
+				addToDoubleMetric(threads, labels, f, now)
 			}
 		case "Threads_created":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Threads, "created")
-				addToMetric(threads, labels, f, now)
+				addToDoubleMetric(threads, labels, f, now)
 			}
 		case "Threads_running":
 			if f, ok := m.parseFloat(k, v); ok {
 				labels.Insert(metadata.L.Threads, "running")
-				addToMetric(threads, labels, f, now)
+				addToDoubleMetric(threads, labels, f, now)
 			}
 		}
 	}

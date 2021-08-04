@@ -47,7 +47,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolPagesMetrics[label] = dp.Value()
+				bufferPoolPagesMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 6, len(bufferPoolPagesMetrics))
 			require.Equal(t, map[string]float64{
@@ -59,8 +59,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.buffer_pool_pages :total database:otel":   8192,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 7, dps.Len())
 			bufferPoolOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -68,7 +68,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolOperationsMetrics[label] = dp.Value()
+				bufferPoolOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -89,7 +89,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolSizeMetrics[label] = dp.Value()
+				bufferPoolSizeMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
 			require.Equal(t, map[string]float64{
@@ -98,8 +98,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.buffer_pool_size :size database:otel":  134217728,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 6, dps.Len())
 			commandsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -107,7 +107,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				commandsMetrics[label] = dp.Value()
+				commandsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 6, len(commandsMetrics))
 			require.Equal(t, map[string]int64{
@@ -119,8 +119,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.commands :send_long_data database:otel": 0,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 18, dps.Len())
 			handlersMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -128,7 +128,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				handlersMetrics[label] = dp.Value()
+				handlersMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 18, len(handlersMetrics))
 			require.Equal(t, map[string]int64{
@@ -152,8 +152,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.handlers :write database:otel":              256734,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			doubleWritesMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -161,7 +161,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				doubleWritesMetrics[label] = dp.Value()
+				doubleWritesMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
 			require.Equal(t, map[string]int64{
@@ -169,8 +169,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.double_writes :written database:otel": 27,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			logOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -178,7 +178,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				logOperationsMetrics[label] = dp.Value()
+				logOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -187,8 +187,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.log_operations :writes database:otel":   14,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			operationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -196,7 +196,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				operationsMetrics[label] = dp.Value()
+				operationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(operationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -205,8 +205,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.operations :writes database:otel": 215,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			pageOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -214,7 +214,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				pageOperationsMetrics[label] = dp.Value()
+				pageOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -223,8 +223,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.page_operations :written database:otel": 168,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			rowLocksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -232,7 +232,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				rowLocksMetrics[label] = dp.Value()
+				rowLocksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
 			require.Equal(t, map[string]int64{
@@ -240,8 +240,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.row_locks :waits database:otel": 0,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			rowOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -249,7 +249,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				rowOperationsMetrics[label] = dp.Value()
+				rowOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -259,8 +259,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.row_operations :updated database:otel":  0,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			locksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -268,7 +268,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				locksMetrics[label] = dp.Value()
+				locksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(locksMetrics))
 			require.Equal(t, map[string]int64{
@@ -276,8 +276,8 @@ func TestScraperWithDatabase(t *testing.T) {
 				"mysql.locks :waited database:otel":    0,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			sortsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -285,7 +285,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				sortsMetrics[label] = dp.Value()
+				sortsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(sortsMetrics))
 			require.Equal(t, map[string]int64{
@@ -303,7 +303,7 @@ func TestScraperWithDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				threadsMetrics[label] = dp.Value()
+				threadsMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 4, len(threadsMetrics))
 			require.Equal(t, map[string]float64{
@@ -351,7 +351,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolPagesMetrics[label] = dp.Value()
+				bufferPoolPagesMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 6, len(bufferPoolPagesMetrics))
 			require.Equal(t, map[string]float64{
@@ -363,8 +363,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.buffer_pool_pages :total database:_global":   8192,
 			}, bufferPoolPagesMetrics)
 		case metadata.M.MysqlBufferPoolOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 7, dps.Len())
 			bufferPoolOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -372,7 +372,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolOperationsMetrics[label] = dp.Value()
+				bufferPoolOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -393,7 +393,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				bufferPoolSizeMetrics[label] = dp.Value()
+				bufferPoolSizeMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
 			require.Equal(t, map[string]float64{
@@ -402,8 +402,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.buffer_pool_size :size database:_global":  134217728,
 			}, bufferPoolSizeMetrics)
 		case metadata.M.MysqlCommands.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 6, dps.Len())
 			commandsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -411,7 +411,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				commandsMetrics[label] = dp.Value()
+				commandsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 6, len(commandsMetrics))
 			require.Equal(t, map[string]int64{
@@ -423,8 +423,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.commands :send_long_data database:_global": 0,
 			}, commandsMetrics)
 		case metadata.M.MysqlHandlers.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 18, dps.Len())
 			handlersMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -432,7 +432,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				handlersMetrics[label] = dp.Value()
+				handlersMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 18, len(handlersMetrics))
 			require.Equal(t, map[string]int64{
@@ -456,8 +456,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.handlers :write database:_global":              256734,
 			}, handlersMetrics)
 		case metadata.M.MysqlDoubleWrites.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			doubleWritesMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -465,7 +465,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				doubleWritesMetrics[label] = dp.Value()
+				doubleWritesMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
 			require.Equal(t, map[string]int64{
@@ -473,8 +473,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.double_writes :written database:_global": 27,
 			}, doubleWritesMetrics)
 		case metadata.M.MysqlLogOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			logOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -482,7 +482,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				logOperationsMetrics[label] = dp.Value()
+				logOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -491,8 +491,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.log_operations :writes database:_global":   14,
 			}, logOperationsMetrics)
 		case metadata.M.MysqlOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			operationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -500,7 +500,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				operationsMetrics[label] = dp.Value()
+				operationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(operationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -509,8 +509,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.operations :writes database:_global": 215,
 			}, operationsMetrics)
 		case metadata.M.MysqlPageOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 3, dps.Len())
 			pageOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -518,7 +518,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				pageOperationsMetrics[label] = dp.Value()
+				pageOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -527,8 +527,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.page_operations :written database:_global": 168,
 			}, pageOperationsMetrics)
 		case metadata.M.MysqlRowLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			rowLocksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -536,7 +536,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				rowLocksMetrics[label] = dp.Value()
+				rowLocksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
 			require.Equal(t, map[string]int64{
@@ -544,8 +544,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.row_locks :waits database:_global": 0,
 			}, rowLocksMetrics)
 		case metadata.M.MysqlRowOperations.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			rowOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -553,7 +553,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				rowOperationsMetrics[label] = dp.Value()
+				rowOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
 			require.Equal(t, map[string]int64{
@@ -563,8 +563,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.row_operations :updated database:_global":  0,
 			}, rowOperationsMetrics)
 		case metadata.M.MysqlLocks.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 2, dps.Len())
 			locksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -572,7 +572,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				locksMetrics[label] = dp.Value()
+				locksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(locksMetrics))
 			require.Equal(t, map[string]int64{
@@ -580,8 +580,8 @@ func TestScraperNoDatabase(t *testing.T) {
 				"mysql.locks :waited database:_global":    0,
 			}, locksMetrics)
 		case metadata.M.MysqlSorts.Name():
-			dps := m.IntSum().DataPoints()
-			require.True(t, m.IntSum().IsMonotonic())
+			dps := m.Sum().DataPoints()
+			require.True(t, m.Sum().IsMonotonic())
 			require.Equal(t, 4, dps.Len())
 			sortsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
@@ -589,7 +589,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				sortsMetrics[label] = dp.Value()
+				sortsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(sortsMetrics))
 			require.Equal(t, map[string]int64{
@@ -607,7 +607,7 @@ func TestScraperNoDatabase(t *testing.T) {
 				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
 				db_label, _ := dp.LabelsMap().Get(metadata.L.Database)
 				label := fmt.Sprintf("%s :%s database:%s", m.Name(), value_label, db_label)
-				threadsMetrics[label] = dp.Value()
+				threadsMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 4, len(threadsMetrics))
 			require.Equal(t, map[string]float64{

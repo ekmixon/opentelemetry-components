@@ -19,11 +19,8 @@ type NormalizeSumsProcessor struct {
 }
 
 type startPoint struct {
-	dataType pdata.MetricDataType
-
-	intDataPoint    *pdata.IntDataPoint
-	doubleDataPoint *pdata.DoubleDataPoint
-	lastIntValue    int64
+	dataType        pdata.MetricDataType
+	numberDataPoint *pdata.NumberDataPoint
 	lastDoubleValue float64
 }
 
@@ -97,7 +94,7 @@ func (nsp *NormalizeSumsProcessor) transformMetrics(rms pdata.ResourceMetrics) [
 
 func (nsp *NormalizeSumsProcessor) shouldTransformMetric(metric pdata.Metric) (bool, *Transform) {
 	// Only consider Sums
-	if !(metric.DataType() == pdata.MetricDataTypeIntSum || metric.DataType() == pdata.MetricDataTypeSum) {
+	if metric.DataType() != pdata.MetricDataTypeSum {
 		return false, nil
 	}
 
@@ -119,72 +116,11 @@ func (nsp *NormalizeSumsProcessor) shouldTransformMetric(metric pdata.Metric) (b
 
 func (nsp *NormalizeSumsProcessor) processMetric(resource pdata.Resource, metric pdata.Metric) (bool, error) {
 	switch t := metric.DataType(); t {
-	case pdata.MetricDataTypeIntSum:
-		return nsp.processIntSumMetric(resource, metric) > 0, nil
 	case pdata.MetricDataTypeSum:
 		return nsp.processSumMetric(resource, metric) > 0, nil
-
 	default:
 		return false, fmt.Errorf("data type not supported %s", t)
 	}
-}
-
-func (nsp *NormalizeSumsProcessor) processIntSumMetric(resource pdata.Resource, metric pdata.Metric) int {
-	dps := metric.IntSum().DataPoints()
-	for i := 0; i < dps.Len(); {
-		reportData := nsp.processIntSumDataPoint(dps.At(i), resource, metric)
-
-		if !reportData {
-			intRemoveAt(dps, i)
-			continue
-		}
-		i++
-	}
-
-	return dps.Len()
-}
-
-func (nsp *NormalizeSumsProcessor) processIntSumDataPoint(dp pdata.IntDataPoint, resource pdata.Resource, metric pdata.Metric) bool {
-	metricIdentifier := dataPointIdentifier(resource, metric, dp.LabelsMap())
-
-	start := nsp.history[metricIdentifier]
-	// If this is the first time we've observed this unique metric,
-	// record it as the start point and do not report this data point
-	if start == nil {
-		dps := metric.IntSum().DataPoints()
-		newDP := pdata.NewIntDataPoint()
-		dps.At(0).CopyTo(newDP)
-
-		newStart := startPoint{
-			dataType:     pdata.MetricDataTypeIntSum,
-			intDataPoint: &newDP,
-			lastIntValue: newDP.Value(),
-		}
-		nsp.history[metricIdentifier] = &newStart
-
-		return false
-	}
-
-	// If this data is older than the start point, we can't
-	// meaningfully report this point
-	if dp.Timestamp() <= start.intDataPoint.Timestamp() {
-		return false
-	}
-
-	// If data has rolled over or the counter has been restarted for
-	// any other reason, grab a new start point and do not report this data
-	if dp.Value() < start.lastIntValue {
-		dp.CopyTo(*start.intDataPoint)
-		start.lastIntValue = dp.Value()
-
-		return false
-	}
-
-	start.lastIntValue = dp.Value()
-	dp.SetValue(dp.Value() - start.intDataPoint.Value())
-	dp.SetStartTimestamp(start.intDataPoint.Timestamp())
-
-	return true
 }
 
 func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, metric pdata.Metric) int {
@@ -193,7 +129,7 @@ func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, met
 		reportData := nsp.processSumDataPoint(dps.At(i), resource, metric)
 
 		if !reportData {
-			doubleRemoveAt(dps, i)
+			removeAt(dps, i)
 			continue
 		}
 		i++
@@ -202,7 +138,7 @@ func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, met
 	return dps.Len()
 }
 
-func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.DoubleDataPoint, resource pdata.Resource, metric pdata.Metric) bool {
+func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint, resource pdata.Resource, metric pdata.Metric) bool {
 	metricIdentifier := dataPointIdentifier(resource, metric, dp.LabelsMap())
 
 	start := nsp.history[metricIdentifier]
@@ -210,12 +146,12 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.DoubleDataPoint,
 	// record it as the start point and do not report this data point
 	if start == nil {
 		dps := metric.Sum().DataPoints()
-		newDP := pdata.NewDoubleDataPoint()
+		newDP := pdata.NewNumberDataPoint()
 		dps.At(0).CopyTo(newDP)
 
 		newStart := startPoint{
-			dataType:        pdata.MetricDataTypeIntSum,
-			doubleDataPoint: &newDP,
+			dataType:        pdata.MetricDataTypeSum,
+			numberDataPoint: &newDP,
 			lastDoubleValue: newDP.Value(),
 		}
 		nsp.history[metricIdentifier] = &newStart
@@ -225,22 +161,22 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.DoubleDataPoint,
 
 	// If this data is older than the start point, we can't
 	// meaningfully report this point
-	if dp.Timestamp() <= start.doubleDataPoint.Timestamp() {
+	if dp.Timestamp() <= start.numberDataPoint.Timestamp() {
 		return false
 	}
 
 	// If data has rolled over or the counter has been restarted for
 	// any other reason, grab a new start point and do not report this data
 	if dp.Value() < start.lastDoubleValue {
-		dp.CopyTo(*start.doubleDataPoint)
+		dp.CopyTo(*start.numberDataPoint)
 		start.lastDoubleValue = dp.Value()
 
 		return false
 	}
 
 	start.lastDoubleValue = dp.Value()
-	dp.SetValue(dp.Value() - start.doubleDataPoint.Value())
-	dp.SetStartTimestamp(start.doubleDataPoint.Timestamp())
+	dp.SetDoubleVal(dp.Value() - start.numberDataPoint.Value())
+	dp.SetStartTimestamp(start.numberDataPoint.Timestamp())
 
 	return true
 }
@@ -300,22 +236,8 @@ func addAttributeToIdentityBuilder(b *strings.Builder, v pdata.AttributeValue) {
 	}
 }
 
-func intRemoveAt(slice pdata.IntDataPointSlice, idx int) {
-	newSlice := pdata.NewIntDataPointSlice()
-	j := 0
-	for i := 0; i < slice.Len(); i++ {
-		if i != idx {
-			dp := newSlice.AppendEmpty()
-			slice.At(i).CopyTo(dp)
-			j++
-		}
-	}
-
-	newSlice.CopyTo(slice)
-}
-
-func doubleRemoveAt(slice pdata.DoubleDataPointSlice, idx int) {
-	newSlice := pdata.NewDoubleDataPointSlice()
+func removeAt(slice pdata.NumberDataPointSlice, idx int) {
+	newSlice := pdata.NewNumberDataPointSlice()
 	j := 0
 	for i := 0; i < slice.Len(); i++ {
 		if i != idx {
