@@ -99,6 +99,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
+	r.now = pdata.TimestampFromTime(time.Now())
 	metrics := pdata.NewMetrics()
 	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
