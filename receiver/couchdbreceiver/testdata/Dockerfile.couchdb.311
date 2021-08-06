@@ -1,0 +1,6 @@
+FROM apache/couchdb:3.1.1
+
+ENV COUCHDB_USER=otel
+ENV COUCHDB_PASSWORD=otel
+
+COPY scripts/setup311.sh /setup311.sh

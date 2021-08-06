@@ -7,6 +7,7 @@ This repository hosts components that may be imported into distributions of the 
 The following components are based in this repository:
 
 Receivers:
+- [couchdb](/receiver/couchdbreceiver/)
 - [elasticsearch](/receiver/elasticsearchreceiver/)
 - [httpd](/receiver/httpdreceiver/)
 - [mysql](/receiver/mysqlreceiver/)

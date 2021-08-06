@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
+	"github.com/observiq/opentelemetry-components/receiver/couchdbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/elasticsearchreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver"
@@ -33,6 +34,7 @@ func components() (component.Factories, error) {
 	var errs []error
 
 	receivers, err := component.MakeReceiverFactoryMap(
+		couchdbreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		httpdreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
