@@ -47,6 +47,10 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
 
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	ns := newHttpdScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start))
 
