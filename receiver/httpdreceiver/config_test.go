@@ -9,132 +9,71 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("error path", func(t *testing.T) {
-		testCases := []struct {
-			desc   string
-			rawUrl string
-			actual error
-		}{
-			{
-				desc:   "only port",
-				rawUrl: "8081",
-				actual: errors.New("invalid host: expected IP address or localhost, but got 8081"),
-			},
-			{
-				desc:   "invalid host",
-				rawUrl: "127.0.0.0.1.1",
-				actual: errors.New("invalid host: expected IP address or localhost, but got 127.0.0.0.1.1"),
-			},
-			{
-				desc:   "invalid host, port",
-				rawUrl: "127.0.0.0.1.1:8080",
-				actual: errors.New("invalid host: expected IP address or localhost, but got 127.0.0.0.1.1"),
-			},
-			{
-				desc:   "invalid path",
-				rawUrl: "127.0.0.1:8080/bad-server-status",
-				actual: errors.New("invalid path: expected '/server-status' path, but got '/bad-server-status'"),
-			},
-			{
-				desc:   "invalid path, path",
-				rawUrl: "127.0.0.1:8080/server-status/server-status",
-				actual: errors.New("invalid path: expected '/server-status' path, but got '/server-status/server-status'"),
-			},
-			{
-				desc:   "invalid query",
-				rawUrl: "127.0.0.1:8080/server-status?badauto",
-				actual: errors.New("invalid raw query: expected 'auto' query, but got 'badauto'"),
-			},
-			{
-				desc:   "invalid frag",
-				rawUrl: "127.0.0.1:8080/server-status?auto#badfrag",
-				actual: errors.New("invalid fragment: expected empty string, but got badfrag"),
-			},
-			{
-				desc:   "missing colon",
-				rawUrl: "127.0.0.18080/server-status?auto",
-				actual: errors.New("invalid host: expected IP address or localhost, but got 127.0.0.18080"),
-			},
-			{
-				desc:   "missing colon with space",
-				rawUrl: "127.0.0.1 8080/server-status?auto",
-				actual: errors.New("invalid endpoint 'http://127.0.0.1 8080/server-status?auto'"),
-			},
-		}
-		for _, tC := range testCases {
-			t.Run(tC.desc, func(t *testing.T) {
-				cfg := NewFactory().CreateDefaultConfig().(*Config)
-				cfg.Endpoint = tC.rawUrl
-				require.EqualError(t, cfg.Validate(), tC.actual.Error())
-			})
-		}
+		cfg := NewFactory().CreateDefaultConfig().(*Config)
+		cfg.Endpoint = "http://endpoint with space"
+		require.Equal(t, errors.New("invalid endpoint 'http://endpoint with space'"), cfg.Validate())
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		testCases := []struct {
-			desc      string
-			rawUrl    string
-			actual    error
-			parsedUrl string
+			desc        string
+			rawUrl      string
+			expected    error
+			expectedUrl string
 		}{
 			{
-				desc:      "default path",
-				rawUrl:    "",
-				actual:    nil,
-				parsedUrl: "http://localhost:8081/server-status?auto",
+				desc:        "default path",
+				rawUrl:      "",
+				expected:    nil,
+				expectedUrl: "http://localhost:8080/server-status?auto",
 			},
 			{
-				desc:      "only host(local)",
-				rawUrl:    "localhost",
-				actual:    nil,
-				parsedUrl: "http://localhost:8081/server-status?auto",
+				desc:        "only host(local)",
+				rawUrl:      "localhost",
+				expected:    nil,
+				expectedUrl: "http://localhost:8080",
 			},
 			{
-				desc:      "only host",
-				rawUrl:    "127.0.0.1",
-				actual:    nil,
-				parsedUrl: "http://127.0.0.1:8081/server-status?auto",
+				desc:        "only host",
+				rawUrl:      "127.0.0.1",
+				expected:    nil,
+				expectedUrl: "http://127.0.0.1:8080",
 			},
 			{
-				desc:      "only host(local), port",
-				rawUrl:    "localhost:8081",
-				actual:    nil,
-				parsedUrl: "http://localhost:8081/server-status?auto",
+				desc:        "only schema(http), host, port, query",
+				rawUrl:      "http://127.0.0.1:8080/server-status?auto",
+				expected:    nil,
+				expectedUrl: "http://127.0.0.1:8080/server-status?auto",
 			},
 			{
-				desc:      "only host, port",
-				rawUrl:    "127.0.0.1:8081",
-				actual:    nil,
-				parsedUrl: "http://127.0.0.1:8081/server-status?auto",
+				desc:        "unique host no port",
+				rawUrl:      "myAlias.Site",
+				expected:    nil,
+				expectedUrl: "http://myAlias.Site:8080",
 			},
 			{
-				desc:      "only host, port, path",
-				rawUrl:    "127.0.0.1:8081/server-status",
-				actual:    nil,
-				parsedUrl: "http://127.0.0.1:8081/server-status?auto",
+				desc:        "unique host with port",
+				rawUrl:      "myAlias.Site:1234",
+				expected:    nil,
+				expectedUrl: "http://myAlias.Site:1234",
 			},
 			{
-				desc:      "only host, port, path, query",
-				rawUrl:    "127.0.0.1:8081/server-status?auto",
-				actual:    nil,
-				parsedUrl: "http://127.0.0.1:8081/server-status?auto",
+				desc:        "unique port",
+				rawUrl:      "8080",
+				expected:    nil,
+				expectedUrl: "http://8080:8080",
 			},
 			{
-				desc:      "only schema, host, port, path, query",
-				rawUrl:    "http://127.0.0.1:8081/server-status?auto",
-				actual:    nil,
-				parsedUrl: "http://127.0.0.1:8081/server-status?auto",
+				desc:        "invalid ip",
+				rawUrl:      "127.0.0.0.1.1",
+				expected:    nil,
+				expectedUrl: "http://127.0.0.0.1.1:8080",
 			},
 			{
-				desc:      "only schema(https), host, port, path, query",
-				rawUrl:    "https://127.0.0.1:8081/server-status?auto",
-				actual:    nil,
-				parsedUrl: "https://127.0.0.1:8081/server-status?auto",
-			},
-			{
-				desc:      "added slash",
-				rawUrl:    "127.0.0.1:8081/server-status/?auto",
-				actual:    errors.New("invalid path: expected '/server-status' path, but got '/server-status/'"),
-				parsedUrl: "http://127.0.0.1:8081/server-status/?auto",
+				desc:        "multiple ports",
+				rawUrl:      "8080:8080:8080",
+				expected:    nil,
+				expectedUrl: "http://8080:8080:8080",
 			},
 		}
 		for _, tC := range testCases {
@@ -142,8 +81,52 @@ func TestValidate(t *testing.T) {
 				cfg := NewFactory().CreateDefaultConfig().(*Config)
 				cfg.Endpoint = tC.rawUrl
 				require.NoError(t, cfg.Validate())
-				require.Equal(t, cfg.Endpoint, tC.parsedUrl)
+				require.Equal(t, tC.expectedUrl, cfg.Endpoint)
 			})
 		}
 	})
+}
+
+func TestMissingProtocol(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		rawUrl   string
+		expected bool
+	}{
+		{
+			desc:     "localhost, no http",
+			rawUrl:   "localhost",
+			expected: true,
+		},
+		{
+			desc:     "localhost, no http",
+			rawUrl:   "127.0.0.1",
+			expected: true,
+		},
+		{
+			desc:     "localhost, with http",
+			rawUrl:   "http://localhost",
+			expected: false,
+		},
+		{
+			desc:     "localhost, with https",
+			rawUrl:   "https://localhost",
+			expected: false,
+		},
+		{
+			desc:     "localhost, with http",
+			rawUrl:   "http://127.0.0.1",
+			expected: false,
+		},
+		{
+			desc:     "localhost, with https",
+			rawUrl:   "https://127.0.0.1",
+			expected: false,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			require.Equal(t, tC.expected, missingProtocol(tC.rawUrl))
+		})
+	}
 }
