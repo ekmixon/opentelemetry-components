@@ -1,6 +1,7 @@
 package couchdbreceiver
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -34,8 +35,19 @@ func newCouchDBClient(host component.Host, cfg *Config, logger *zap.Logger) (*co
 	}, nil
 }
 
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
 func (c *couchdbClient) Get() (map[string]interface{}, error) {
-	resp, err := c.client.Get(c.cfg.HTTPClientSettings.Endpoint)
+	req, err := http.NewRequest("GET", c.cfg.Endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Basic "+basicAuth(c.cfg.Username, c.cfg.Password))
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}

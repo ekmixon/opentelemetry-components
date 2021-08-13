@@ -85,5 +85,5 @@ func ValidateEndpoint(endpoint string) error {
 // MakeClientEndpoint makes the client endpoint using config parameters.
 func (cfg *Config) MakeClientEndpoint() string {
 	endpoint := strings.Split(cfg.Endpoint, ":")
-	return fmt.Sprintf("http://%s:%s@%s:%s/_node/%s/_stats/couchdb", cfg.Username, cfg.Password, endpoint[0], endpoint[1], cfg.Nodename)
+	return fmt.Sprintf("http://%s:%s/_node/%s/_stats/couchdb", endpoint[0], endpoint[1], cfg.Nodename)
 }

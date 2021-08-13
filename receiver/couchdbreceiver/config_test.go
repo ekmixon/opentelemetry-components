@@ -142,6 +142,6 @@ func TestMakeClientEndpoint(t *testing.T) {
 		Nodename: "_local",
 	}
 	expected := cfg.MakeClientEndpoint()
-	actual := "http://otelu:otelp@localhost:5984/_node/_local/_stats/couchdb"
+	actual := "http://localhost:5984/_node/_local/_stats/couchdb"
 	require.Equal(t, expected, actual)
 }
