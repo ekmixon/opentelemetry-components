@@ -1,6 +1,7 @@
 package couchdbreceiver
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -123,5 +124,10 @@ func TestGet(t *testing.T) {
 }
 
 func TestBasicAuth(t *testing.T) {
-
+	username := "otelu"
+	password := "otelp"
+	encoded := basicAuth(username, password)
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	require.Nil(t, err)
+	require.Equal(t, "otelu:otelp", string(decoded))
 }

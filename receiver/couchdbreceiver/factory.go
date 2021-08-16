@@ -49,7 +49,7 @@ func createMetricsReceiver(
 	if err != nil {
 		return nil, err
 	}
-	cfg.HTTPClientSettings.Endpoint = cfg.MakeClientEndpoint()
+	cfg.Endpoint = cfg.MakeClientEndpoint()
 
 	ns := newCouchdbScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start))
