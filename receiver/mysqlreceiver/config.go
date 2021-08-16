@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.uber.org/multierr"
 )
 
 type Config struct {
@@ -18,18 +19,15 @@ type Config struct {
 const (
 	ErrNoUsername = "invalid config: missing username"
 	ErrNoPassword = "invalid config: missing password"
-	ErrNoEndpoint = "invalid config: missing endpoint"
 )
 
 func (cfg *Config) Validate() error {
+	var errs []error
 	if cfg.Username == "" {
-		return errors.New(ErrNoUsername)
+		errs = append(errs, errors.New(ErrNoUsername))
 	}
 	if cfg.Password == "" {
-		return errors.New(ErrNoPassword)
+		errs = append(errs, errors.New(ErrNoPassword))
 	}
-	if cfg.Endpoint == "" {
-		return errors.New(ErrNoEndpoint)
-	}
-	return nil
+	return multierr.Combine(errs...)
 }
