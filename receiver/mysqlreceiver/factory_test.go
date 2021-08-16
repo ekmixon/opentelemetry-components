@@ -27,75 +27,21 @@ func TestValidConfig(t *testing.T) {
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
-	testCases := []struct {
-		desc        string
-		username    string
-		password    string
-		endpoint    string
-		expectedErr string
-	}{
-		{
-			desc:        "missing username",
-			username:    "",
-			password:    "otel",
-			endpoint:    "localhost:3306",
-			expectedErr: ErrNoUsername,
-		},
-		{
-			desc:        "missing password",
-			username:    "otel",
-			password:    "",
-			endpoint:    "localhost:3306",
-			expectedErr: ErrNoPassword,
-		},
-		{
-			desc:        "missing endpoint",
-			username:    "otel",
-			password:    "otel",
-			endpoint:    "",
-			expectedErr: ErrNoEndpoint,
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			factory := NewFactory()
-			metricsReceiver, err := factory.CreateMetricsReceiver(
-				context.Background(),
-				component.ReceiverCreateSettings{Logger: zap.NewNop()},
-				&Config{
-					ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-						ReceiverSettings:   config.NewReceiverSettings(config.NewID("mysql")),
-						CollectionInterval: 10 * time.Second,
-					},
-					Username: tC.username,
-					Password: tC.password,
-					Endpoint: tC.endpoint,
-				},
-				&testbed.MockMetricConsumer{},
-			)
-			require.Error(t, err)
-			require.EqualError(t, err, tC.expectedErr)
-			require.Nil(t, metricsReceiver)
-		})
-	}
-
-	t.Run("happy path", func(t *testing.T) {
-		factory := NewFactory()
-		metricsReceiver, err := factory.CreateMetricsReceiver(
-			context.Background(),
-			component.ReceiverCreateSettings{Logger: zap.NewNop()},
-			&Config{
-				ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-					ReceiverSettings:   config.NewReceiverSettings(config.NewID("mysql")),
-					CollectionInterval: 10 * time.Second,
-				},
-				Username: "otel",
-				Password: "otel",
-				Endpoint: "localhost:3306",
+	factory := NewFactory()
+	metricsReceiver, err := factory.CreateMetricsReceiver(
+		context.Background(),
+		component.ReceiverCreateSettings{Logger: zap.NewNop()},
+		&Config{
+			ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
+				ReceiverSettings:   config.NewReceiverSettings(config.NewID("mysql")),
+				CollectionInterval: 10 * time.Second,
 			},
-			&testbed.MockMetricConsumer{},
-		)
-		require.NoError(t, err)
-		require.NotNil(t, metricsReceiver)
-	})
+			Username: "otel",
+			Password: "otel",
+			Endpoint: "localhost:3306",
+		},
+		&testbed.MockMetricConsumer{},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, metricsReceiver)
 }
