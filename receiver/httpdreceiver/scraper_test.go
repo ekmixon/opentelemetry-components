@@ -38,7 +38,7 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 	}))
 	sc := newHttpdScraper(zap.NewNop(), &Config{
 		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: httpdMock.URL + "/server-status?auto",
+			Endpoint: httpdMock.URL,
 		},
 	})
 

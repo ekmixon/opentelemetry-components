@@ -3,6 +3,7 @@ package httpdreceiver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -137,7 +138,8 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 
 // GetStats collects metric stats by making a get request at an endpoint.
 func (r *httpdScraper) GetStats() (string, error) {
-	resp, err := r.httpClient.Get(r.cfg.HTTPClientSettings.Endpoint)
+	url := fmt.Sprintf("%s%s", r.cfg.Endpoint, "/server-status?auto")
+	resp, err := r.httpClient.Get(url)
 	if err != nil {
 		return "", err
 	}

@@ -33,7 +33,7 @@ func TestHttpdIntegration(t *testing.T) {
 
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = fmt.Sprintf("http://%s/server-status?auto", net.JoinHostPort(hostname, "8080"))
+	cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "8080"))
 
 	consumer := new(consumertest.MetricsSink)
 	settings := componenttest.NewNopReceiverCreateSettings()
