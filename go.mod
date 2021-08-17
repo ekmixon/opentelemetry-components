@@ -3,6 +3,7 @@ module github.com/observiq/opentelemetry-components
 go 1.16
 
 require (
+	github.com/couchbase/gocb/v2 v2.3.0 // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
