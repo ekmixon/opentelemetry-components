@@ -3,10 +3,10 @@ package elasticsearchreceiver
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.uber.org/multierr"
 )
 
 type Config struct {
@@ -17,17 +17,57 @@ type Config struct {
 	Username string `mapstructure:"username"`
 }
 
+var (
+	DefaultProtocol = "http://"
+	DefaultHost     = "localhost"
+	DefaultPort     = "9200"
+	DefaultEndpoint = "http://localhost:9200"
+)
+
 func (cfg *Config) Validate() error {
-	var errs []error
-	if cfg.Username == "" && cfg.Password != "" {
-		errs = append(errs, fmt.Errorf("'password' specified but not 'username'"))
-	} else if cfg.Password == "" && cfg.Username != "" {
-		errs = append(errs, fmt.Errorf("'username' specified but not 'password'"))
+	if err := invalidCredentials(cfg.Username, cfg.Password); err != nil {
+		return err
 	}
+
 	if cfg.Endpoint == "" {
-		errs = append(errs, fmt.Errorf("missing required field 'endpoint'"))
-	} else if _, err := url.Parse(cfg.Endpoint); err != nil {
-		errs = append(errs, fmt.Errorf("invalid url specified in field 'endpoint'"))
+		cfg.Endpoint = DefaultEndpoint
+		return nil
 	}
-	return multierr.Combine(errs...)
+
+	if missingProtocol(cfg.Endpoint) {
+		cfg.Endpoint = fmt.Sprintf("%s%s", DefaultProtocol, cfg.Endpoint)
+	}
+
+	u, err := url.Parse(cfg.Endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint '%s'", cfg.Endpoint)
+	}
+
+	if u.Hostname() == "" {
+		u.Host = fmt.Sprintf("%s:%s", DefaultHost, DefaultPort)
+	}
+
+	if u.Port() == "" {
+		u.Host = fmt.Sprintf("%s:%s", u.Host, DefaultPort)
+	}
+
+	cfg.Endpoint = u.String()
+	return nil
+}
+
+// missingProtocol returns true if any http protocol is found, case sensitive.
+func missingProtocol(rawUrl string) bool {
+	return !strings.HasPrefix(strings.ToLower(rawUrl), "http")
+}
+
+// invalidCredentials returns true if only one username or password is not empty.
+func invalidCredentials(username, password string) error {
+	if username == "" && password != "" {
+		return fmt.Errorf("'password' specified but not 'username'")
+	}
+
+	if password == "" && username != "" {
+		return fmt.Errorf("'username' specified but not 'password'")
+	}
+	return nil
 }
