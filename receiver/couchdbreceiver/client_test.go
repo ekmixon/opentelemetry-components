@@ -1,6 +1,7 @@
 package couchdbreceiver
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -111,9 +112,7 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("no error", func(t *testing.T) {
 		couchdbClient, err := newCouchDBClient(componenttest.NewNopHost(), &Config{
-			HTTPClientSettings: confighttp.HTTPClientSettings{
-				Endpoint: couchdbMock.URL + "/_node/_local/_stats/couchdb",
-			},
+			Endpoint: couchdbMock.URL + "/_node/_local/_stats/couchdb",
 		}, zap.NewNop())
 		require.Nil(t, err)
 		require.NotNil(t, couchdbClient)
@@ -122,4 +121,13 @@ func TestGet(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, result)
 	})
+}
+
+func TestBasicAuth(t *testing.T) {
+	username := "otelu"
+	password := "otelp"
+	encoded := basicAuth(username, password)
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	require.Nil(t, err)
+	require.Equal(t, "otelu:otelp", string(decoded))
 }
