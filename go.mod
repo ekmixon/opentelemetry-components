@@ -6,7 +6,6 @@ require (
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/lib/pq v1.9.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.30.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.30.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.30.0
