@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/observiq/opentelemetry-components/receiver/elasticsearchreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -115,7 +116,93 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 }
 
 func validateResult(t *testing.T, metrics pdata.MetricSlice) {
-	require.Equal(t, 17, metrics.Len())
+	require.Equal(t, len(metadata.M.Names()), metrics.Len())
+	exists := make(map[string]bool)
 
-	// TODO thorough validation
+	unenumLabelSet := []string{
+		metadata.L.ServerName,
+	}
+
+	enumLabelSet := []string{
+		metadata.L.CacheName,
+		metadata.L.GcType,
+		metadata.L.Direction,
+		metadata.L.DocumentType,
+		metadata.L.ShardType,
+		metadata.L.MemoryType,
+		metadata.L.Operation,
+	}
+
+	for i := 0; i < metrics.Len(); i++ {
+		m := metrics.At(i)
+		require.Contains(t, metadata.M.Names(), m.Name())
+
+		metricIntr := metadata.M.ByName(m.Name())
+		require.Equal(t, metricIntr.New().DataType(), m.DataType())
+		var dps pdata.NumberDataPointSlice
+		switch m.DataType() {
+		case pdata.MetricDataTypeGauge:
+			dps = m.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			dps = m.Sum().DataPoints()
+		}
+
+		for j := 0; j < dps.Len(); j++ {
+			key := m.Name()
+			dp := dps.At(j)
+
+			for _, label := range unenumLabelSet {
+				_, ok := dp.LabelsMap().Get(label)
+				if ok {
+					key = key + " " + label
+				}
+			}
+
+			for _, label := range enumLabelSet {
+				label, ok := dp.LabelsMap().Get(label)
+				if ok {
+					key += " " + label
+				}
+			}
+			exists[key] = true
+		}
+	}
+	require.Equal(t, map[string]bool{
+		"elasticsearch.cache_memory_usage server_name field":   true,
+		"elasticsearch.cache_memory_usage server_name query":   true,
+		"elasticsearch.cache_memory_usage server_name request": true,
+		"elasticsearch.evictions server_name field":            true,
+		"elasticsearch.evictions server_name query":            true,
+		"elasticsearch.evictions server_name request":          true,
+		"elasticsearch.gc_collection server_name young":        true,
+		"elasticsearch.gc_collection server_name old":          true,
+		"elasticsearch.memory_usage server_name heap":          true,
+		"elasticsearch.memory_usage server_name non-heap":      true,
+		"elasticsearch.network server_name transmit":           true,
+		"elasticsearch.network server_name receive":            true,
+		"elasticsearch.current_documents server_name live":     true,
+		"elasticsearch.current_documents server_name deleted":  true,
+		"elasticsearch.http_connections server_name":           true,
+		"elasticsearch.open_files server_name":                 true,
+		"elasticsearch.server_connections server_name":         true,
+		"elasticsearch.operations server_name get":             true,
+		"elasticsearch.operations server_name delete":          true,
+		"elasticsearch.operations server_name index":           true,
+		"elasticsearch.operations server_name query":           true,
+		"elasticsearch.operations server_name fetch":           true,
+		"elasticsearch.operation_time server_name get":         true,
+		"elasticsearch.operation_time server_name delete":      true,
+		"elasticsearch.operation_time server_name index":       true,
+		"elasticsearch.operation_time server_name query":       true,
+		"elasticsearch.operation_time server_name fetch":       true,
+		"elasticsearch.peak_threads server_name":               true,
+		"elasticsearch.storage_size server_name":               true,
+		"elasticsearch.threads server_name":                    true,
+		"elasticsearch.data_nodes":                             true,
+		"elasticsearch.nodes":                                  true,
+		"elasticsearch.shards unassigned":                      true,
+		"elasticsearch.shards active":                          true,
+		"elasticsearch.shards relocating":                      true,
+		"elasticsearch.shards initializing":                    true,
+	}, exists)
 }
