@@ -10,8 +10,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 
 	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver/internal/metadata"
@@ -20,6 +20,7 @@ import (
 type mongodbScraper struct {
 	logger *zap.Logger
 	config *Config
+	client client
 }
 
 type numberType int
@@ -36,69 +37,69 @@ type mongoMetric struct {
 	dataPointType numberType
 }
 
-var dbStatsMetrics []mongoMetric = []mongoMetric{
-	mongoMetric{
+var dbStatsMetrics = []mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbCollections,
 		path:          []string{"collections"},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbDataSize,
 		path:          []string{"dataSize"},
 		dataPointType: double,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbExtents,
 		path:          []string{"numExtents"},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbIndexSize,
 		path:          []string{"indexSize"},
 		dataPointType: double,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbIndexes,
 		path:          []string{"indexes"},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbObjects,
 		path:          []string{"objects"},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbStorageSize,
 		path:          []string{"storageSize"},
 		dataPointType: double,
 	},
 }
 
-var serverStatusMetrics []mongoMetric = []mongoMetric{
-	mongoMetric{
+var serverStatusMetrics = []mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbConnections,
 		path:          []string{"connections", "current"},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbMemoryUsage,
 		path:          []string{"mem", "resident"},
 		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbMemoryUsage,
 		path:          []string{"mem", "virtual"},
 		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbMemoryUsage,
 		path:          []string{"mem", "mapped"},
 		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped},
 		dataPointType: integer,
 	},
-	mongoMetric{
+	{
 		metricDef:     metadata.M.MongodbMemoryUsage,
 		path:          []string{"mem", "mappedWithJournal"},
 		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal},
@@ -109,25 +110,35 @@ var serverStatusMetrics []mongoMetric = []mongoMetric{
 func newMongodbScraper(
 	logger *zap.Logger,
 	config *Config,
-) scraperhelper.Scraper {
+) *mongodbScraper {
 	ms := &mongodbScraper{
 		logger: logger,
 		config: config,
 	}
-	return scraperhelper.NewResourceMetricsScraper(config.ID(), ms.scrape)
+
+	return ms
+}
+
+func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
+	client, err := r.initClient(r.config.Timeout)
+	if err != nil {
+		r.logger.Error("Failed to connect to mongodb", zap.Error(err))
+		return err
+	}
+	r.client = client
+	return nil
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
 	// Init client in scrape method in case there are transient errors in the
 	// constructor.
-	client, err := r.initClient(ctx, r.logger, r.config.Timeout)
-	if err != nil {
-		r.logger.Error("Failed to connect to mongodb", zap.Error(err))
-		return pdata.ResourceMetricsSlice{}, err
+	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
+	defer cancel()
+	if err := r.client.Connect(timeoutCtx); err != nil {
+		r.logger.Error("Failed to disconnect from client", zap.Error(err))
 	}
-
 	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
+		if err := r.client.Disconnect(ctx); err != nil {
 			r.logger.Error("Failed to disconnect from client", zap.Error(err))
 		}
 	}()
@@ -137,15 +148,15 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
 	mm := newMetricManager(r.logger, ilm)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
+	timeoutCtx, cancel = context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
-	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
+	dbNames, err := r.client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
 		r.logger.Error("fetch database names", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
+	serverStatus, err := r.client.query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
 		r.logger.Error("query serverStatus in admin", zap.Error(err))
 	} else {
@@ -153,14 +164,14 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	}
 
 	for _, dbName := range dbNames {
-		dbStats, err := client.query(ctx, dbName, bson.M{"dbStats": 1})
+		dbStats, err := r.client.query(ctx, dbName, bson.M{"dbStats": 1})
 		if err != nil {
 			r.logger.Error("collect dbStats metric", zap.Error(err), zap.String("database", dbName))
 		} else {
 			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
 		}
 
-		serverStatus, err := client.query(ctx, dbName, bson.M{"serverStatus": 1})
+		serverStatus, err := r.client.query(ctx, dbName, bson.M{"serverStatus": 1})
 		if err != nil {
 			r.logger.Error("collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
 		} else {

@@ -2,62 +2,26 @@ package mongodbreceiver
 
 import (
 	"context"
+	"fmt"
 	"net"
-	"path"
 	"testing"
-	"time"
 
+	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.uber.org/zap"
 )
 
-func mongodbContainer(t *testing.T) testcontainers.Container {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
-		FromDockerfile: testcontainers.FromDockerfile{
-			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.mongodb",
-		},
-		ExposedPorts: []string{"37017:27017"},
-		WaitingFor: wait.ForListeningPort("27017").
-			WithStartupTimeout(2 * time.Minute),
-	}
-
-	require.NoError(t, req.Validate())
-
-	mongodb, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-	return mongodb
-}
-
 func TestScraper(t *testing.T) {
-	container := mongodbContainer(t)
-	defer func() {
-		err := container.Terminate(context.Background())
-		require.NoError(t, err)
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
-
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
+	cfg.Endpoint = net.JoinHostPort("localhost", "37017")
 	cfg.Username = "otel"
 	cfg.Password = "otel"
 
 	sc := newMongodbScraper(zap.NewNop(), cfg)
-
-	err = sc.Start(context.Background(), componenttest.NewNopHost())
-	require.NoError(t, err)
-	metrics, err := sc.Scrape(context.Background(), cfg.ID())
+	sc.client = &fakeClient{}
+	rms, err := sc.scrape(context.Background())
 	require.Nil(t, err)
-	rms := metrics.ResourceMetrics()
 	require.Equal(t, 1, rms.Len())
 	rm := rms.At(0)
 
@@ -73,31 +37,133 @@ func TestScraper(t *testing.T) {
 		m := ms.At(i)
 		switch m.Name() {
 		case "mongodb.collections":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.data_size":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, float64(3141), m.Gauge().DataPoints().At(0).DoubleVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.extents":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, int64(0), m.Gauge().DataPoints().At(0).IntVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.index_size":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.indexes":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.objects":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, int64(2), m.Gauge().DataPoints().At(0).IntVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.storage_size":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.connections":
-			require.Equal(t, 3, m.Gauge().DataPoints().Len())
+			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			require.Equal(t, int64(3), m.Gauge().DataPoints().At(0).IntVal())
+			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			if !ok {
+				require.NoError(t, fmt.Errorf("database name label missing"))
+			}
+			require.Equal(t, "fakedatabase", dbName)
 		case "mongodb.memory_usage":
-			require.Equal(t, 12, m.Gauge().DataPoints().Len())
+			require.Equal(t, 4, m.Gauge().DataPoints().Len())
+			dps := m.Gauge().DataPoints()
+			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
+				dp := dps.At(dpIndex)
+
+				dbName, ok := dp.LabelsMap().Get(metadata.L.DatabaseName)
+				if !ok {
+					require.NoError(t, fmt.Errorf("database name label missing"))
+				}
+				require.Equal(t, "fakedatabase", dbName)
+
+				dpLabel, ok := dp.LabelsMap().Get(metadata.L.MemoryType)
+				if !ok {
+					require.NoError(t, fmt.Errorf("Memory type label doesn't exist where it should"))
+				}
+				switch dpLabel {
+				case "resident":
+					require.Equal(t, int64(79), dp.IntVal())
+				case "virtual":
+					require.Equal(t, int64(1089), dp.IntVal())
+				case "mapped":
+					require.Equal(t, int64(0), dp.IntVal())
+				case "mappedWithJournal":
+					require.Equal(t, int64(0), dp.IntVal())
+				default:
+					require.NoError(t, fmt.Errorf("Incorrect memory type"))
+				}
+			}
 		case "mongodb.global_lock_hold_time":
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.Equal(t, int64(58964000), m.Sum().DataPoints().At(0).IntVal())
 		case "mongodb.cache_misses":
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.Equal(t, int64(18), m.Sum().DataPoints().At(0).IntVal())
 		case "mongodb.cache_hits":
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.Equal(t, int64(197), m.Sum().DataPoints().At(0).IntVal())
 		case "mongodb.operation_count":
 			require.Equal(t, 6, m.Sum().DataPoints().Len())
+			dps := m.Sum().DataPoints()
+			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
+				dp := dps.At(dpIndex)
+				dpLabel, ok := dp.LabelsMap().Get(metadata.L.Operation)
+				if !ok {
+					require.NoError(t, fmt.Errorf("Operation label doesn't exist where it should"))
+				}
+				switch dpLabel {
+				case "insert":
+					require.Equal(t, int64(0), dp.IntVal())
+				case "query":
+					require.Equal(t, int64(2), dp.IntVal())
+				case "update":
+					require.Equal(t, int64(0), dp.IntVal())
+				case "delete":
+					require.Equal(t, int64(0), dp.IntVal())
+				case "getmore":
+					require.Equal(t, int64(0), dp.IntVal())
+				case "command":
+					require.Equal(t, int64(20), dp.IntVal())
+				default:
+					require.NoError(t, fmt.Errorf("Incorrect operation"))
+				}
+			}
 		default:
 			t.Errorf("Incorrect name or untracked metric name %s", m.Name())
 		}

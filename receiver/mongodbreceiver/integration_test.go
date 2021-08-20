@@ -1,5 +1,3 @@
-// +build integration
-
 package mongodbreceiver
 
 import (
@@ -78,19 +76,74 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 }
 
 func validateResult(t *testing.T, metrics pdata.MetricSlice) {
-	names := metadata.Metrics.Names()
-	seen := make(map[string]bool, len(names))
-	for i := range names {
-		seen[names[i]] = false
+	require.Equal(t, len(metadata.M.Names()), metrics.Len())
+	exists := make(map[string]bool)
+
+	unenumLabelSet := []string{
+		metadata.L.DatabaseName,
+	}
+
+	enumLabelSet := []string{
+		metadata.L.MemoryType,
+		metadata.L.Operation,
 	}
 
 	for i := 0; i < metrics.Len(); i++ {
-		seen[metrics.At(i).Name()] = true
-	}
+		m := metrics.At(i)
+		require.Contains(t, metadata.M.Names(), m.Name())
 
-	for k, v := range seen {
-		if !v {
-			t.Fatalf("Did not find metric %q", k)
+		metricIntr := metadata.M.ByName(m.Name())
+		require.Equal(t, metricIntr.New().DataType(), m.DataType())
+		var dps pdata.NumberDataPointSlice
+		switch m.DataType() {
+		case pdata.MetricDataTypeGauge:
+			dps = m.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			dps = m.Sum().DataPoints()
+		}
+
+		for j := 0; j < dps.Len(); j++ {
+			key := m.Name()
+			dp := dps.At(j)
+
+			for _, label := range unenumLabelSet {
+				_, ok := dp.LabelsMap().Get(label)
+				if ok {
+					key = key + " " + label
+				}
+			}
+
+			for _, label := range enumLabelSet {
+				label, ok := dp.LabelsMap().Get(label)
+				if ok {
+					key += " " + label
+				}
+			}
+			exists[key] = true
 		}
 	}
+
+	require.Equal(t, map[string]bool{
+		"mongodb.cache_hits":                                   true,
+		"mongodb.cache_misses":                                 true,
+		"mongodb.collections database_name":                    true,
+		"mongodb.connections database_name":                    true,
+		"mongodb.data_size database_name":                      true,
+		"mongodb.extents database_name":                        true,
+		"mongodb.global_lock_hold_time":                        true,
+		"mongodb.index_size database_name":                     true,
+		"mongodb.indexes database_name":                        true,
+		"mongodb.memory_usage database_name mapped":            true,
+		"mongodb.memory_usage database_name mappedWithJournal": true,
+		"mongodb.memory_usage database_name resident":          true,
+		"mongodb.memory_usage database_name virtual":           true,
+		"mongodb.objects database_name":                        true,
+		"mongodb.operation_count command":                      true,
+		"mongodb.operation_count delete":                       true,
+		"mongodb.operation_count getmore":                      true,
+		"mongodb.operation_count insert":                       true,
+		"mongodb.operation_count query":                        true,
+		"mongodb.operation_count update":                       true,
+		"mongodb.storage_size database_name":                   true,
+	}, exists)
 }

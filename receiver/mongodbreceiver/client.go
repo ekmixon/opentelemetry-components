@@ -12,13 +12,22 @@ import (
 	"go.uber.org/zap"
 )
 
+type client interface {
+	query(context.Context, string, bson.M) (bson.M, error)
+	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
+	Disconnect(context.Context) error
+	Connect(context.Context) error
+}
+
+var _ client = (*mongodbClient)(nil)
+
 type mongodbClient struct {
 	*mongo.Client
 	logger  *zap.Logger
 	timeout time.Duration
 }
 
-func (r *mongodbScraper) initClient(ctx context.Context, logger *zap.Logger, timeout time.Duration) (*mongodbClient, error) {
+func (r *mongodbScraper) initClient(timeout time.Duration) (*mongodbClient, error) {
 	authentication := ""
 	if r.config.Username != "" && r.config.Password != "" {
 		authentication = fmt.Sprintf("%s:%s@", r.config.Username, r.config.Password)
@@ -26,13 +35,10 @@ func (r *mongodbScraper) initClient(ctx context.Context, logger *zap.Logger, tim
 
 	uri := fmt.Sprintf("mongodb://%s%s", authentication, r.config.Endpoint)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
-	defer cancel()
-
-	client, err := mongo.Connect(timeoutCtx, options.Client().ApplyURI(uri))
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	return &mongodbClient{
 		Client:  client,
-		logger:  logger,
+		logger:  r.logger,
 		timeout: timeout,
 	}, err
 }
