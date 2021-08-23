@@ -45,11 +45,6 @@ func createMetricsReceiver(
 	consumer consumer.Metrics,
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
-	err := cfg.Validate()
-	if err != nil {
-		return nil, err
-	}
-	cfg.Endpoint = cfg.MakeClientEndpoint()
 
 	ns := newCouchdbScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start))

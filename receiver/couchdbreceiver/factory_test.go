@@ -2,7 +2,6 @@ package couchdbreceiver
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"go.opentelemetry.io/collector/config/configcheck"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.opentelemetry.io/collector/testbed/testbed"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -29,46 +27,21 @@ func TestValidConfig(t *testing.T) {
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
-	t.Run("validation error, missing config fields", func(t *testing.T) {
-		factory := NewFactory()
-		metricsReceiver, err := factory.CreateMetricsReceiver(
-			context.Background(),
-			component.ReceiverCreateSettings{Logger: zap.NewNop()},
-			&Config{
-				ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-					ReceiverSettings:   config.NewReceiverSettings(config.NewID("couchdb")),
-					CollectionInterval: 10 * time.Second,
-				},
+	factory := NewFactory()
+	metricsReceiver, err := factory.CreateMetricsReceiver(
+		context.Background(),
+		component.ReceiverCreateSettings{Logger: zap.NewNop()},
+		&Config{
+			ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
+				ReceiverSettings:   config.NewReceiverSettings(config.NewID("couchdb")),
+				CollectionInterval: 10 * time.Second,
 			},
-			&testbed.MockMetricConsumer{},
-		)
-		require.Error(t, err)
-		expectedErr := multierr.Combine(
-			errors.New(ErrNoUsername),
-			errors.New(ErrNoPassword),
-			errors.New(ErrNoEndpoint),
-		)
-		require.Equal(t, expectedErr, err)
-		require.Nil(t, metricsReceiver)
-	})
-
-	t.Run("no error", func(t *testing.T) {
-		factory := NewFactory()
-		metricsReceiver, err := factory.CreateMetricsReceiver(
-			context.Background(),
-			component.ReceiverCreateSettings{Logger: zap.NewNop()},
-			&Config{
-				ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
-					ReceiverSettings:   config.NewReceiverSettings(config.NewID("couchdb")),
-					CollectionInterval: 10 * time.Second,
-				},
-				Username: "otelu",
-				Password: "otelp",
-				Endpoint: "localhost:5984",
-			},
-			&testbed.MockMetricConsumer{},
-		)
-		require.NoError(t, err)
-		require.NotNil(t, metricsReceiver)
-	})
+			Username: "otelu",
+			Password: "otelp",
+			Endpoint: "localhost:5984",
+		},
+		&testbed.MockMetricConsumer{},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, metricsReceiver)
 }
