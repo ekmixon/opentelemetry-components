@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/config/configcheck"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.opentelemetry.io/collector/testbed/testbed"
 	"go.uber.org/zap"
@@ -36,9 +37,11 @@ func TestCreateMetricsReceiver(t *testing.T) {
 				ReceiverSettings:   config.NewReceiverSettings(config.NewID("couchdb")),
 				CollectionInterval: 10 * time.Second,
 			},
+			HTTPClientSettings: confighttp.HTTPClientSettings{
+				Endpoint: "localhost:5984",
+			},
 			Username: "otelu",
 			Password: "otelp",
-			Endpoint: "localhost:5984",
 		},
 		&testbed.MockMetricConsumer{},
 	)

@@ -31,11 +31,10 @@ func TestCouchdbIntegration(t *testing.T) {
 
 		f := NewFactory()
 		cfg := f.CreateDefaultConfig().(*Config)
-		cfg.Endpoint = net.JoinHostPort(hostname, "5984")
+		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "5985"))
 		cfg.Username = "otel"
 		cfg.Password = "otel"
 		cfg.Nodename = "_local"
-
 		consumer := new(consumertest.MetricsSink)
 		settings := componenttest.NewNopReceiverCreateSettings()
 		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
@@ -65,7 +64,7 @@ func TestCouchdbIntegration(t *testing.T) {
 
 		f := NewFactory()
 		cfg := f.CreateDefaultConfig().(*Config)
-		cfg.Endpoint = net.JoinHostPort(hostname, "5984")
+		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "5984"))
 		cfg.Username = "otel"
 		cfg.Password = "otel"
 		cfg.Nodename = "_local"
@@ -96,7 +95,7 @@ var (
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.couchdb.300",
 		},
-		ExposedPorts: []string{"5984:5984"}, // TODO: standardize how to do ports between local-targets
+		ExposedPorts: []string{"5985:5984"},
 		WaitingFor: wait.ForListeningPort("5984").
 			WithStartupTimeout(2 * time.Minute),
 	}

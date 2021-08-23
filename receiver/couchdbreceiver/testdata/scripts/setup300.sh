@@ -2,7 +2,7 @@
 
 set -e
 
-export COUCHDB_LISTEN_ADDR="localhost:5984"
+export COUCHDB_LISTEN_ADDR="localhost:5985"
 export COUCHDB_USER=otel
 export COUCHDB_PASSWORD=otel
 export COUCHDB_DATABASE=otel

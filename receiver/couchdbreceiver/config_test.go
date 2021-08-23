@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.uber.org/multierr"
 )
 
@@ -14,7 +15,9 @@ func TestValidate(t *testing.T) {
 		cfg := &Config{
 			Username: "otelu",
 			Password: "otelp",
-			Endpoint: "http://endpoint with space",
+			HTTPClientSettings: confighttp.HTTPClientSettings{
+				Endpoint: "http://endpoint with space",
+			},
 		}
 		require.Equal(t, errors.New("invalid endpoint 'http://endpoint with space'"), cfg.Validate())
 	})
@@ -96,7 +99,9 @@ func TestValidate(t *testing.T) {
 				cfg := &Config{
 					Username: "otelu",
 					Password: "otelp",
-					Endpoint: tC.rawUrl,
+					HTTPClientSettings: confighttp.HTTPClientSettings{
+						Endpoint: tC.rawUrl,
+					},
 				}
 				require.NoError(t, cfg.Validate())
 				require.Equal(t, tC.expected, cfg.Endpoint)
@@ -225,7 +230,9 @@ func TestValidateEndpointFormat(t *testing.T) {
 			cfg := &Config{
 				Username: "otelu",
 				Password: "otelp",
-				Endpoint: endpoint,
+				HTTPClientSettings: confighttp.HTTPClientSettings{
+					Endpoint: endpoint,
+				},
 			}
 			err := cfg.Validate()
 			require.NoError(t, err)

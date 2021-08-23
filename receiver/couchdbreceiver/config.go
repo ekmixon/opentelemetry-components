@@ -17,7 +17,6 @@ type Config struct {
 	Username                                string `mapstructure:"username"`
 	Password                                string `mapstructure:"password"`
 	Nodename                                string `mapstructure:"nodename"`
-	Endpoint                                string `mapstructure:"endpoint"`
 }
 
 var (
