@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"go.opentelemetry.io/collector/config/confighttp"
@@ -21,18 +20,16 @@ type Config struct {
 	Endpoint                                string `mapstructure:"endpoint"`
 }
 
-const (
+var (
+	// Defaults for missing parameters
+	DefaultProtocol = "http://"
+	DefaultHost     = "localhost"
+	DefaultPort     = "5984"
+	DefaultEndpoint = fmt.Sprintf("%s%s:%s", DefaultProtocol, DefaultHost, DefaultPort)
+
 	// Errors for missing required config parameters.
 	ErrNoUsername = "missing required field 'username'"
 	ErrNoPassword = "missing required field 'password'"
-	ErrNoEndpoint = "missing required field 'endpoint'"
-	ErrNoHost     = "missing host in 'host:port' in required field 'endpoint'"
-	ErrNoPort     = "missing port in 'host:port' in required field 'endpoint'"
-
-	// Errors for invalid required config parameters.
-	ErrInvalidEndpoint = "invalid 'host':'port' in required field 'endpoint'"
-	ErrInvalidHost     = "invalid host in required field 'endpoint'"
-	ErrInvalidPort     = "invalid port in required field 'endpoint'"
 )
 
 // Validate validates missing and invalid configuration fields.
@@ -40,7 +37,7 @@ func (cfg *Config) Validate() error {
 	if missingFields := ValidateMissingFields(cfg); missingFields != nil {
 		return missingFields
 	}
-	return ValidateEndpoint(cfg.Endpoint)
+	return cfg.ValidateEndpoint()
 }
 
 // ValidateMissingFields validates config values for missing fields.
@@ -53,37 +50,42 @@ func ValidateMissingFields(cfg *Config) error {
 	if cfg.Password == "" {
 		errs = append(errs, errors.New(ErrNoPassword))
 	}
-	if cfg.Endpoint == "" {
-		errs = append(errs, errors.New(ErrNoEndpoint))
-	}
 	return multierr.Combine(errs...)
 }
 
-// ValidateEndpoint validates endpoint fields.
-func ValidateEndpoint(endpoint string) error {
-	hostPort := strings.Split(endpoint, ":")
-	if len(hostPort) != 2 {
-		return errors.New(ErrInvalidEndpoint)
-	}
-	if len(hostPort[0]) == 0 {
-		return errors.New(ErrNoHost)
-	}
-	if len(hostPort[1]) == 0 {
-		return errors.New(ErrNoPort)
+// ValidateEndpoint validates the endpoint by adding sensible default fields.
+func (cfg *Config) ValidateEndpoint() error {
+	if cfg.Endpoint == "" {
+		cfg.Endpoint = DefaultEndpoint
+		return nil
 	}
 
-	if _, err := url.Parse(hostPort[0]); err != nil {
-		return errors.New(ErrInvalidHost)
+	if missingProtocol(cfg.Endpoint) {
+		cfg.Endpoint = fmt.Sprintf("%s%s", DefaultProtocol, cfg.Endpoint)
 	}
 
-	if _, err := strconv.Atoi(hostPort[1]); err != nil {
-		return errors.New(ErrInvalidPort)
+	u, err := url.Parse(cfg.Endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint '%s'", cfg.Endpoint)
 	}
+
+	if u.Hostname() == "" {
+		u.Host = fmt.Sprintf("%s:%s", DefaultHost, DefaultPort)
+	}
+
+	if u.Port() == "" {
+		u.Host = fmt.Sprintf("%s:%s", u.Host, DefaultPort)
+	}
+
+	// the url path/query to scrape metrics gets called in the scraper.
+	u.Path = ""
+	u.RawQuery = ""
+
+	cfg.Endpoint = u.String()
 	return nil
 }
 
-// MakeClientEndpoint makes the client endpoint using config parameters.
-func (cfg *Config) MakeClientEndpoint() string {
-	endpoint := strings.Split(cfg.Endpoint, ":")
-	return fmt.Sprintf("http://%s:%s/_node/%s/_stats/couchdb", endpoint[0], endpoint[1], cfg.Nodename)
+// missingProtocol returns true if any http protocol is found, case sensitive.
+func missingProtocol(rawUrl string) bool {
+	return !strings.HasPrefix(strings.ToLower(rawUrl), "http")
 }

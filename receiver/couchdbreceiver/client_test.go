@@ -112,7 +112,8 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("no error", func(t *testing.T) {
 		couchdbClient, err := newCouchDBClient(componenttest.NewNopHost(), &Config{
-			Endpoint: couchdbMock.URL + "/_node/_local/_stats/couchdb",
+			Endpoint: couchdbMock.URL,
+			Nodename: "_local",
 		}, zap.NewNop())
 		require.Nil(t, err)
 		require.NotNil(t, couchdbClient)

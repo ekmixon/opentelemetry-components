@@ -35,6 +35,7 @@ func createDefaultConfig() config.Receiver {
 			Timeout: 10 * time.Second,
 		},
 		Nodename: "_local",
+		Endpoint: "http://localhost:5984",
 	}
 }
 

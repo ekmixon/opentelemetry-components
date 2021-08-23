@@ -3,6 +3,7 @@ package couchdbreceiver
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -41,7 +42,8 @@ func basicAuth(username, password string) string {
 }
 
 func (c *couchdbClient) Get() (map[string]interface{}, error) {
-	req, err := http.NewRequest("GET", c.cfg.Endpoint, nil)
+	url := fmt.Sprintf("%s/_node/%s/_stats/couchdb", c.cfg.Endpoint, c.cfg.Nodename)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
