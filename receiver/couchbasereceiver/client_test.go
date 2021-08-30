@@ -1,16 +1,24 @@
 package couchbasereceiver
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/confighttp"
+	"go.uber.org/zap"
 )
 
-func TestNewCouchbaseClient(t *testing.T) {
-	cfg := couchbaseConfig{}
-	client, err := newCouchbaseClient(cfg)
+func TestGetMetrics(t *testing.T) {
+	client, err := newCouchbaseClient(componenttest.NewNopHost(), &Config{
+		HTTPClientSettings: confighttp.HTTPClientSettings{
+			Endpoint: "http://127.0.0.1:8091/pools/default/stats/range",
+		},
+		Username: "Administrator",
+		Password: "password",
+	}, zap.NewNop())
 	assert.Nil(t, err)
-	fmt.Printf("%#v\n", client)
-
+	m := Metrics
+	newMetrics := client.Post(m)
+	assert.Nil(t, newMetrics)
 }
