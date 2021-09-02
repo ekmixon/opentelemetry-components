@@ -131,12 +131,12 @@ func (c *couchbaseClient) Post(metrics []Metric) error {
 	}
 
 	PopulateMetrics(responseBody, Metrics)
-	// fmt.Printf("\n\nMetrics!: %#v\n", Metrics)
+	fmt.Printf("\n\nMetrics!: %#v\n", Metrics)
 
 	return nil
 }
 
-func cleanBrackets(rawString string) string {
+func removeBrackets(rawString string) string {
 	removedLeftBrackets := strings.ReplaceAll(rawString, "[", "")
 	return strings.ReplaceAll(removedLeftBrackets, "]", "")
 }
@@ -150,12 +150,12 @@ func PopulateMetrics(responseBody ResponseBody, metrics []Metric) {
 	for i := 0; i < len(metrics); i++ {
 		if len(responseBody[i].Errors) > 0 {
 			errors := strings.Split(fmt.Sprintf("%v", responseBody[i].Errors), " ")
-			metrics[i].ErrMessage = cleanBrackets(errors[len(errors)-1]) // gets the last timestamp value
+			metrics[i].ErrMessage = removeBrackets(errors[len(errors)-1]) // gets the last timestamp value
 		}
 
 		if len(responseBody[i].Data[0].Values) > 0 {
 			values := strings.Split(fmt.Sprintf("%v", responseBody[i].Data[0].Values), " ")
-			metrics[i].Value = cleanBrackets(values[len(values)-1])
+			metrics[i].Value = removeBrackets(values[len(values)-1])
 		}
 
 		metrics[i].Timestamp = responseBody[i].EndTimestamp
