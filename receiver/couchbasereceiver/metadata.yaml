@@ -1,109 +1,135 @@
 name: couchbasereceiver
 
+labels:
+  buckets:
+    description: The name of the bucket.
+
 metrics:
-  couchbase.kv_collection_data_size_bytes:
-    description: The kv_collection_data_size_bytes
+  couchbase.b_data_used:
+    description: Bytes in memory used by Index in this buckets.
+    unit: by
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_disk_fetches:
+    description: Number of reads per second from disk for this bucket.
+    unit: number/sec
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_disk_used:
+    description: Bytes on disk used by Index in this buckets.
+    unit: by
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_item_count:
+    description: Number of items in this bucket.
+    unit: number/sec
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_mem_used:
+    description: Total memory used in bytes for this buckets.
+    unit: by
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_ops:
+    description: Number of operations from per second for this buckets.
+    unit: by
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.b_quota_used:
+    description: Percentage of index RAM quota in use for this buckets.
+    unit: by
+    data:
+      type: gauge
+    labels: [ buckets ]
+  couchbase.cmd_get:
+    description: Number of reads(get operations) per second.
+    unit: number/sec
+    data:
+      type: gauge
+    labels: []
+  couchbase.cpu_utilization_rate:
+    description: Percentage of CPU in use across all available cores on this server.
     unit: 1
     data:
       type: gauge
-      labels: []
-  couchbase.kv_collection_item_count:
-    description: The kv_collection_item_count
+    labels: []
+  couchbase.curr_items:
+    description: Number of active items in all buckets.
     unit: 1
     data:
       type: gauge
-      labels: []
-  couchbase.kv_collection_mem_used_bytes:
-    description: The kv_collection_mem_used_bytes
+    labels: []
+  couchbase.curr_items_tot:
+    description: Total number of items in all buckets.
     unit: 1
     data:
       type: gauge
-      labels: []
-  couchbase.kv_collection_ops:
-    description: The kv_collection_ops
-    unit: 1
+    labels: []
+  couchbase.get_hits:
+    description: Number of reads(get operations) from RAM per second.
+    unit: number/sec
     data:
       type: gauge
-      labels: []
-  couchbase.kv_curr_connections:
-    description: The kv_curr_connections
-    unit: 1
+    labels: []
+  couchbase.index_data_size:
+    description: Bytes in memory used by Index across all indexes and buckets.
+    unit: by
     data:
       type: gauge
-      labels: []
-  couchbase.kv_curr_items:
-    description: The kv_curr_items
-    unit: 1
+    labels: []
+  couchbase.index_disk_size:
+    description: Bytes on disk used by Index across all indexes and buckets.
+    unit: by
     data:
       type: gauge
-      labels: []
-  couchbase.kv_curr_items_tot:
-    description: The kv_curr_items_tot
-    unit: 1
+    labels: []
+  couchbase.mem_total:
+    description: Total bytes capacity of RAM on this server.
+    unit: by
+    data:
+      type: gauge
+    labels: []
+  couchbase.mem_used:
+    description: Total memory used in bytes.
+    unit: by
+    data:
+      type: gauge
+    labels: []
+  couchbase.ops:
+    description: Number of operations from per second.
+    unit: number/sec
+    data:
+      type: gauge
+    labels: []
+  couchbase.swap_total:
+    description: Total bytes capacity on this server.
+    unit: by
+    data:
+      type: gauge
+    labels: []
+  couchbase.swap_used:
+    description: Bytes of swap space in use on this server.
+    unit: by
+    data:
+      type: gauge
+    labels: []
+  couchbase.uptime:
+    description: Total time the couchbase server has been running.
+    unit: s
     data:
       type: sum
       monotonic: true
       aggregation: cumulative
-      labels: []
-  couchbase.kv_ops:
-    description: The kv_ops
-    unit: 1
+    labels: []
+  couchbase.mem_free:
+    description: Bytes of RAM available to Couchbase on this server.
+    unit: by
     data:
       type: gauge
-      labels: []
-  couchbase.kv_ops_failed:
-    description: The kv_ops_failed
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_read_bytes:
-    description: The kv_read_bytes
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_system_connections:
-    description: The kv_system_connections
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_time_seconds:
-    description: The kv_time_seconds
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_total_connections:
-    description: The kv_total_connections
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_total_memory_used_bytes:
-    description: The kv_total_memory_used_bytes
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_total_resp_errors:
-    description: The kv_total_resp_errors
-    unit: 1
-    data:
-      type: gauge
-      labels: []
-  couchbase.kv_uptime_seconds:
-    description: The kv_uptime_seconds
-    unit: 1
-    data:
-      type: sum
-      monotonic: true
-      aggregation: cumulative
-      labels: []
-  couchbase.kv_written_bytes:
-    description: The kv_written_bytes
-    unit: 1
-    data:
-      type: gauge
-      labels: []
+    labels: []

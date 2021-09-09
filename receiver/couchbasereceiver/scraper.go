@@ -3,8 +3,7 @@ package couchbasereceiver
 import (
 	"context"
 	"errors"
-	"strconv"
-	"time"
+	"fmt"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -68,7 +67,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		return pdata.ResourceMetricsSlice{}, errors.New("failed to connect to couchbase client")
 	}
 
-	metricsResults, err := c.GetMetrics()
+	stats, err := c.GetStats()
 	if err != nil {
 		c.logger.Error("Failed to fetch couchbase metrics", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, errors.New("failed to fetch couchbase stats")
@@ -78,132 +77,19 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/couchbase")
-	now := pdata.TimestampFromTime(time.Now())
+	// now := pdata.TimestampFromTime(time.Now())
 
-	// c.logger.Info(fmt.Sprintf("METRICS GOT %v", metricsResults))
-	for i := 0; i < len(metricsResults); i++ {
-		metricResult := metricsResults[i]
-		// c.logger.Info(fmt.Sprintf("Processing Metric %v", metricResult))
-		if metricResult.Kind == "gauge" {
-			gaugeSlice := initMetric(ilm.Metrics(), metricResult.MetadataLabel).Gauge().DataPoints()
-			labels := pdata.NewStringMap()
-			for _, metricLabel := range metricResult.Labels {
-				labels.Insert(metricResult.MetadataLabel.Name(), metricLabel)
-			}
-			if metricResult.ValueType == "float" {
-				value, ok := parseFloat(metricResult.Value)
-				if !ok {
-					c.logger.Info(
-						err.Error(),
-						zap.String("metric", metricResult.Name),
-					)
-				} else {
-					addToDoubleMetric(gaugeSlice, labels, value, now)
-				}
-			} else if metricResult.ValueType == "int" {
-				value, ok := parseInt(metricResult.Value)
-				if !ok {
-					c.logger.Info(
-						err.Error(),
-						zap.String("metric", metricResult.Name),
-					)
-				} else {
-					addToIntMetric(gaugeSlice, labels, value, now)
-				}
-			} else {
-				c.logger.Info(
-					err.Error(),
-					zap.String("metric", metricResult.Name),
-				)
-			}
-
-		} else if metricResult.Kind == "sum" {
-			sumSlice := initMetric(ilm.Metrics(), metricResult.MetadataLabel).Sum().DataPoints()
-			labels := pdata.NewStringMap()
-			for _, metricLabel := range metricResult.Labels {
-				labels.Insert(metricResult.MetadataLabel.Name(), metricLabel)
-			}
-			if metricResult.ValueType == "float" {
-				value, ok := parseFloat(metricResult.Value)
-				if !ok {
-					c.logger.Info(
-						err.Error(),
-						zap.String("metric", metricResult.Name),
-					)
-				} else {
-					addToDoubleMetric(sumSlice, labels, value, now)
-				}
-			} else if metricResult.ValueType == "int" {
-				value, ok := parseInt(metricResult.Value)
-				if !ok {
-					c.logger.Info(
-						err.Error(),
-						zap.String("metric", metricResult.Name),
-					)
-				} else {
-					addToIntMetric(sumSlice, labels, value, now)
-				}
-			} else {
-				c.logger.Info(
-					err.Error(),
-					zap.String("metric", metricResult.Name),
-				)
-			}
-		} else {
-			continue
-		}
+	for _, bucket := range stats.BucketsStats {
+		c.logger.Info(fmt.Sprintf("%s", bucket.Name))
 	}
 
 	return rms, nil
 }
 
-func (c *couchbaseScraper) GetMetrics() ([]Metric, error) {
-	metrics := Metrics
-
-	err := c.client.Post(metrics)
+func (c *couchbaseScraper) GetStats() (*Stats, error) {
+	stats, err := c.client.Get()
 	if err != nil {
 		return nil, err
 	}
-	return metrics, nil
-}
-
-// parseFloat converts string to float64.
-func parseFloat(value interface{}) (float64, bool) {
-	switch f := value.(type) {
-	case float64:
-		return f, true
-	case int64:
-		return float64(f), true
-	case float32:
-		return float64(f), true
-	case int32:
-		return float64(f), true
-	case string:
-		fConv, err := strconv.ParseFloat(f, 64)
-		if err != nil {
-			return 0, false
-		}
-		return fConv, true
-	}
-	return 0, false
-}
-
-func parseInt(value interface{}) (int64, bool) {
-	switch i := value.(type) {
-	case int64:
-		return i, true
-	case float64:
-		return int64(i), true
-	case float32:
-		return int64(i), true
-	case int32:
-		return int64(i), true
-	case string:
-		intConv, err := strconv.ParseInt(i, 10, 64)
-		if err != nil {
-			return 0, false
-		}
-		return intConv, true
-	}
-	return 0, false
+	return stats, nil
 }

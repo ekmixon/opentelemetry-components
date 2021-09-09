@@ -1,20 +1,18 @@
 package couchbasereceiver
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"strings"
 
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
 )
 
 type client interface {
-	Post([]Metric) error
+	Get() (*Stats, error)
 }
 
 type couchbaseClient struct {
@@ -43,75 +41,83 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-type MetricFields struct {
-	Label string `json:"label"`
-	Value string `json:"value"`
+// Stats is implemented to to group NodeStats and BucketsStats since BucketsStats depends upon NodeStats
+type Stats struct {
+	NodeStats
+	BucketsStats
 }
 
-type PostRequest struct {
-	Metric          []MetricFields `json:"metric"`
-	ApplyFunctions  []string       `json:"applyFunctions"`
-	AlignTimestamps bool           `json:"alignTimestamps"`
-	Step            int            `json:"step"`
-	Start           int            `json:"start"`
+// NodeStats contains node stats about about all the nodes, which related to all the buckets. The field URI in Buckets struck contains a uuid, which is needed to call the getbucketsStats.
+type NodeStats struct {
+	Nodes []struct {
+		SystemStats struct {
+			CPUUtilizationRate *float64 `json:"cpu_utilization_rate"`
+			SwapTotal          *float64 `json:"swap_total"`
+			SwapUsed           *float64 `json:"swap_used"`
+			MemTotal           *float64 `json:"mem_total"`
+			MemFree            *float64 `json:"mem_free"`
+		} `json:"systemStats"`
+		InterestingStats struct {
+			CurrItems     *float64 `json:"curr_items"`
+			CurrItemsTot  *float64 `json:"curr_items_tot"`
+			EpBgFetched   *float64 `json:"ep_bg_fetched"`
+			MemUsed       *float64 `json:"mem_used"`
+			CmdGet        *float64 `json:"cmd_get"`
+			GetHits       *float64 `json:"get_hits"`
+			Ops           *float64 `json:"ops"`
+			IndexDataSize *float64 `json:"index_data_size"`
+			IndexDiskSize *float64 `json:"index_disk_size"`
+		} `json:"interestingStats"`
+		Uptime string `json:"uptime"`
+	} `json:"nodes"`
+	Buckets struct {
+		URI string `json:"uri"`
+	} `json:"buckets"`
 }
 
-// NewPostRequest fills in metric names for the fields that are to be retrived via post request.
-func NewPostRequest(value string) PostRequest {
-	return PostRequest{
-		Metric: []MetricFields{
-			{
-				Label: "name",
-				Value: value,
-			},
-		},
-		ApplyFunctions: []string{"avg"},
-		Step:           60,
-		Start:          -60,
-	}
+// BucketsStats contains a stats for each bucket instance.
+type BucketsStats []struct {
+	Name       string `json:"name"`
+	BasicStats struct {
+		QuotaPercentUsed *float64 `json:"quotaPercentUsed"`
+		OpsPerSec        *float64 `json:"opsPerSec"`
+		DiskFetches      *float64 `json:"diskFetches"`
+		ItemCount        *float64 `json:"itemCount"`
+		DiskUsed         *float64 `json:"diskUsed"`
+		DataUsed         *float64 `json:"dataUsed"`
+		MemUsed          *float64 `json:"memUsed"`
+	} `json:"basicStats"`
 }
 
-// NewPostRequests creates a NewPostRequest for each metric in Metrics.
-func NewPostRequests(metrics []Metric) []PostRequest {
-	postRequests := []PostRequest{}
-	for _, metric := range metrics {
-		postRequest := NewPostRequest(metric.Name)
-		postRequests = append(postRequests, postRequest)
-	}
-	return postRequests
-}
-
-type ResponseBody []struct {
-	Data []struct {
-		Metric struct {
-			Nodes []string `json:"nodes"`
-		} `json:"metric"`
-		Values [][]interface{} `json:"values"`
-	} `json:"data"`
-	Errors         []interface{} `json:"errors"`
-	StartTimestamp int           `json:"startTimestamp"`
-	EndTimestamp   int           `json:"endTimestamp"`
-}
-
-func (c *couchbaseClient) Post(metrics []Metric) error {
-
-	postRequest := NewPostRequests(Metrics)
-	jsonStr, err := json.Marshal(postRequest)
+// Get is exposesd by the client interface and returns the NodeStats and BucketsStats.
+func (c *couchbaseClient) Get() (*Stats, error) {
+	nodeStats, err := c.getNodeStats()
 	if err != nil {
-		panic("failed to marshal post request")
+		return nil, err
 	}
-	// fmt.Println(string(jsonStr))
-
-	req, err := http.NewRequest("POST", c.cfg.Endpoint, bytes.NewBuffer(jsonStr))
+	bucketsStats, err := c.getBucketsStats(nodeStats.Buckets.URI)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	stats := Stats{
+		NodeStats:    *nodeStats,
+		BucketsStats: *bucketsStats}
+
+	fmt.Printf("%#v\n", stats)
+	return &stats, nil
+}
+
+func (c *couchbaseClient) getNodeStats() (*NodeStats, error) {
+	url := fmt.Sprintf("%s%s", c.cfg.Endpoint, "/pools/default")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Add("Authorization", "Basic "+basicAuth(c.cfg.Username, c.cfg.Password))
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -119,45 +125,48 @@ func (c *couchbaseClient) Post(metrics []Metric) error {
 		}
 	}()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	responseBody := ResponseBody{}
-	err = json.Unmarshal([]byte(body), &responseBody)
+	nodeStats := &NodeStats{}
+	err = json.Unmarshal(body, nodeStats)
 	if err != nil {
-		panic(err)
+		panic("failed to marshal post request")
 	}
 
-	PopulateMetrics(responseBody, Metrics)
-	fmt.Printf("\n\nMetrics!: %#v\n", Metrics)
-
-	return nil
+	return nodeStats, nil
 }
 
-func removeBrackets(rawString string) string {
-	removedLeftBrackets := strings.ReplaceAll(rawString, "[", "")
-	return strings.ReplaceAll(removedLeftBrackets, "]", "")
-}
-
-// PopulateMetrics populates the metrics with the responseBody.
-// Since there are no labels, this function makes sure that the metric order
-// remains the same.
-// The values extracted create a time series, but we are only interested in the
-// latest timestamp, therefore, we take the last index.
-func PopulateMetrics(responseBody ResponseBody, metrics []Metric) {
-	for i := 0; i < len(metrics); i++ {
-		if len(responseBody[i].Errors) > 0 {
-			errors := strings.Split(fmt.Sprintf("%v", responseBody[i].Errors), " ")
-			metrics[i].ErrMessage = removeBrackets(errors[len(errors)-1]) // gets the last timestamp value
-		}
-
-		if len(responseBody[i].Data[0].Values) > 0 {
-			values := strings.Split(fmt.Sprintf("%v", responseBody[i].Data[0].Values), " ")
-			metrics[i].Value = removeBrackets(values[len(values)-1])
-		}
-
-		metrics[i].Timestamp = responseBody[i].EndTimestamp
+func (c *couchbaseClient) getBucketsStats(uri string) (*BucketsStats, error) {
+	url := fmt.Sprintf("%s%s", c.cfg.Endpoint, uri)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	req.Header.Add("Authorization", "Basic "+basicAuth(c.cfg.Username, c.cfg.Password))
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			c.logger.Error("failed to close client response", zap.Error(err))
+		}
+	}()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	bucketsStats := &BucketsStats{}
+	err = json.Unmarshal(body, bucketsStats)
+	if err != nil {
+		panic("failed to marshal post request")
+	}
+
+	return bucketsStats, nil
 }
