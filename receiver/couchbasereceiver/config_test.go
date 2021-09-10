@@ -22,6 +22,13 @@ func TestValidate(t *testing.T) {
 		require.Equal(t, errors.New("invalid endpoint 'http://endpoint with space'"), cfg.Validate())
 	})
 
+	t.Run("error path missing password", func(t *testing.T) {
+		cfg := &Config{
+			Username: "otelu",
+		}
+		require.Equal(t, errors.New("missing required field 'password'"), cfg.Validate())
+	})
+
 	t.Run("happy path", func(t *testing.T) {
 		testCases := []struct {
 			desc     string
