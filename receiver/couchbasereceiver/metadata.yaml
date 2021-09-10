@@ -83,18 +83,6 @@ metrics:
     data:
       type: gauge
     labels: []
-  couchbase.index_data_size:
-    description: Bytes in memory used by Index across all indexes and buckets.
-    unit: by
-    data:
-      type: gauge
-    labels: []
-  couchbase.index_disk_size:
-    description: Bytes on disk used by Index across all indexes and buckets.
-    unit: by
-    data:
-      type: gauge
-    labels: []
   couchbase.mem_free:
     description: Bytes of RAM available to Couchbase on this server.
     unit: by

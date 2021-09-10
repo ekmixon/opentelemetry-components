@@ -58,15 +58,13 @@ type NodeStats struct {
 			MemFree            *int64   `json:"mem_free"`
 		} `json:"systemStats"`
 		InterestingStats struct {
-			CurrItems     *int64   `json:"curr_items"`
-			CurrItemsTot  *int64   `json:"curr_items_tot"`
-			EpBgFetched   *float64 `json:"ep_bg_fetched"`
-			MemUsed       *int64   `json:"mem_used"`
-			CmdGet        *float64 `json:"cmd_get"`
-			GetHits       *float64 `json:"get_hits"`
-			Ops           *float64 `json:"ops"`
-			IndexDataSize *int64   `json:"index_data_size"`
-			IndexDiskSize *int64   `json:"index_disk_size"`
+			CurrItems    *int64   `json:"curr_items"`
+			CurrItemsTot *int64   `json:"curr_items_tot"`
+			EpBgFetched  *float64 `json:"ep_bg_fetched"`
+			MemUsed      *int64   `json:"mem_used"`
+			CmdGet       *float64 `json:"cmd_get"`
+			GetHits      *float64 `json:"get_hits"`
+			Ops          *float64 `json:"ops"`
 		} `json:"interestingStats"`
 		Uptime *string `json:"uptime"`
 	} `json:"nodes"`

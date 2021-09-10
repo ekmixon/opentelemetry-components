@@ -1,0 +1,190 @@
+{
+  "name": "default",
+  "nodes": [
+    {
+      "systemStats": {
+        "cpu_utilization_rate": 1.1,
+        "cpu_stolen_rate": 0,
+        "swap_total": 1,
+        "swap_used": 2,
+        "mem_total": 3,
+        "mem_free": 4,
+        "mem_limit": 1585446912,
+        "cpu_cores_available": 0.5,
+        "allocstall": 0
+      },
+      "interestingStats": {
+        "cmd_get": 1.3,
+        "couch_docs_actual_disk_size": 16403150,
+        "couch_docs_data_size": 8482816,
+        "couch_spatial_data_size": 0,
+        "couch_spatial_disk_size": 0,
+        "couch_views_actual_disk_size": 0,
+        "couch_views_data_size": 0,
+        "curr_items": 5,
+        "curr_items_tot": 6,
+        "ep_bg_fetched": 1.2,
+        "get_hits": 1.4,
+        "mem_used": 7,
+        "ops": 1.5,
+        "vb_active_num_non_resident": 0,
+        "vb_replica_curr_items": 0
+      },
+      "uptime": "10",
+      "memoryTotal": 2083807232,
+      "memoryFree": 973848576,
+      "mcdMemoryReserved": 1589,
+      "mcdMemoryAllocated": 1589,
+      "couchApiBase": "http://172.24.0.2:8092/",
+      "couchApiBaseHTTPS": "https://172.24.0.2:18092/",
+      "clusterMembership": "active",
+      "recoveryType": "none",
+      "status": "healthy",
+      "otpNode": "ns_1@cb.local",
+      "thisNode": true,
+      "hostname": "172.24.0.2:8091",
+      "nodeUUID": "54e6f60a15c448b847086562e4924a66",
+      "clusterCompatibility": 393222,
+      "version": "6.6.2-9600-enterprise",
+      "os": "x86_64-unknown-linux-gnu",
+      "cpuCount": 0.5,
+      "ports": {
+        "direct": 11210,
+        "httpsCAPI": 18092,
+        "httpsMgmt": 18091,
+        "distTCP": 21100,
+        "distTLS": 21150
+      },
+      "services": [
+        "fts",
+        "index",
+        "kv",
+        "n1ql"
+      ],
+      "nodeEncryption": false,
+      "configuredHostname": "127.0.0.1:8091",
+      "addressFamily": "inet",
+      "externalListeners": [
+        {
+          "afamily": "inet",
+          "nodeEncryption": false
+        },
+        {
+          "afamily": "inet6",
+          "nodeEncryption": false
+        }
+      ]
+    }
+  ],
+  "buckets": {
+    "uri": "/pools/default/buckets?v=76748755&uuid=1d56c2976653a907dc456a1090c30f8f",
+    "terseBucketsBase": "/pools/default/b/",
+    "terseStreamingBucketsBase": "/pools/default/bs/"
+  },
+  "remoteClusters": {
+    "uri": "/pools/default/remoteClusters?uuid=1d56c2976653a907dc456a1090c30f8f",
+    "validateURI": "/pools/default/remoteClusters?just_validate=1"
+  },
+  "alerts": [],
+  "alertsSilenceURL": "/controller/resetAlerts?uuid=1d56c2976653a907dc456a1090c30f8f&token=0",
+  "controllers": {
+    "addNode": {
+      "uri": "/controller/addNodeV2?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "rebalance": {
+      "uri": "/controller/rebalance?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "failOver": {
+      "uri": "/controller/failOver?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "startGracefulFailover": {
+      "uri": "/controller/startGracefulFailover?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "reAddNode": {
+      "uri": "/controller/reAddNode?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "reFailOver": {
+      "uri": "/controller/reFailOver?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "ejectNode": {
+      "uri": "/controller/ejectNode?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "setRecoveryType": {
+      "uri": "/controller/setRecoveryType?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "setAutoCompaction": {
+      "uri": "/controller/setAutoCompaction?uuid=1d56c2976653a907dc456a1090c30f8f",
+      "validateURI": "/controller/setAutoCompaction?just_validate=1"
+    },
+    "clusterLogsCollection": {
+      "startURI": "/controller/startLogsCollection?uuid=1d56c2976653a907dc456a1090c30f8f",
+      "cancelURI": "/controller/cancelLogsCollection?uuid=1d56c2976653a907dc456a1090c30f8f"
+    },
+    "replication": {
+      "createURI": "/controller/createReplication?uuid=1d56c2976653a907dc456a1090c30f8f",
+      "validateURI": "/controller/createReplication?just_validate=1"
+    }
+  },
+  "rebalanceStatus": "none",
+  "rebalanceProgressUri": "/pools/default/rebalanceProgress",
+  "stopRebalanceUri": "/controller/stopRebalance?uuid=1d56c2976653a907dc456a1090c30f8f",
+  "nodeStatusesUri": "/nodeStatuses",
+  "maxBucketCount": 30,
+  "autoCompactionSettings": {
+    "parallelDBAndViewCompaction": false,
+    "databaseFragmentationThreshold": {
+      "percentage": 30,
+      "size": "undefined"
+    },
+    "viewFragmentationThreshold": {
+      "percentage": 30,
+      "size": "undefined"
+    },
+    "indexCompactionMode": "circular",
+    "indexCircularCompaction": {
+      "daysOfWeek": "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
+      "interval": {
+        "fromHour": 0,
+        "toHour": 0,
+        "fromMinute": 0,
+        "toMinute": 0,
+        "abortOutside": false
+      }
+    },
+    "indexFragmentationThreshold": {
+      "percentage": 30
+    }
+  },
+  "tasks": {
+    "uri": "/pools/default/tasks?v=340889"
+  },
+  "counters": {},
+  "indexStatusURI": "/indexStatus?v=1318953",
+  "checkPermissionsURI": "/pools/default/checkPermissions?v=WiWWOGL88pQHe%2BZGVb7YB22Qa04%3D",
+  "serverGroupsUri": "/pools/default/serverGroups?v=33997461",
+  "clusterName": "otelc",
+  "balanced": true,
+  "memoryQuota": 512,
+  "indexMemoryQuota": 256,
+  "ftsMemoryQuota": 256,
+  "cbasMemoryQuota": 1024,
+  "eventingMemoryQuota": 256,
+  "storageTotals": {
+    "ram": {
+      "total": 1585446912,
+      "quotaTotal": 536870912,
+      "quotaUsed": 536870912,
+      "used": 834072576,
+      "usedByData": 57185104,
+      "quotaUsedPerNode": 536870912,
+      "quotaTotalPerNode": 536870912
+    },
+    "hdd": {
+      "total": 62725623808,
+      "quotaTotal": 62725623808,
+      "used": 31362811904,
+      "usedByData": 16403150,
+      "free": 31362811904
+    }
+  }
+}

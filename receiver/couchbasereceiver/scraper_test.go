@@ -18,7 +18,31 @@ import (
 )
 
 func TestScraper(t *testing.T) {
-	t.Run("mocking curl response of couchbase 3.0.0", func(t *testing.T) {
+	t.Run("mocking curl response of couchbase 6.6", func(t *testing.T) {
+		sc := newCouchbaseScraper(zap.NewNop(), &Config{})
+		sc.client = &fakeClient{
+			nodeStatsFilename:    "node_stats_6_6.json",
+			bucketsStatsFilename: "buckets_stats_6_6.json"}
+
+		stats, err := sc.client.Get()
+		require.Nil(t, err)
+		require.NotNil(t, stats)
+
+		rms, err := sc.scrape(context.Background())
+		require.Nil(t, err)
+		require.Equal(t, 1, rms.Len())
+
+		rm := rms.At(0)
+		ilms := rm.InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+
+		ilm := ilms.At(0)
+		ms := ilm.Metrics()
+		require.Equal(t, len(metadata.M.Names()), ms.Len())
+
+		validateScraperResult(t, ms)
+	})
+	t.Run("mocking curl response of couchbase 7.0", func(t *testing.T) {
 		sc := newCouchbaseScraper(zap.NewNop(), &Config{})
 		sc.client = &fakeClient{
 			nodeStatsFilename:    "node_stats_7_0.json",
@@ -185,14 +209,6 @@ func validateScraperResult(t *testing.T, metric pdata.MetricSlice) {
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())
 			require.EqualValues(t, 1.4, dps.At(0).DoubleVal())
-		case metadata.M.CouchbaseIndexDataSize.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-			require.EqualValues(t, 8, dps.At(0).IntVal())
-		case metadata.M.CouchbaseIndexDiskSize.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-			require.EqualValues(t, 9, dps.At(0).IntVal())
 		case metadata.M.CouchbaseMemFree.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())

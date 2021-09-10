@@ -93,8 +93,6 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	currItemsTot := initMetric(ilm.Metrics(), metadata.M.CouchbaseCurrItemsTot).Gauge().DataPoints()
 	diskFetches := initMetric(ilm.Metrics(), metadata.M.CouchbaseDiskFetches).Gauge().DataPoints()
 	getHits := initMetric(ilm.Metrics(), metadata.M.CouchbaseGetHits).Gauge().DataPoints()
-	indexDataSize := initMetric(ilm.Metrics(), metadata.M.CouchbaseIndexDataSize).Gauge().DataPoints()
-	indexDiskSize := initMetric(ilm.Metrics(), metadata.M.CouchbaseIndexDiskSize).Gauge().DataPoints()
 	memFree := initMetric(ilm.Metrics(), metadata.M.CouchbaseMemFree).Gauge().DataPoints()
 	memTotal := initMetric(ilm.Metrics(), metadata.M.CouchbaseMemTotal).Gauge().DataPoints()
 	memUsed := initMetric(ilm.Metrics(), metadata.M.CouchbaseMemUsed).Gauge().DataPoints()
@@ -277,30 +275,6 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		)
 	} else {
 		addToDoubleMetric(getHits, getHitsLabels, *getHitsValues, now)
-	}
-
-	// indexDataSize
-	indexDataSizeLabels := pdata.NewStringMap()
-	indexDataSizeValues := stats.NodeStats.Nodes[0].InterestingStats.IndexDataSize
-	if indexDataSizeValues == nil {
-		c.logger.Info(
-			"failed to collect metric",
-			zap.String("metric", "indexDataSize"),
-		)
-	} else {
-		addToIntMetric(indexDataSize, indexDataSizeLabels, *indexDataSizeValues, now)
-	}
-
-	// indexDiskSize
-	indexDiskSizeLabels := pdata.NewStringMap()
-	indexDiskSizeValues := stats.NodeStats.Nodes[0].InterestingStats.IndexDiskSize
-	if indexDiskSizeValues == nil {
-		c.logger.Info(
-			"failed to collect metric",
-			zap.String("metric", "indexDiskSize"),
-		)
-	} else {
-		addToIntMetric(indexDiskSize, indexDiskSizeLabels, *indexDiskSizeValues, now)
 	}
 
 	// memFree
