@@ -52,23 +52,23 @@ type NodeStats struct {
 	Nodes []struct {
 		SystemStats struct {
 			CPUUtilizationRate *float64 `json:"cpu_utilization_rate"`
-			SwapTotal          *float64 `json:"swap_total"`
-			SwapUsed           *float64 `json:"swap_used"`
-			MemTotal           *float64 `json:"mem_total"`
-			MemFree            *float64 `json:"mem_free"`
+			SwapTotal          *int64   `json:"swap_total"`
+			SwapUsed           *int64   `json:"swap_used"`
+			MemTotal           *int64   `json:"mem_total"`
+			MemFree            *int64   `json:"mem_free"`
 		} `json:"systemStats"`
 		InterestingStats struct {
-			CurrItems     *float64 `json:"curr_items"`
-			CurrItemsTot  *float64 `json:"curr_items_tot"`
+			CurrItems     *int64   `json:"curr_items"`
+			CurrItemsTot  *int64   `json:"curr_items_tot"`
 			EpBgFetched   *float64 `json:"ep_bg_fetched"`
-			MemUsed       *float64 `json:"mem_used"`
+			MemUsed       *int64   `json:"mem_used"`
 			CmdGet        *float64 `json:"cmd_get"`
 			GetHits       *float64 `json:"get_hits"`
 			Ops           *float64 `json:"ops"`
-			IndexDataSize *float64 `json:"index_data_size"`
-			IndexDiskSize *float64 `json:"index_disk_size"`
+			IndexDataSize *int64   `json:"index_data_size"`
+			IndexDiskSize *int64   `json:"index_disk_size"`
 		} `json:"interestingStats"`
-		Uptime string `json:"uptime"`
+		Uptime *string `json:"uptime"`
 	} `json:"nodes"`
 	Buckets struct {
 		URI string `json:"uri"`
@@ -82,10 +82,10 @@ type BucketsStats []struct {
 		QuotaPercentUsed *float64 `json:"quotaPercentUsed"`
 		OpsPerSec        *float64 `json:"opsPerSec"`
 		DiskFetches      *float64 `json:"diskFetches"`
-		ItemCount        *float64 `json:"itemCount"`
-		DiskUsed         *float64 `json:"diskUsed"`
-		DataUsed         *float64 `json:"dataUsed"`
-		MemUsed          *float64 `json:"memUsed"`
+		ItemCount        *int64   `json:"itemCount"`
+		DiskUsed         *int64   `json:"diskUsed"`
+		DataUsed         *int64   `json:"dataUsed"`
+		MemUsed          *int64   `json:"memUsed"`
 	} `json:"basicStats"`
 }
 
@@ -103,7 +103,7 @@ func (c *couchbaseClient) Get() (*Stats, error) {
 		NodeStats:    *nodeStats,
 		BucketsStats: *bucketsStats}
 
-	fmt.Printf("%#v\n", stats)
+	// fmt.Printf("%#v\n", stats)
 	return &stats, nil
 }
 
@@ -133,7 +133,7 @@ func (c *couchbaseClient) getNodeStats() (*NodeStats, error) {
 	nodeStats := &NodeStats{}
 	err = json.Unmarshal(body, nodeStats)
 	if err != nil {
-		panic("failed to marshal post request")
+		c.logger.Error("failed to unmarshal", zap.Error(err))
 	}
 
 	return nodeStats, nil
@@ -165,7 +165,7 @@ func (c *couchbaseClient) getBucketsStats(uri string) (*BucketsStats, error) {
 	bucketsStats := &BucketsStats{}
 	err = json.Unmarshal(body, bucketsStats)
 	if err != nil {
-		panic("failed to marshal post request")
+		c.logger.Error("failed to unmarshal", zap.Error(err))
 	}
 
 	return bucketsStats, nil

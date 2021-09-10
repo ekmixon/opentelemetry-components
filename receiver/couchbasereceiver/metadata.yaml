@@ -89,6 +89,12 @@ metrics:
     data:
       type: gauge
     labels: []
+  couchbase.mem_free:
+    description: Bytes of RAM available to Couchbase on this server.
+    unit: by
+    data:
+      type: gauge
+    labels: []
   couchbase.mem_total:
     description: Total bytes capacity of RAM on this server.
     unit: by
@@ -126,10 +132,4 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: []
-  couchbase.mem_free:
-    description: Bytes of RAM available to Couchbase on this server.
-    unit: by
-    data:
-      type: gauge
     labels: []
