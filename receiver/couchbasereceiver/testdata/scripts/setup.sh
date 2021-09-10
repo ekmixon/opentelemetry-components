@@ -41,6 +41,10 @@ couchbase-cli cluster-init -c 127.0.0.1 --cluster-username otelu --cluster-passw
 log "$(date +"%T") Create buckets ........."
 couchbase-cli bucket-create -c 127.0.0.1 --username otelu --password otelpassword --bucket-type couchbase --bucket-ramsize 256 --bucket otelb
 
+# Create the buckets
+log "$(date +"%T") Create buckets ........."
+couchbase-cli bucket-create -c 127.0.0.1 --username otelu --password otelpassword --bucket-type couchbase --bucket-ramsize 256 --bucket test_bucket
+
 # Create user
 log "$(date +"%T") Create users ........."
 couchbase-cli user-manage -c 127.0.0.1:8091 -u otelu -p otelpassword --set --rbac-username sysadmin --rbac-password otelpassword \
@@ -56,5 +60,9 @@ sleep 20
 # Create otelb indexes
 echo "$(date +"%T") Create otelb indexes ........."
 cbq -u otelu -p otelpassword -s "CREATE PRIMARY INDEX idx_primary ON \`otelb\`;"
+
+# Create otelb indexes
+echo "$(date +"%T") Create test_bucket indexes ........."
+cbq -u otelu -p otelpassword -s "CREATE PRIMARY INDEX idx_primary ON \`test_bucket\`;"
 
 exit 0

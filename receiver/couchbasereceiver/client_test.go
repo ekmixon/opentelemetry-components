@@ -48,6 +48,85 @@ func TestNewCouchbaseClient(t *testing.T) {
 	})
 }
 
+func TestGetNodeSTats(t *testing.T) {
+	couchbaseMock := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(200)
+		_, _ = rw.Write([]byte(`{"key": "value"}`))
+		// if req.URL.Path == "/pools/default" {
+		// 	rw.WriteHeader(200)
+		// 	_, _ = rw.Write([]byte(`{"key": "value"}`))
+		// 	return
+		// }
+		// if req.URL.Path == "/invalid_endpoint" {
+		// 	rw.WriteHeader(404)
+		// 	return
+		// }
+		// if req.URL.Path == "/invalid_body" {
+		// 	rw.Header().Set("Content-Length", "1")
+		// 	return
+		// }
+		// if req.URL.Path == "/invalid_json" {
+		// 	rw.WriteHeader(200)
+		// 	_, _ = rw.Write([]byte(`{"}`))
+		// 	return
+		// }
+
+		// rw.WriteHeader(404)
+	}))
+	// t.Run("invalid endpoint", func(t *testing.T) {
+	// 	couchdbClient, err := newCouchDBClient(componenttest.NewNopHost(), &Config{
+	// 		HTTPClientSettings: confighttp.HTTPClientSettings{
+	// 			Endpoint: couchbaseMock.URL + "/invalid_endpoint",
+	// 		},
+	// 	}, zap.NewNop())
+	// 	require.Nil(t, err)
+	// 	require.NotNil(t, couchdbClient)
+
+	// 	result, err := couchdbClient.Get()
+	// 	require.NotNil(t, err)
+	// 	require.Nil(t, result)
+	// })
+	// t.Run("invalid body", func(t *testing.T) {
+	// 	couchdbClient, err := newCouchDBClient(componenttest.NewNopHost(), &Config{
+	// 		HTTPClientSettings: confighttp.HTTPClientSettings{
+	// 			Endpoint: couchbaseMock.URL + "/invalid_body",
+	// 		},
+	// 	}, zap.NewNop())
+	// 	require.Nil(t, err)
+	// 	require.NotNil(t, couchdbClient)
+
+	// 	result, err := couchdbClient.Get()
+	// 	require.NotNil(t, err)
+	// 	require.Nil(t, result)
+	// })
+	// t.Run("invalid json", func(t *testing.T) {
+	// 	couchdbClient, err := newCouchDBClient(componenttest.NewNopHost(), &Config{
+	// 		HTTPClientSettings: confighttp.HTTPClientSettings{
+	// 			Endpoint: couchbaseMock.URL + "/invalid_json",
+	// 		},
+	// 	}, zap.NewNop())
+	// 	require.Nil(t, err)
+	// 	require.NotNil(t, couchdbClient)
+
+	// 	result, err := couchdbClient.Get()
+	// 	require.NotNil(t, err)
+	// 	require.Nil(t, result)
+	// })
+	t.Run("no error", func(t *testing.T) {
+		couchdbClient, err := newCouchbaseClient(componenttest.NewNopHost(), &Config{
+			HTTPClientSettings: confighttp.HTTPClientSettings{
+				Endpoint: couchbaseMock.URL + "/pools/default",
+			},
+		}, zap.NewNop())
+		require.Nil(t, err)
+		require.NotNil(t, couchdbClient)
+
+		result, err := couchdbClient.getNodeStats()
+		require.Nil(t, err)
+		require.NotNil(t, result)
+	})
+}
+
 func TestBasicAuth(t *testing.T) {
 	username := "otelu"
 	password := "otelp"

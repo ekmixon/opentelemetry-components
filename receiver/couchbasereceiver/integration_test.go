@@ -139,4 +139,162 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 
 func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 	require.Equal(t, len(metadata.M.Names()), metric.Len())
+	for i := 0; i < metric.Len(); i++ {
+		m := metric.At(i)
+		switch m.Name() {
+		case metadata.M.CouchbaseBDataUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_data_used method: otelb":       true,
+				"couchbase.b_data_used method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBDiskFetches.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_disk_fetches method: otelb":       true,
+				"couchbase.b_disk_fetches method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBDiskUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_disk_used method: otelb":       true,
+				"couchbase.b_disk_used method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBItemCount.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_item_count method: otelb":       true,
+				"couchbase.b_item_count method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBMemUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_mem_used method: otelb":       true,
+				"couchbase.b_mem_used method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBOps.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_ops method: otelb":       true,
+				"couchbase.b_ops method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseBQuotaUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 2, dps.Len())
+
+			metricsMap := map[string]bool{}
+			for i := 0; i < dps.Len(); i++ {
+				dp := dps.At(i)
+				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				metricsMap[label] = true
+			}
+			require.Equal(t, 2, len(metricsMap))
+			require.Equal(t, map[string]bool{
+				"couchbase.b_quota_used method: otelb":       true,
+				"couchbase.b_quota_used method: test_bucket": true,
+			}, metricsMap)
+		case metadata.M.CouchbaseCmdGet.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseCPUUtilizationRate.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseCurrItems.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseCurrItemsTot.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseDiskFetches.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseGetHits.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseMemFree.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseMemTotal.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseMemUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseOps.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseSwapTotal.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseSwapUsed.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchbaseUptime.Name():
+			dps := m.Sum().DataPoints()
+			require.Equal(t, 1, dps.Len())
+		default:
+			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
+		}
+	}
 }
