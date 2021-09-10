@@ -101,7 +101,6 @@ func (c *couchbaseClient) Get() (*Stats, error) {
 		NodeStats:    *nodeStats,
 		BucketsStats: *bucketsStats}
 
-	// fmt.Printf("%#v\n", stats)
 	return &stats, nil
 }
 
