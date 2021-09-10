@@ -1,0 +1,19 @@
+receivers:
+  couchbase:
+    endpoint: localhost:8091
+    username: otelu
+    password: $COUCHBASE_PASSWORD
+    collection_interval: 60s
+
+processors:
+  nop:
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    metrics:
+     receivers: [couchbase]
+     processors: [nop]
+     exporters: [nop]
