@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package couchbasereceiver
 
 import (
@@ -106,9 +103,17 @@ var (
 		},
 		ExposedPorts: []string{"8091:8091"},
 		WaitingFor: wait.ForListeningPort("8091").
-			WithStartupTimeout(2 * time.Minute),
+			WithStartupTimeout(5 * time.Minute),
 	}
 )
+
+type TestLogConsumer struct {
+	t *testing.T
+}
+
+func (lc *TestLogConsumer) Accept(l testcontainers.Log) {
+	lc.t.Log(string(l.Content))
+}
 
 func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontainers.Container {
 	require.NoError(t, req.Validate())
@@ -119,6 +124,16 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 			Started:          true,
 		})
 	require.NoError(t, err)
+
+	logConsumer := TestLogConsumer{t}
+	require.NoError(t, container.StartLogProducer(context.Background()))
+	container.FollowOutput(&logConsumer)
+
+	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
+	require.NoError(t, err)
+	require.Equal(t, 0, code)
+
+	require.NoError(t, container.StopLogProducer())
 	return container
 }
 
