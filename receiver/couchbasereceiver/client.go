@@ -131,6 +131,7 @@ func (c *couchbaseClient) getNodeStats() (*NodeStats, error) {
 	err = json.Unmarshal(body, nodeStats)
 	if err != nil {
 		c.logger.Error("failed to unmarshal", zap.Error(err))
+		return nil, err
 	}
 
 	return nodeStats, nil
@@ -163,6 +164,7 @@ func (c *couchbaseClient) getBucketsStats(uri string) (*BucketsStats, error) {
 	err = json.Unmarshal(body, bucketsStats)
 	if err != nil {
 		c.logger.Error("failed to unmarshal", zap.Error(err))
+		return nil, err
 	}
 
 	return bucketsStats, nil
