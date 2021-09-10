@@ -91,6 +91,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	cpuUtilizationRate := initMetric(ilm.Metrics(), metadata.M.CouchbaseCPUUtilizationRate).Gauge().DataPoints()
 	currItems := initMetric(ilm.Metrics(), metadata.M.CouchbaseCurrItems).Gauge().DataPoints()
 	currItemsTot := initMetric(ilm.Metrics(), metadata.M.CouchbaseCurrItemsTot).Gauge().DataPoints()
+	diskFetches := initMetric(ilm.Metrics(), metadata.M.CouchbaseDiskFetches).Gauge().DataPoints()
 	getHits := initMetric(ilm.Metrics(), metadata.M.CouchbaseGetHits).Gauge().DataPoints()
 	indexDataSize := initMetric(ilm.Metrics(), metadata.M.CouchbaseIndexDataSize).Gauge().DataPoints()
 	indexDiskSize := initMetric(ilm.Metrics(), metadata.M.CouchbaseIndexDiskSize).Gauge().DataPoints()
@@ -252,6 +253,18 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		)
 	} else {
 		addToIntMetric(currItemsTot, currItemsTotLabels, *currItemsTotValues, now)
+	}
+
+	// diskFetches
+	diskFetchesLabels := pdata.NewStringMap()
+	diskFetchesValues := stats.NodeStats.Nodes[0].InterestingStats.EpBgFetched
+	if currItemsTotValues == nil {
+		c.logger.Info(
+			"failed to collect metric",
+			zap.String("metric", "diskFetches"),
+		)
+	} else {
+		addToDoubleMetric(diskFetches, diskFetchesLabels, *diskFetchesValues, now)
 	}
 
 	// getHits

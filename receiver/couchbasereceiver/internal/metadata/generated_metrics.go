@@ -52,6 +52,7 @@ type metricStruct struct {
 	CouchbaseCPUUtilizationRate MetricIntf
 	CouchbaseCurrItems          MetricIntf
 	CouchbaseCurrItemsTot       MetricIntf
+	CouchbaseDiskFetches        MetricIntf
 	CouchbaseGetHits            MetricIntf
 	CouchbaseIndexDataSize      MetricIntf
 	CouchbaseIndexDiskSize      MetricIntf
@@ -78,6 +79,7 @@ func (m *metricStruct) Names() []string {
 		"couchbase.cpu_utilization_rate",
 		"couchbase.curr_items",
 		"couchbase.curr_items_tot",
+		"couchbase.disk_fetches",
 		"couchbase.get_hits",
 		"couchbase.index_data_size",
 		"couchbase.index_disk_size",
@@ -103,6 +105,7 @@ var metricsByName = map[string]MetricIntf{
 	"couchbase.cpu_utilization_rate": Metrics.CouchbaseCPUUtilizationRate,
 	"couchbase.curr_items":           Metrics.CouchbaseCurrItems,
 	"couchbase.curr_items_tot":       Metrics.CouchbaseCurrItemsTot,
+	"couchbase.disk_fetches":         Metrics.CouchbaseDiskFetches,
 	"couchbase.get_hits":             Metrics.CouchbaseGetHits,
 	"couchbase.index_data_size":      Metrics.CouchbaseIndexDataSize,
 	"couchbase.index_disk_size":      Metrics.CouchbaseIndexDiskSize,
@@ -132,6 +135,7 @@ func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 		Metrics.CouchbaseCPUUtilizationRate.Name(): Metrics.CouchbaseCPUUtilizationRate.Init,
 		Metrics.CouchbaseCurrItems.Name():          Metrics.CouchbaseCurrItems.Init,
 		Metrics.CouchbaseCurrItemsTot.Name():       Metrics.CouchbaseCurrItemsTot.Init,
+		Metrics.CouchbaseDiskFetches.Name():        Metrics.CouchbaseDiskFetches.Init,
 		Metrics.CouchbaseGetHits.Name():            Metrics.CouchbaseGetHits.Init,
 		Metrics.CouchbaseIndexDataSize.Name():      Metrics.CouchbaseIndexDataSize.Init,
 		Metrics.CouchbaseIndexDiskSize.Name():      Metrics.CouchbaseIndexDiskSize.Init,
@@ -198,7 +202,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("couchbase.b_ops")
 			metric.SetDescription("Number of operations from per second for this buckets.")
-			metric.SetUnit("by")
+			metric.SetUnit("number/sec")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
@@ -207,7 +211,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("couchbase.b_quota_used")
 			metric.SetDescription("Percentage of index RAM quota in use for this buckets.")
-			metric.SetUnit("by")
+			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
@@ -243,6 +247,15 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("couchbase.curr_items_tot")
 			metric.SetDescription("Total number of items in all buckets.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
+	&metricImpl{
+		"couchbase.disk_fetches",
+		func(metric pdata.Metric) {
+			metric.SetName("couchbase.disk_fetches")
+			metric.SetDescription("Number of reads per second from disk.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},

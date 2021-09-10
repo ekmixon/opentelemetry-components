@@ -37,13 +37,13 @@ metrics:
     labels: [ buckets ]
   couchbase.b_ops:
     description: Number of operations from per second for this buckets.
-    unit: by
+    unit: number/sec
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_quota_used:
     description: Percentage of index RAM quota in use for this buckets.
-    unit: by
+    unit: 1
     data:
       type: gauge
     labels: [ buckets ]
@@ -67,6 +67,12 @@ metrics:
     labels: []
   couchbase.curr_items_tot:
     description: Total number of items in all buckets.
+    unit: 1
+    data:
+      type: gauge
+    labels: []
+  couchbase.disk_fetches:
+    description: Number of reads per second from disk.
     unit: 1
     data:
       type: gauge
