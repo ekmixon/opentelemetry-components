@@ -77,8 +77,8 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	metrics := pdata.NewMetrics()
-	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	rms := pdata.NewResourceMetricsSlice()
+	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/httpd")
 	now := pdata.TimestampFromTime(time.Now())
 
@@ -133,7 +133,7 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		}
 	}
 
-	return metrics.ResourceMetrics(), nil
+	return rms, nil
 }
 
 // GetStats collects metric stats by making a get request at an endpoint.

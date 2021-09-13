@@ -70,8 +70,8 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
-	metrics := pdata.NewMetrics()
-	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	rms := pdata.NewResourceMetricsSlice()
+	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/rabbitmq")
 	now := pdata.TimestampFromTime(time.Now())
 
@@ -159,7 +159,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 		}
 	}
 
-	return metrics.ResourceMetrics(), nil
+	return rms, nil
 }
 
 func getValFromBody(keys []string, body map[string]interface{}) (float64, error) {
