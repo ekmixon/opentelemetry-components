@@ -68,8 +68,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		return pdata.ResourceMetricsSlice{}, errors.New("failed to connect to couchbase client")
 	}
 
-	stats, err := c.GetStats()
-	if err != nil {
+	stats, err := c.client.Get()
+	if err != nil || len(stats.Nodes) == 0 {
 		c.logger.Error("Failed to fetch couchbase metrics", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, errors.New("failed to fetch couchbase stats")
 	}
@@ -109,7 +109,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bDataUsedValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bDataUsed"),
+				zap.String("metric", metadata.M.CouchbaseBDataUsed.Name()),
 			)
 		} else {
 			addToIntMetric(bDataUsed, bDataUsedLabels, *bDataUsedValues, now)
@@ -124,7 +124,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bDiskFetchesValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bDiskFetches"),
+				zap.String("metric", metadata.M.CouchbaseBDiskFetches.Name()),
 			)
 		} else {
 			addToDoubleMetric(bDiskFetches, bDiskFetchesLabels, *bDiskFetchesValues, now)
@@ -139,7 +139,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bDiskUsedValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bDiskUsed"),
+				zap.String("metric", metadata.M.CouchbaseBDiskUsed.Name()),
 			)
 		} else {
 			addToIntMetric(bDiskUsed, bDiskUsedLabels, *bDiskUsedValues, now)
@@ -154,7 +154,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bItemCountValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bItemCount"),
+				zap.String("metric", metadata.M.CouchbaseBItemCount.Name()),
 			)
 		} else {
 			addToIntMetric(bItemCount, bItemCountLabels, *bItemCountValues, now)
@@ -169,7 +169,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bMemUsedValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bMemUsed"),
+				zap.String("metric", metadata.M.CouchbaseBMemUsed.Name()),
 			)
 		} else {
 			addToIntMetric(bMemUsed, bMemUsedLabels, *bMemUsedValues, now)
@@ -183,7 +183,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bOpsValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bOps"),
+				zap.String("metric", metadata.M.CouchbaseBOps.Name()),
 			)
 		} else {
 			addToDoubleMetric(bOps, bOpsLabels, *bOpsValues, now)
@@ -198,7 +198,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 		if bQuotaUsedValues == nil {
 			c.logger.Info(
 				"failed to collect metric",
-				zap.String("metric", "bQuotaUsed"),
+				zap.String("metric", metadata.M.CouchbaseBQuotaUsed.Name()),
 			)
 		} else {
 			addToDoubleMetric(bQuotaUsed, bQuotaUsedLabels, *bQuotaUsedValues, now)
@@ -211,7 +211,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if cmdGetValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "cmdGet"),
+			zap.String("metric", metadata.M.CouchbaseCmdGet.New().Description()),
 		)
 	} else {
 		addToDoubleMetric(cmdGet, cmdGetLabels, *cmdGetValues, now)
@@ -223,7 +223,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if cpuUtilizationRateValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "cpuUtilizationRate"),
+			zap.String("metric", metadata.M.CouchbaseCPUUtilizationRate.Name()),
 		)
 	} else {
 		addToDoubleMetric(cpuUtilizationRate, cpuUtilizationRateLabels, *cpuUtilizationRateValues, now)
@@ -235,7 +235,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if currItemsValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "currItems"),
+			zap.String("metric", metadata.M.CouchbaseCurrItems.Name()),
 		)
 	} else {
 		addToIntMetric(currItems, currItemsLabels, *currItemsValues, now)
@@ -247,7 +247,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if currItemsTotValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "currItemsTot"),
+			zap.String("metric", metadata.M.CouchbaseCurrItemsTot.Name()),
 		)
 	} else {
 		addToIntMetric(currItemsTot, currItemsTotLabels, *currItemsTotValues, now)
@@ -259,7 +259,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if currItemsTotValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "diskFetches"),
+			zap.String("metric", metadata.M.CouchbaseDiskFetches.Name()),
 		)
 	} else {
 		addToDoubleMetric(diskFetches, diskFetchesLabels, *diskFetchesValues, now)
@@ -271,7 +271,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if getHitsValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "getHits"),
+			zap.String("metric", metadata.M.CouchbaseGetHits.Name()),
 		)
 	} else {
 		addToDoubleMetric(getHits, getHitsLabels, *getHitsValues, now)
@@ -283,7 +283,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if memFreeValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "memFree"),
+			zap.String("metric", metadata.M.CouchbaseMemFree.Name()),
 		)
 	} else {
 		addToIntMetric(memFree, memFreeLabels, *memFreeValues, now)
@@ -295,7 +295,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if memTotalValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "memTotal"),
+			zap.String("metric", metadata.M.CouchbaseMemTotal.Name()),
 		)
 	} else {
 		addToIntMetric(memTotal, memTotalLabels, *memTotalValues, now)
@@ -307,7 +307,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if memUsedValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "memUsed"),
+			zap.String("metric", metadata.M.CouchbaseMemUsed.Name()),
 		)
 	} else {
 		addToIntMetric(memUsed, memUsedLabels, *memUsedValues, now)
@@ -319,7 +319,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if opsValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "ops"),
+			zap.String("metric", metadata.M.CouchbaseOps.Name()),
 		)
 	} else {
 		addToDoubleMetric(ops, opsLabels, *opsValues, now)
@@ -331,7 +331,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if swapTotalValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "swapTotal"),
+			zap.String("metric", metadata.M.CouchbaseSwapTotal.Name()),
 		)
 	} else {
 		addToIntMetric(swapTotal, swapTotalLabels, *swapTotalValues, now)
@@ -343,7 +343,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if swapUsedValues == nil {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "swapUsed"),
+			zap.String("metric", metadata.M.CouchbaseSwapUsed.Name()),
 		)
 	} else {
 		addToIntMetric(swapUsed, swapUsedLabels, *swapUsedValues, now)
@@ -355,21 +355,13 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	if !ok {
 		c.logger.Info(
 			"failed to collect metric",
-			zap.String("metric", "swapUsed"),
+			zap.String("metric", metadata.M.CouchbaseUptime.Name()),
 		)
 	} else {
 		addToIntMetric(uptime, uptimeLabels, uptimeValues, now)
 	}
 
 	return rms, nil
-}
-
-func (c *couchbaseScraper) GetStats() (*Stats, error) {
-	stats, err := c.client.Get()
-	if err != nil {
-		return nil, err
-	}
-	return stats, nil
 }
 
 // parseInt converts string to int64.

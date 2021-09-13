@@ -64,6 +64,9 @@ func (f *fakeClient) getBucketsStats() (*BucketsStats, error) {
 }
 
 func (f *fakeClient) Get() (*Stats, error) {
+	if f.nodeStatsFilename == "empty" {
+		return &Stats{}, nil
+	}
 	nodeStats, err := f.getNodeStats()
 	if err != nil {
 		return nil, err

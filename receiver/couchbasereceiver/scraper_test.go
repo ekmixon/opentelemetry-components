@@ -25,11 +25,11 @@ func TestScraper(t *testing.T) {
 			bucketsStatsFilename: "buckets_stats_6_6.json"}
 
 		stats, err := sc.client.Get()
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, stats)
 
 		rms, err := sc.scrape(context.Background())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, 1, rms.Len())
 
 		rm := rms.At(0)
@@ -49,11 +49,11 @@ func TestScraper(t *testing.T) {
 			bucketsStatsFilename: "buckets_stats_7_0.json"}
 
 		stats, err := sc.client.Get()
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, stats)
 
 		rms, err := sc.scrape(context.Background())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, 1, rms.Len())
 
 		rm := rms.At(0)
@@ -255,6 +255,14 @@ func TestScraperError(t *testing.T) {
 	t.Run("error on get", func(t *testing.T) {
 		sc := newCouchbaseScraper(zap.NewNop(), &Config{})
 		sc.client = &fakeClient{err: errors.New("failed to fetch couchbase stats")}
+
+		_, err := sc.scrape(context.Background())
+		require.Error(t, err)
+		require.EqualValues(t, errors.New("failed to fetch couchbase stats"), err)
+	})
+	t.Run("empty stats", func(t *testing.T) {
+		sc := newCouchbaseScraper(zap.NewNop(), &Config{})
+		sc.client = &fakeClient{nodeStatsFilename: "empty"}
 
 		_, err := sc.scrape(context.Background())
 		require.Error(t, err)
