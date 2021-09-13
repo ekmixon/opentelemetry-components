@@ -304,3 +304,18 @@ func TestStart(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func TestMissingMetrics(t *testing.T) {
+	sc := newCouchbaseScraper(zap.NewNop(), &Config{})
+	sc.client = &fakeClient{
+		nodeStatsFilename:    "missing_node_stats.json",
+		bucketsStatsFilename: "missing_buckets_stats.json"}
+
+	stats, err := sc.client.Get()
+	require.NoError(t, err)
+	require.NotNil(t, stats)
+
+	rms, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 1, rms.Len())
+}

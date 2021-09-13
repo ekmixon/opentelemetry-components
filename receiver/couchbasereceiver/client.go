@@ -66,7 +66,7 @@ type NodeStats struct {
 			GetHits      *float64 `json:"get_hits"`
 			Ops          *float64 `json:"ops"`
 		} `json:"interestingStats"`
-		Uptime *string `json:"uptime"`
+		Uptime string `json:"uptime"`
 	} `json:"nodes"`
 	Buckets struct {
 		URI string `json:"uri"`

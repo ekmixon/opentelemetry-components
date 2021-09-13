@@ -1,0 +1,25 @@
+{
+    "name": "default",
+    "nodes": [
+      {
+        "systemStats": {
+          "cpu_cores_available": 0.5,
+          "allocstall": 0
+        },
+        "interestingStats": {
+          "couch_spatial_disk_size": 0,
+          "couch_spatial_data_size": 0
+        },
+        "memoryTotal": 2083807232,
+        "memoryFree": 930258944,
+        "mcdMemoryReserved": 1589,
+        "mcdMemoryAllocated": 1589
+      }
+    ],
+    "buckets": {
+      "uri": "/pools/default/buckets?v=105443202&uuid=4517d7f94cde4b64cdd260a662c65072",
+      "terseBucketsBase": "/pools/default/b/",
+      "terseStreamingBucketsBase": "/pools/default/bs/"
+    }
+  }
+  

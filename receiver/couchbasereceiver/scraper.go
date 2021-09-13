@@ -351,7 +351,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// uptime
 	uptimeLabels := pdata.NewStringMap()
-	uptimeValues, ok := c.parseInt("uptime", *stats.NodeStats.Nodes[0].Uptime)
+	uptimeValues, ok := c.parseInt("uptime", stats.NodeStats.Nodes[0].Uptime)
 	if !ok {
 		c.logger.Info(
 			"failed to collect metric",

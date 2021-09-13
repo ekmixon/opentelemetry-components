@@ -1,0 +1,15 @@
+[
+    {
+      "name": "otelb",
+      "basicStats": {
+        "vbActiveNumNonResident": 0
+      }
+    },
+    {
+      "name": "test_bucket",
+      "basicStats": {
+        "vbActiveNumNonResident": 0
+      }
+    }
+  ]
+  
