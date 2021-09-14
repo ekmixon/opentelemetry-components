@@ -37,6 +37,7 @@ func (m *mySQLScraper) start(_ context.Context, host component.Host) error {
 	client, err := newMySQLClient(mySQLConfig{
 		username: m.config.Username,
 		password: m.config.Password,
+		database: m.config.Database,
 		endpoint: m.config.Endpoint,
 	})
 	if err != nil {

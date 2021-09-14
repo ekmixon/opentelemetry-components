@@ -19,6 +19,9 @@ The following settings are required to create a database connection:
 - `username`
 - `password`
 
+The following settings are optional:
+- `database`: The database name. If not specified, metrics will be collected for all databases.
+
 - `collection_interval` (default = `10s`): This receiver collects metrics on an interval. This value must be a string readable by Golang's [time.ParseDuration](https://pkg.go.dev/time#ParseDuration). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, `h`.
 
 ### Example Configuration
@@ -29,6 +32,7 @@ receivers:
     endpoint: localhost:3306
     username: otel
     password: $MYSQL_PASSWORD
+    database: otel
     collection_interval: 10s
 ```
 
