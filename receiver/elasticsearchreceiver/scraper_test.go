@@ -67,7 +67,7 @@ func TestScraper(t *testing.T) {
 	ilm := ilms.At(0)
 	ms := ilm.Metrics()
 
-	require.Equal(t, 17, ms.Len())
+	require.Equal(t, len(metadata.M.Names()), ms.Len())
 
 	metricValues := make(map[string]interface{}, 7)
 
@@ -84,76 +84,97 @@ func TestScraper(t *testing.T) {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.CacheName)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.memory_usage":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.MemoryType)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.current_documents":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.DocumentType)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.http_connections":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.open_files":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.server_connections":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.peak_threads":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.storage_size":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.threads":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.data_nodes":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.nodes":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
 				}
 			case "elasticsearch.shards":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
 					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ShardType)
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
-					metricValues[label] = dp.Value()
+					metricValues[label] = dp.IntVal()
+				}
+			case "elasticsearch.thread_pool.threads":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ThreadPoolName)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
+				}
+			case "elasticsearch.thread_pool.queue":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ThreadPoolName)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
+				}
+			case "elasticsearch.thread_pool.active":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ThreadPoolName)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
 				}
 			}
 		case pdata.MetricDataTypeSum:
@@ -195,47 +216,66 @@ func TestScraper(t *testing.T) {
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
 					metricValues[label] = dp.IntVal()
 				}
+			case "elasticsearch.thread_pool.rejected":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ThreadPoolName)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
+				}
+			case "elasticsearch.thread_pool.completed":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.ThreadPoolName)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
+				}
 			}
 		}
 	}
 
 	require.Equal(t, map[string]interface{}{
-		"elasticsearch.cache_memory_usage field":   float64(0.0),
-		"elasticsearch.cache_memory_usage query":   float64(0.0),
-		"elasticsearch.cache_memory_usage request": float64(0.0),
-		"elasticsearch.current_documents deleted":  float64(0.0),
-		"elasticsearch.current_documents live":     float64(0.0),
-		"elasticsearch.data_nodes":                 float64(1.0),
-		"elasticsearch.gc_collection old":          int64(0),
-		"elasticsearch.gc_collection young":        int64(20),
-		"elasticsearch.http_connections":           float64(2.0),
-		"elasticsearch.memory_usage heap":          float64(3.05152e+08),
-		"elasticsearch.memory_usage non-heap":      float64(1.28825192e+08),
-		"elasticsearch.network receive":            int64(0),
-		"elasticsearch.network transmit":           int64(0),
-		"elasticsearch.nodes":                      float64(1.0),
-		"elasticsearch.open_files":                 float64(270.0),
-		"elasticsearch.operation_time delete":      int64(0),
-		"elasticsearch.operation_time fetch":       int64(0),
-		"elasticsearch.operation_time get":         int64(0),
-		"elasticsearch.operation_time index":       int64(0),
-		"elasticsearch.operation_time query":       int64(0),
-		"elasticsearch.operations delete":          int64(0),
-		"elasticsearch.operations fetch":           int64(0),
-		"elasticsearch.operations get":             int64(0),
-		"elasticsearch.operations index":           int64(0),
-		"elasticsearch.operations query":           int64(0),
-		"elasticsearch.peak_threads":               float64(28.0),
-		"elasticsearch.server_connections":         float64(0.0),
-		"elasticsearch.shards active":              float64(0.0),
-		"elasticsearch.shards initializing":        float64(0.0),
-		"elasticsearch.shards relocating":          float64(0.0),
-		"elasticsearch.shards unassigned":          float64(0.0),
-		"elasticsearch.storage_size":               float64(0.0),
-		"elasticsearch.threads":                    float64(27.0),
-		"elasticsearch.evictions field":            int64(0),
-		"elasticsearch.evictions query":            int64(0),
-		"elasticsearch.evictions request":          int64(0),
+		"elasticsearch.cache_memory_usage field":      int64(0.0),
+		"elasticsearch.cache_memory_usage query":      int64(0.0),
+		"elasticsearch.cache_memory_usage request":    int64(0.0),
+		"elasticsearch.current_documents deleted":     int64(0.0),
+		"elasticsearch.current_documents live":        int64(0.0),
+		"elasticsearch.data_nodes":                    int64(1.0),
+		"elasticsearch.gc_collection old":             int64(10),
+		"elasticsearch.gc_collection young":           int64(20),
+		"elasticsearch.http_connections":              int64(2.0),
+		"elasticsearch.memory_usage heap":             int64(3.05152e+08),
+		"elasticsearch.memory_usage non-heap":         int64(1.28825192e+08),
+		"elasticsearch.network receive":               int64(0),
+		"elasticsearch.network transmit":              int64(0),
+		"elasticsearch.nodes":                         int64(1.0),
+		"elasticsearch.open_files":                    int64(270.0),
+		"elasticsearch.operation_time delete":         int64(0),
+		"elasticsearch.operation_time fetch":          int64(0),
+		"elasticsearch.operation_time get":            int64(0),
+		"elasticsearch.operation_time index":          int64(0),
+		"elasticsearch.operation_time query":          int64(0),
+		"elasticsearch.operations delete":             int64(0),
+		"elasticsearch.operations fetch":              int64(0),
+		"elasticsearch.operations get":                int64(0),
+		"elasticsearch.operations index":              int64(0),
+		"elasticsearch.operations query":              int64(0),
+		"elasticsearch.peak_threads":                  int64(28.0),
+		"elasticsearch.server_connections":            int64(0.0),
+		"elasticsearch.shards active":                 int64(0.0),
+		"elasticsearch.shards initializing":           int64(0.0),
+		"elasticsearch.shards relocating":             int64(0.0),
+		"elasticsearch.shards unassigned":             int64(0.0),
+		"elasticsearch.storage_size":                  int64(0.0),
+		"elasticsearch.threads":                       int64(27.0),
+		"elasticsearch.evictions field":               int64(0),
+		"elasticsearch.evictions query":               int64(0),
+		"elasticsearch.evictions request":             int64(0),
+		"elasticsearch.thread_pool.active analyze":    int64(3),
+		"elasticsearch.thread_pool.completed analyze": int64(6),
+		"elasticsearch.thread_pool.queue analyze":     int64(2),
+		"elasticsearch.thread_pool.rejected analyze":  int64(4),
+		"elasticsearch.thread_pool.threads analyze":   int64(1),
 	}, metricValues)
 }
 

@@ -43,15 +43,6 @@ func (r *elasticsearchScraper) start(_ context.Context, host component.Host) err
 	return nil
 }
 
-func (r *elasticsearchScraper) processFloatMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
-	floatVal, err := getFloatFromBody(keys, body)
-	if err != nil {
-		r.logger.Info(err.Error())
-	} else {
-		addToMetric(metric, labels, floatVal, r.now)
-	}
-}
-
 func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
 	intVal, err := getIntFromBody(keys, body)
 	if err != nil {
@@ -103,7 +94,10 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
-	nodesInter := nodeStats["nodes"]
+	nodesInter, ok := nodeStats["nodes"]
+	if !ok {
+		return pdata.ResourceMetricsSlice{}, fmt.Errorf("no nodes data available")
+	}
 	nodes, ok := nodesInter.(map[string]interface{})
 	if !ok {
 		return pdata.ResourceMetricsSlice{}, fmt.Errorf("could not reflect set of nodes as a map")
@@ -126,6 +120,11 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	peakThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchPeakThreads).Gauge().DataPoints()
 	storageSizeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchStorageSize).Gauge().DataPoints()
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
+	threadPoolThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolThreads).Gauge().DataPoints()
+	threadPoolQueueMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolQueue).Gauge().DataPoints()
+	threadPoolActiveMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolActive).Gauge().DataPoints()
+	threadPoolRejectedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolRejected).Sum().DataPoints()
+	threadPoolCompletedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolCompleted).Sum().DataPoints()
 
 	for _, nodeDataInter := range nodes {
 		nodeData, ok := nodeDataInter.(map[string]interface{})
@@ -134,25 +133,20 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 			continue
 		}
 
-		nodeNameInter, ok := nodeData["name"]
-		if !ok {
-			r.logger.Error("could not find node name")
-			continue
-		}
-		nodeName, ok := nodeNameInter.(string)
-		if !ok {
-			r.logger.Error("invalid node name")
+		nodeName, err := getStringFromBody([]string{"name"}, nodeData)
+		if err != nil {
+			r.logger.Error(err.Error())
 			continue
 		}
 
 		labels := pdata.NewStringMap()
 		labels.Upsert(metadata.L.ServerName, nodeName)
 		labels.Upsert(metadata.L.CacheName, "query")
-		r.processFloatMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		r.processIntMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		labels.Upsert(metadata.L.CacheName, "request")
-		r.processFloatMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		labels.Upsert(metadata.L.CacheName, "field")
-		r.processFloatMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 
 		labels.Upsert(metadata.L.CacheName, "query")
 		r.processIntMetric([]string{"indices", "query_cache", "evictions"}, nodeData, evictionsMetric, labels)
@@ -169,9 +163,9 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		labels.Delete(metadata.L.GcType)
 
 		labels.Upsert(metadata.L.MemoryType, "heap")
-		r.processFloatMetric([]string{"jvm", "mem", "heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
+		r.processIntMetric([]string{"jvm", "mem", "heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
 		labels.Upsert(metadata.L.MemoryType, "non-heap")
-		r.processFloatMetric([]string{"jvm", "mem", "non_heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
+		r.processIntMetric([]string{"jvm", "mem", "non_heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
 		labels.Delete(metadata.L.MemoryType)
 
 		labels.Upsert(metadata.L.Direction, "receive")
@@ -181,16 +175,16 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		labels.Delete(metadata.L.Direction)
 
 		labels.Upsert(metadata.L.DocumentType, "live")
-		r.processFloatMetric([]string{"indices", "docs", "count"}, nodeData, CurrentDocsMetric, labels)
+		r.processIntMetric([]string{"indices", "docs", "count"}, nodeData, CurrentDocsMetric, labels)
 		labels.Upsert(metadata.L.DocumentType, "deleted")
-		r.processFloatMetric([]string{"indices", "docs", "deleted"}, nodeData, CurrentDocsMetric, labels)
+		r.processIntMetric([]string{"indices", "docs", "deleted"}, nodeData, CurrentDocsMetric, labels)
 		labels.Delete(metadata.L.DocumentType)
 
-		r.processFloatMetric([]string{"http", "current_open"}, nodeData, HTTPConnsMetric, labels)
+		r.processIntMetric([]string{"http", "current_open"}, nodeData, HTTPConnsMetric, labels)
 
-		r.processFloatMetric([]string{"process", "open_file_descriptors"}, nodeData, OpenFilesMetric, labels)
+		r.processIntMetric([]string{"process", "open_file_descriptors"}, nodeData, OpenFilesMetric, labels)
 
-		r.processFloatMetric([]string{"transport", "server_open"}, nodeData, ServerConnsMetric, labels)
+		r.processIntMetric([]string{"transport", "server_open"}, nodeData, ServerConnsMetric, labels)
 
 		labels.Upsert(metadata.L.Operation, "index")
 		r.processIntMetric([]string{"indices", "indexing", "index_total"}, nodeData, OperationsMetric, labels)
@@ -215,11 +209,37 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		r.processIntMetric([]string{"indices", "search", "fetch_time_in_millis"}, nodeData, OperationTimeMetric, labels)
 		labels.Delete(metadata.L.Operation)
 
-		r.processFloatMetric([]string{"jvm", "threads", "peak_count"}, nodeData, peakThreadsMetric, labels)
+		r.processIntMetric([]string{"jvm", "threads", "peak_count"}, nodeData, peakThreadsMetric, labels)
 
-		r.processFloatMetric([]string{"indices", "store", "size_in_bytes"}, nodeData, storageSizeMetric, labels)
+		r.processIntMetric([]string{"indices", "store", "size_in_bytes"}, nodeData, storageSizeMetric, labels)
 
-		r.processFloatMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, labels)
+		r.processIntMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, labels)
+
+		threadPools, ok := nodeData["thread_pool"]
+		if !ok {
+			r.logger.Error("no thread pool data available")
+			continue
+		}
+		threadPoolsInter, ok := threadPools.(map[string]interface{})
+		if !ok {
+			r.logger.Error("could not reflect thread pools data as a map")
+			continue
+		}
+
+		for threadPoolName, threadPoolInter := range threadPoolsInter {
+			threadPool, ok := threadPoolInter.(map[string]interface{})
+			if !ok {
+				r.logger.Error("could not reflect thread pool data as a map")
+				continue
+			}
+			labels.Upsert(metadata.L.ThreadPoolName, threadPoolName)
+			r.processIntMetric([]string{"threads"}, threadPool, threadPoolThreadsMetric, labels)
+			r.processIntMetric([]string{"queue"}, threadPool, threadPoolQueueMetric, labels)
+			r.processIntMetric([]string{"active"}, threadPool, threadPoolActiveMetric, labels)
+			r.processIntMetric([]string{"rejected"}, threadPool, threadPoolRejectedMetric, labels)
+			r.processIntMetric([]string{"completed"}, threadPool, threadPoolCompletedMetric, labels)
+			labels.Delete(metadata.L.ThreadPoolName)
+		}
 	}
 
 	labels := pdata.NewStringMap()
@@ -228,46 +248,46 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
-	r.processFloatMetric([]string{"nodes", "count", "data"}, clusterStats, DataNodesMetric, labels)
+	r.processIntMetric([]string{"nodes", "count", "data"}, clusterStats, DataNodesMetric, labels)
 
-	r.processFloatMetric([]string{"nodes", "count", "total"}, clusterStats, NodesMetric, labels)
+	r.processIntMetric([]string{"nodes", "count", "total"}, clusterStats, NodesMetric, labels)
 
 	clusterHealth, err := r.makeRequest("/_cluster/health")
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
 	labels.Upsert(metadata.L.ShardType, "initializing")
-	r.processFloatMetric([]string{"initializing_shards"}, clusterHealth, ShardsMetric, labels)
+	r.processIntMetric([]string{"initializing_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Upsert(metadata.L.ShardType, "relocating")
-	r.processFloatMetric([]string{"relocating_shards"}, clusterHealth, ShardsMetric, labels)
+	r.processIntMetric([]string{"relocating_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Upsert(metadata.L.ShardType, "active")
-	r.processFloatMetric([]string{"active_shards"}, clusterHealth, ShardsMetric, labels)
+	r.processIntMetric([]string{"active_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Upsert(metadata.L.ShardType, "unassigned")
-	r.processFloatMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
+	r.processIntMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Delete(metadata.L.ShardType)
 
 	return rms, nil
 }
 
-func getFloatFromBody(keys []string, body map[string]interface{}) (float64, error) {
+func getStringFromBody(keys []string, body map[string]interface{}) (string, error) {
 	var currentValue interface{} = body
 
 	for _, key := range keys {
 		currentBody, ok := currentValue.(map[string]interface{})
 		if !ok {
-			return 0, fmt.Errorf("could not find key in body")
+			return "", fmt.Errorf("could not find key in body")
 		}
 
 		currentValue, ok = currentBody[key]
 		if !ok {
-			return 0, fmt.Errorf("could not find key in body")
+			return "", fmt.Errorf("could not find key in body")
 		}
 	}
-	floatVal, ok := parseFloat(currentValue)
+	stringVal, ok := currentValue.(string)
 	if !ok {
-		return 0, fmt.Errorf("could not parse value as float")
+		return "", fmt.Errorf("could not parse value as string")
 	}
-	return floatVal, nil
+	return stringVal, nil
 }
 
 func getIntFromBody(keys []string, body map[string]interface{}) (int64, error) {
@@ -289,27 +309,6 @@ func getIntFromBody(keys []string, body map[string]interface{}) (int64, error) {
 		return 0, fmt.Errorf("could not parse value as int, keys: %s", keys)
 	}
 	return intVal, nil
-}
-
-// parseFloat converts string to float64.
-func parseFloat(value interface{}) (float64, bool) {
-	switch f := value.(type) {
-	case float64:
-		return f, true
-	case int64:
-		return float64(f), true
-	case float32:
-		return float64(f), true
-	case int32:
-		return float64(f), true
-	case string:
-		fConv, err := strconv.ParseFloat(f, 64)
-		if err != nil {
-			return 0, false
-		}
-		return fConv, true
-	}
-	return 0, false
 }
 
 func parseInt(value interface{}) (int64, bool) {
@@ -336,15 +335,6 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	m := ms.AppendEmpty()
 	mi.Init(m)
 	return m
-}
-
-func addToMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
-	dataPoint := metric.AppendEmpty()
-	dataPoint.SetTimestamp(ts)
-	dataPoint.SetDoubleVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
-	}
 }
 
 func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {

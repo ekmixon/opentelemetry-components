@@ -41,23 +41,28 @@ func (m *metricImpl) Init(metric pdata.Metric) {
 }
 
 type metricStruct struct {
-	ElasticsearchCacheMemoryUsage  MetricIntf
-	ElasticsearchCurrentDocuments  MetricIntf
-	ElasticsearchDataNodes         MetricIntf
-	ElasticsearchEvictions         MetricIntf
-	ElasticsearchGcCollection      MetricIntf
-	ElasticsearchHTTPConnections   MetricIntf
-	ElasticsearchMemoryUsage       MetricIntf
-	ElasticsearchNetwork           MetricIntf
-	ElasticsearchNodes             MetricIntf
-	ElasticsearchOpenFiles         MetricIntf
-	ElasticsearchOperationTime     MetricIntf
-	ElasticsearchOperations        MetricIntf
-	ElasticsearchPeakThreads       MetricIntf
-	ElasticsearchServerConnections MetricIntf
-	ElasticsearchShards            MetricIntf
-	ElasticsearchStorageSize       MetricIntf
-	ElasticsearchThreads           MetricIntf
+	ElasticsearchCacheMemoryUsage    MetricIntf
+	ElasticsearchCurrentDocuments    MetricIntf
+	ElasticsearchDataNodes           MetricIntf
+	ElasticsearchEvictions           MetricIntf
+	ElasticsearchGcCollection        MetricIntf
+	ElasticsearchHTTPConnections     MetricIntf
+	ElasticsearchMemoryUsage         MetricIntf
+	ElasticsearchNetwork             MetricIntf
+	ElasticsearchNodes               MetricIntf
+	ElasticsearchOpenFiles           MetricIntf
+	ElasticsearchOperationTime       MetricIntf
+	ElasticsearchOperations          MetricIntf
+	ElasticsearchPeakThreads         MetricIntf
+	ElasticsearchServerConnections   MetricIntf
+	ElasticsearchShards              MetricIntf
+	ElasticsearchStorageSize         MetricIntf
+	ElasticsearchThreadPoolActive    MetricIntf
+	ElasticsearchThreadPoolCompleted MetricIntf
+	ElasticsearchThreadPoolQueue     MetricIntf
+	ElasticsearchThreadPoolRejected  MetricIntf
+	ElasticsearchThreadPoolThreads   MetricIntf
+	ElasticsearchThreads             MetricIntf
 }
 
 // Names returns a list of all the metric name strings.
@@ -79,28 +84,38 @@ func (m *metricStruct) Names() []string {
 		"elasticsearch.server_connections",
 		"elasticsearch.shards",
 		"elasticsearch.storage_size",
+		"elasticsearch.thread_pool.active",
+		"elasticsearch.thread_pool.completed",
+		"elasticsearch.thread_pool.queue",
+		"elasticsearch.thread_pool.rejected",
+		"elasticsearch.thread_pool.threads",
 		"elasticsearch.threads",
 	}
 }
 
 var metricsByName = map[string]MetricIntf{
-	"elasticsearch.cache_memory_usage": Metrics.ElasticsearchCacheMemoryUsage,
-	"elasticsearch.current_documents":  Metrics.ElasticsearchCurrentDocuments,
-	"elasticsearch.data_nodes":         Metrics.ElasticsearchDataNodes,
-	"elasticsearch.evictions":          Metrics.ElasticsearchEvictions,
-	"elasticsearch.gc_collection":      Metrics.ElasticsearchGcCollection,
-	"elasticsearch.http_connections":   Metrics.ElasticsearchHTTPConnections,
-	"elasticsearch.memory_usage":       Metrics.ElasticsearchMemoryUsage,
-	"elasticsearch.network":            Metrics.ElasticsearchNetwork,
-	"elasticsearch.nodes":              Metrics.ElasticsearchNodes,
-	"elasticsearch.open_files":         Metrics.ElasticsearchOpenFiles,
-	"elasticsearch.operation_time":     Metrics.ElasticsearchOperationTime,
-	"elasticsearch.operations":         Metrics.ElasticsearchOperations,
-	"elasticsearch.peak_threads":       Metrics.ElasticsearchPeakThreads,
-	"elasticsearch.server_connections": Metrics.ElasticsearchServerConnections,
-	"elasticsearch.shards":             Metrics.ElasticsearchShards,
-	"elasticsearch.storage_size":       Metrics.ElasticsearchStorageSize,
-	"elasticsearch.threads":            Metrics.ElasticsearchThreads,
+	"elasticsearch.cache_memory_usage":    Metrics.ElasticsearchCacheMemoryUsage,
+	"elasticsearch.current_documents":     Metrics.ElasticsearchCurrentDocuments,
+	"elasticsearch.data_nodes":            Metrics.ElasticsearchDataNodes,
+	"elasticsearch.evictions":             Metrics.ElasticsearchEvictions,
+	"elasticsearch.gc_collection":         Metrics.ElasticsearchGcCollection,
+	"elasticsearch.http_connections":      Metrics.ElasticsearchHTTPConnections,
+	"elasticsearch.memory_usage":          Metrics.ElasticsearchMemoryUsage,
+	"elasticsearch.network":               Metrics.ElasticsearchNetwork,
+	"elasticsearch.nodes":                 Metrics.ElasticsearchNodes,
+	"elasticsearch.open_files":            Metrics.ElasticsearchOpenFiles,
+	"elasticsearch.operation_time":        Metrics.ElasticsearchOperationTime,
+	"elasticsearch.operations":            Metrics.ElasticsearchOperations,
+	"elasticsearch.peak_threads":          Metrics.ElasticsearchPeakThreads,
+	"elasticsearch.server_connections":    Metrics.ElasticsearchServerConnections,
+	"elasticsearch.shards":                Metrics.ElasticsearchShards,
+	"elasticsearch.storage_size":          Metrics.ElasticsearchStorageSize,
+	"elasticsearch.thread_pool.active":    Metrics.ElasticsearchThreadPoolActive,
+	"elasticsearch.thread_pool.completed": Metrics.ElasticsearchThreadPoolCompleted,
+	"elasticsearch.thread_pool.queue":     Metrics.ElasticsearchThreadPoolQueue,
+	"elasticsearch.thread_pool.rejected":  Metrics.ElasticsearchThreadPoolRejected,
+	"elasticsearch.thread_pool.threads":   Metrics.ElasticsearchThreadPoolThreads,
+	"elasticsearch.threads":               Metrics.ElasticsearchThreads,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -109,23 +124,28 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 
 func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 	return map[string]func(pdata.Metric){
-		Metrics.ElasticsearchCacheMemoryUsage.Name():  Metrics.ElasticsearchCacheMemoryUsage.Init,
-		Metrics.ElasticsearchCurrentDocuments.Name():  Metrics.ElasticsearchCurrentDocuments.Init,
-		Metrics.ElasticsearchDataNodes.Name():         Metrics.ElasticsearchDataNodes.Init,
-		Metrics.ElasticsearchEvictions.Name():         Metrics.ElasticsearchEvictions.Init,
-		Metrics.ElasticsearchGcCollection.Name():      Metrics.ElasticsearchGcCollection.Init,
-		Metrics.ElasticsearchHTTPConnections.Name():   Metrics.ElasticsearchHTTPConnections.Init,
-		Metrics.ElasticsearchMemoryUsage.Name():       Metrics.ElasticsearchMemoryUsage.Init,
-		Metrics.ElasticsearchNetwork.Name():           Metrics.ElasticsearchNetwork.Init,
-		Metrics.ElasticsearchNodes.Name():             Metrics.ElasticsearchNodes.Init,
-		Metrics.ElasticsearchOpenFiles.Name():         Metrics.ElasticsearchOpenFiles.Init,
-		Metrics.ElasticsearchOperationTime.Name():     Metrics.ElasticsearchOperationTime.Init,
-		Metrics.ElasticsearchOperations.Name():        Metrics.ElasticsearchOperations.Init,
-		Metrics.ElasticsearchPeakThreads.Name():       Metrics.ElasticsearchPeakThreads.Init,
-		Metrics.ElasticsearchServerConnections.Name(): Metrics.ElasticsearchServerConnections.Init,
-		Metrics.ElasticsearchShards.Name():            Metrics.ElasticsearchShards.Init,
-		Metrics.ElasticsearchStorageSize.Name():       Metrics.ElasticsearchStorageSize.Init,
-		Metrics.ElasticsearchThreads.Name():           Metrics.ElasticsearchThreads.Init,
+		Metrics.ElasticsearchCacheMemoryUsage.Name():    Metrics.ElasticsearchCacheMemoryUsage.Init,
+		Metrics.ElasticsearchCurrentDocuments.Name():    Metrics.ElasticsearchCurrentDocuments.Init,
+		Metrics.ElasticsearchDataNodes.Name():           Metrics.ElasticsearchDataNodes.Init,
+		Metrics.ElasticsearchEvictions.Name():           Metrics.ElasticsearchEvictions.Init,
+		Metrics.ElasticsearchGcCollection.Name():        Metrics.ElasticsearchGcCollection.Init,
+		Metrics.ElasticsearchHTTPConnections.Name():     Metrics.ElasticsearchHTTPConnections.Init,
+		Metrics.ElasticsearchMemoryUsage.Name():         Metrics.ElasticsearchMemoryUsage.Init,
+		Metrics.ElasticsearchNetwork.Name():             Metrics.ElasticsearchNetwork.Init,
+		Metrics.ElasticsearchNodes.Name():               Metrics.ElasticsearchNodes.Init,
+		Metrics.ElasticsearchOpenFiles.Name():           Metrics.ElasticsearchOpenFiles.Init,
+		Metrics.ElasticsearchOperationTime.Name():       Metrics.ElasticsearchOperationTime.Init,
+		Metrics.ElasticsearchOperations.Name():          Metrics.ElasticsearchOperations.Init,
+		Metrics.ElasticsearchPeakThreads.Name():         Metrics.ElasticsearchPeakThreads.Init,
+		Metrics.ElasticsearchServerConnections.Name():   Metrics.ElasticsearchServerConnections.Init,
+		Metrics.ElasticsearchShards.Name():              Metrics.ElasticsearchShards.Init,
+		Metrics.ElasticsearchStorageSize.Name():         Metrics.ElasticsearchStorageSize.Init,
+		Metrics.ElasticsearchThreadPoolActive.Name():    Metrics.ElasticsearchThreadPoolActive.Init,
+		Metrics.ElasticsearchThreadPoolCompleted.Name(): Metrics.ElasticsearchThreadPoolCompleted.Init,
+		Metrics.ElasticsearchThreadPoolQueue.Name():     Metrics.ElasticsearchThreadPoolQueue.Init,
+		Metrics.ElasticsearchThreadPoolRejected.Name():  Metrics.ElasticsearchThreadPoolRejected.Init,
+		Metrics.ElasticsearchThreadPoolThreads.Name():   Metrics.ElasticsearchThreadPoolThreads.Init,
+		Metrics.ElasticsearchThreads.Name():             Metrics.ElasticsearchThreads.Init,
 	}
 }
 
@@ -287,6 +307,55 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
+		"elasticsearch.thread_pool.active",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.thread_pool.active")
+			metric.SetDescription("Number of active threads in the thread pool.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
+	&metricImpl{
+		"elasticsearch.thread_pool.completed",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.thread_pool.completed")
+			metric.SetDescription("Number of tasks completed by the thread pool executor.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(false)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+		},
+	},
+	&metricImpl{
+		"elasticsearch.thread_pool.queue",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.thread_pool.queue")
+			metric.SetDescription("Number of tasks in the queue for the thread pool.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
+	&metricImpl{
+		"elasticsearch.thread_pool.rejected",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.thread_pool.rejected")
+			metric.SetDescription("Number of tasks rejected by the thread pool executor.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(false)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+		},
+	},
+	&metricImpl{
+		"elasticsearch.thread_pool.threads",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.thread_pool.threads")
+			metric.SetDescription("Number of threads in the pool.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
+	&metricImpl{
 		"elasticsearch.threads",
 		func(metric pdata.Metric) {
 			metric.SetName("elasticsearch.threads")
@@ -303,22 +372,24 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
-	// CacheName (type of cache)
+	// CacheName (Type of cache)
 	CacheName string
 	// Direction (Data direction)
 	Direction string
-	// DocumentType (Document count type.)
+	// DocumentType (Type of document count)
 	DocumentType string
-	// GcType (type of garbage collection)
+	// GcType (Type of garbage collection)
 	GcType string
-	// MemoryType (type of memory)
+	// MemoryType (Type of memory)
 	MemoryType string
-	// Operation (the operation_type)
+	// Operation (Type of operation)
 	Operation string
 	// ServerName (The name of the server or node the metric is based on.)
 	ServerName string
 	// ShardType (State of the shard)
 	ShardType string
+	// ThreadPoolName (Thread pool name)
+	ThreadPoolName string
 }{
 	"cache_name",
 	"direction",
@@ -328,6 +399,7 @@ var Labels = struct {
 	"operation",
 	"server_name",
 	"shard_type",
+	"thread_pool_name",
 }
 
 // L contains the possible metric labels that can be used. L is an alias for
