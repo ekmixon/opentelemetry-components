@@ -100,8 +100,8 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	}
 
 	r.now = pdata.TimestampFromTime(time.Now())
-	metrics := pdata.NewMetrics()
-	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	rms := pdata.NewResourceMetricsSlice()
+	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
 	nodesInter := nodeStats["nodes"]
 	nodes, ok := nodesInter.(map[string]interface{})
@@ -235,7 +235,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	r.processFloatMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Delete(metadata.L.ShardType)
 
-	return metrics.ResourceMetrics(), nil
+	return rms, nil
 }
 
 func getFloatFromBody(keys []string, body map[string]interface{}) (float64, error) {

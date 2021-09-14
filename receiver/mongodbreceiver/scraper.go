@@ -143,8 +143,8 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		}
 	}()
 
-	metrics := pdata.NewMetrics()
-	ilm := metrics.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	rms := pdata.NewResourceMetricsSlice()
+	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
 	mm := newMetricManager(r.logger, ilm)
 
@@ -179,7 +179,7 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		}
 	}
 
-	return metrics.ResourceMetrics(), nil
+	return rms, nil
 }
 
 func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricManager, document bson.M) {
