@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.30.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.30.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.31.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.30.0
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.11.1

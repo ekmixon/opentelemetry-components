@@ -1130,6 +1130,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudex
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.30.0/go.mod h1:eC8bR4icobRxEpbraHedyH5cHLKLTRF5UKQx50I2XJY=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.30.0 h1:o3s1fHxwlbG2joJWMuMUSTs3yOg1A9t88BKcgXkQ7SA=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.30.0/go.mod h1:qPb5nlV11AOSavsdJLY0ObyDR7imJc6UVn45/2yI4Sw=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.31.0 h1:yiNA5mp76inwpEVDSfIMUU93u4gREmOH4/kkS5gbGvY=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.31.0/go.mod h1:yCBT+392+dfqWOiJOrZbHe8+GfucV6Dy6GVcts6iuPU=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.30.0 h1:AbvKAwyL6c4GbXWxaeRQKljD3C7GJ6aqao0WnRJ74pI=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.30.0/go.mod h1:Mz+99n8qX7azCD2IBj7OjzvoYZpaQSPJc9yXFChlHJI=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
