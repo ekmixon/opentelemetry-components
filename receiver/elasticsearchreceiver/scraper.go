@@ -127,15 +127,26 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	storageSizeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchStorageSize).Gauge().DataPoints()
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
 
-	for nodeName, nodeDataInter := range nodes {
-		labels := pdata.NewStringMap()
-		labels.Upsert(metadata.L.ServerName, nodeName)
-
+	for _, nodeDataInter := range nodes {
 		nodeData, ok := nodeDataInter.(map[string]interface{})
 		if !ok {
-			r.logger.Info("could not reflect node data as a map")
+			r.logger.Error("could not reflect node data as a map")
 			continue
 		}
+
+		nodeNameInter, ok := nodeData["name"]
+		if !ok {
+			r.logger.Error("could not find node name")
+			continue
+		}
+		nodeName, ok := nodeNameInter.(string)
+		if !ok {
+			r.logger.Error("invalid node name")
+			continue
+		}
+
+		labels := pdata.NewStringMap()
+		labels.Upsert(metadata.L.ServerName, nodeName)
 		labels.Upsert(metadata.L.CacheName, "query")
 		r.processFloatMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		labels.Upsert(metadata.L.CacheName, "request")
