@@ -61,6 +61,10 @@ arm64_linux:
 amd64_windows:
 	GOOS=windows GOARCH=amd64 $(MAKE) build
 
+.PHONY: container-image
+container-image:
+	docker build --progress=plain . -t otelcompcol:latest
+
 .PHONY: vet
 vet:
 	go vet -tags=integration ./...

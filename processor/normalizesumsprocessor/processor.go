@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
@@ -15,7 +16,8 @@ type NormalizeSumsProcessor struct {
 	logger     *zap.Logger
 	transforms []Transform
 
-	history map[string]*startPoint
+	historyMux sync.RWMutex
+	history    map[string]*startPoint
 }
 
 type startPoint struct {
@@ -141,7 +143,9 @@ func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, met
 func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint, resource pdata.Resource, metric pdata.Metric) bool {
 	metricIdentifier := dataPointIdentifier(resource, metric, dp.LabelsMap())
 
+	nsp.historyMux.RLock()
 	start := nsp.history[metricIdentifier]
+	nsp.historyMux.RUnlock()
 	// If this is the first time we've observed this unique metric,
 	// record it as the start point and do not report this data point
 	if start == nil {
@@ -154,7 +158,9 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 			numberDataPoint: &newDP,
 			lastDoubleValue: newDP.Value(),
 		}
+		nsp.historyMux.Lock()
 		nsp.history[metricIdentifier] = &newStart
+		nsp.historyMux.Unlock()
 
 		return false
 	}

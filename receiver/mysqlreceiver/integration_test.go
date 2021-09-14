@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package mysqlreceiver
 
 import (
@@ -33,7 +30,7 @@ func TestMysqlIntegration(t *testing.T) {
 
 		f := NewFactory()
 		cfg := f.CreateDefaultConfig().(*Config)
-		cfg.Endpoint = net.JoinHostPort(hostname, "3306")
+		cfg.Endpoint = net.JoinHostPort(hostname, "3307")
 		cfg.Username = "otel"
 		cfg.Password = "otel"
 
@@ -96,7 +93,7 @@ var (
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.mysql.5_7",
 		},
-		ExposedPorts: []string{"3306:3306"},
+		ExposedPorts: []string{"3307:3306"},
 		WaitingFor: wait.ForListeningPort("3306").
 			WithStartupTimeout(2 * time.Minute),
 	}
