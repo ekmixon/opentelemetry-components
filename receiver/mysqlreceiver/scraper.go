@@ -37,7 +37,6 @@ func (m *mySQLScraper) start(_ context.Context, host component.Host) error {
 	client, err := newMySQLClient(mySQLConfig{
 		username: m.config.Username,
 		password: m.config.Password,
-		database: m.config.Database,
 		endpoint: m.config.Endpoint,
 	})
 	if err != nil {
@@ -112,16 +111,10 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	sorts := initMetric(ilm.Metrics(), metadata.M.MysqlSorts).Sum().DataPoints()
 	threads := initMetric(ilm.Metrics(), metadata.M.MysqlThreads).Gauge().DataPoints()
 
-	databaseName := m.config.Database
-	if databaseName == "" {
-		databaseName = "_global"
-	}
-
 	// collect innodb metrics.
 	innodbStats, err := m.client.getInnodbStats()
 	for k, v := range innodbStats {
 		labels := pdata.NewStringMap()
-		labels.Insert(metadata.L.Database, databaseName)
 		switch k {
 		case "buffer_pool_size":
 			if f, ok := m.parseFloat(k, v); ok {
@@ -144,7 +137,6 @@ func (m *mySQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 
 	for k, v := range globalStats {
 		labels := pdata.NewStringMap()
-		labels.Insert(metadata.L.Database, databaseName)
 		switch k {
 
 		// buffer_pool_pages

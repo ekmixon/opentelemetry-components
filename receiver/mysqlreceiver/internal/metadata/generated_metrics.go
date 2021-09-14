@@ -284,8 +284,6 @@ var Labels = struct {
 	BufferPoolSize string
 	// Command (The command types)
 	Command string
-	// Database (The name of the database)
-	Database string
 	// DoubleWrites (The doublewrite types)
 	DoubleWrites string
 	// Handler (The handler types)
@@ -311,7 +309,6 @@ var Labels = struct {
 	"kind",
 	"kind",
 	"command",
-	"database",
 	"kind",
 	"kind",
 	"kind",
