@@ -71,6 +71,14 @@ metrics:
       monotonic: true
       aggregation: cumulative
     labels: [server_name, gc_type]
+  elasticsearch.gc_collection_time:
+    description: Garbage collection time.
+    unit: ms
+    data:
+      type: sum
+      monotonic: true
+      aggregation: cumulative
+    labels: [server_name, gc_type]
   elasticsearch.memory_usage:
     description: Size in bytes of memory.
     unit: by

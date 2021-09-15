@@ -256,7 +256,7 @@
                         },
                         "old": {
                             "collection_count": 10,
-                            "collection_time_in_millis": 0
+                            "collection_time_in_millis": 5
                         }
                     }
                 },

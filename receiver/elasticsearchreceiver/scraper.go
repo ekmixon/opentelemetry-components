@@ -106,6 +106,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	cacheMemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCacheMemoryUsage).Gauge().DataPoints()
 	evictionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchEvictions).Sum().DataPoints()
 	GCCollectionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollection).Sum().DataPoints()
+	GCCollectionTimeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollectionTime).Sum().DataPoints()
 	MemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchMemoryUsage).Gauge().DataPoints()
 	NetworkMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchNetwork).Sum().DataPoints()
 	CurrentDocsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCurrentDocuments).Gauge().DataPoints()
@@ -158,8 +159,10 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 
 		labels.Upsert(metadata.L.GcType, "young")
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_count"}, nodeData, GCCollectionsMetric, labels)
+		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
 		labels.Upsert(metadata.L.GcType, "old")
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_count"}, nodeData, GCCollectionsMetric, labels)
+		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
 		labels.Delete(metadata.L.GcType)
 
 		labels.Upsert(metadata.L.MemoryType, "heap")

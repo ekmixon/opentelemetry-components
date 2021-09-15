@@ -46,6 +46,7 @@ type metricStruct struct {
 	ElasticsearchDataNodes           MetricIntf
 	ElasticsearchEvictions           MetricIntf
 	ElasticsearchGcCollection        MetricIntf
+	ElasticsearchGcCollectionTime    MetricIntf
 	ElasticsearchHTTPConnections     MetricIntf
 	ElasticsearchMemoryUsage         MetricIntf
 	ElasticsearchNetwork             MetricIntf
@@ -73,6 +74,7 @@ func (m *metricStruct) Names() []string {
 		"elasticsearch.data_nodes",
 		"elasticsearch.evictions",
 		"elasticsearch.gc_collection",
+		"elasticsearch.gc_collection_time",
 		"elasticsearch.http_connections",
 		"elasticsearch.memory_usage",
 		"elasticsearch.network",
@@ -99,6 +101,7 @@ var metricsByName = map[string]MetricIntf{
 	"elasticsearch.data_nodes":            Metrics.ElasticsearchDataNodes,
 	"elasticsearch.evictions":             Metrics.ElasticsearchEvictions,
 	"elasticsearch.gc_collection":         Metrics.ElasticsearchGcCollection,
+	"elasticsearch.gc_collection_time":    Metrics.ElasticsearchGcCollectionTime,
 	"elasticsearch.http_connections":      Metrics.ElasticsearchHTTPConnections,
 	"elasticsearch.memory_usage":          Metrics.ElasticsearchMemoryUsage,
 	"elasticsearch.network":               Metrics.ElasticsearchNetwork,
@@ -129,6 +132,7 @@ func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 		Metrics.ElasticsearchDataNodes.Name():           Metrics.ElasticsearchDataNodes.Init,
 		Metrics.ElasticsearchEvictions.Name():           Metrics.ElasticsearchEvictions.Init,
 		Metrics.ElasticsearchGcCollection.Name():        Metrics.ElasticsearchGcCollection.Init,
+		Metrics.ElasticsearchGcCollectionTime.Name():    Metrics.ElasticsearchGcCollectionTime.Init,
 		Metrics.ElasticsearchHTTPConnections.Name():     Metrics.ElasticsearchHTTPConnections.Init,
 		Metrics.ElasticsearchMemoryUsage.Name():         Metrics.ElasticsearchMemoryUsage.Init,
 		Metrics.ElasticsearchNetwork.Name():             Metrics.ElasticsearchNetwork.Init,
@@ -196,6 +200,17 @@ var Metrics = &metricStruct{
 			metric.SetName("elasticsearch.gc_collection")
 			metric.SetDescription("Garbage collection count.")
 			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+		},
+	},
+	&metricImpl{
+		"elasticsearch.gc_collection_time",
+		func(metric pdata.Metric) {
+			metric.SetName("elasticsearch.gc_collection_time")
+			metric.SetDescription("Garbage collection time.")
+			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
 			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)

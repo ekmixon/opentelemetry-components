@@ -195,6 +195,13 @@ func TestScraper(t *testing.T) {
 					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
 					metricValues[label] = dp.IntVal()
 				}
+			case "elasticsearch.gc_collection_time":
+				for i := 0; i < dps.Len(); i++ {
+					dp := dps.At(i)
+					dbLabel, _ := dp.LabelsMap().Get(metadata.L.GcType)
+					label := fmt.Sprintf("%s %s", m.Name(), dbLabel)
+					metricValues[label] = dp.IntVal()
+				}
 			case "elasticsearch.network":
 				for i := 0; i < dps.Len(); i++ {
 					dp := dps.At(i)
@@ -242,7 +249,9 @@ func TestScraper(t *testing.T) {
 		"elasticsearch.current_documents live":        int64(0.0),
 		"elasticsearch.data_nodes":                    int64(1.0),
 		"elasticsearch.gc_collection old":             int64(10),
+		"elasticsearch.gc_collection_time old":        int64(5),
 		"elasticsearch.gc_collection young":           int64(20),
+		"elasticsearch.gc_collection_time young":      int64(930),
 		"elasticsearch.http_connections":              int64(2.0),
 		"elasticsearch.memory_usage heap":             int64(3.05152e+08),
 		"elasticsearch.memory_usage non-heap":         int64(1.28825192e+08),
