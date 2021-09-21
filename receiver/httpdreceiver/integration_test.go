@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package httpdreceiver
@@ -86,14 +87,22 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			serverName, _ := m.Sum().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 		case metadata.M.HttpdCurrentConnections.Name():
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 		case metadata.M.HttpdWorkers.Name():
 			require.Equal(t, 2, m.Gauge().DataPoints().Len())
+			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 			dps := m.Gauge().DataPoints()
 			present := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
+				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
+				require.EqualValues(t, "localhost", serverName)
 				state, _ := dp.LabelsMap().Get("state")
 				switch state {
 				case metadata.LabelWorkersState.Busy:
@@ -107,9 +116,15 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			require.Equal(t, 2, len(present))
 		case metadata.M.HttpdRequests.Name():
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 		case metadata.M.HttpdBytes.Name():
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
+			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 		case metadata.M.HttpdTraffic.Name():
+			serverName, _ := m.Sum().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "localhost", serverName)
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 		case metadata.M.HttpdScoreboard.Name():
@@ -118,6 +133,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			present := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
+				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
+				require.EqualValues(t, "localhost", serverName)
 				state, _ := dp.LabelsMap().Get("state")
 				switch state {
 				case metadata.LabelScoreboardState.Waiting:

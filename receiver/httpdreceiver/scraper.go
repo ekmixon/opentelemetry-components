@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -90,8 +91,17 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	traffic := initMetric(ilm.Metrics(), metadata.M.HttpdTraffic).Sum().DataPoints()
 	scoreboard := initMetric(ilm.Metrics(), metadata.M.HttpdScoreboard).Gauge().DataPoints()
 
+	u, err := url.Parse(r.cfg.Endpoint)
+	if err != nil {
+		r.logger.Error("Failed to find parse server name", zap.Error(err))
+		return pdata.ResourceMetricsSlice{}, err
+	}
+	serverName := u.Hostname()
+
 	for metricKey, metricValue := range parseStats(stats) {
 		labels := pdata.NewStringMap()
+		labels.Insert(metadata.L.ServerName, serverName)
+
 		switch metricKey {
 		case "ServerUptimeSeconds":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
@@ -126,8 +136,7 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Scoreboard":
 			scoreboardMap := parseScoreboard(metricValue)
 			for identifier, score := range scoreboardMap {
-				labels := pdata.NewStringMap()
-				labels.Insert(metadata.L.ScoreboardState, identifier)
+				labels.Upsert(metadata.L.ScoreboardState, identifier)
 				addToIntMetric(scoreboard, labels, score, now)
 			}
 		}

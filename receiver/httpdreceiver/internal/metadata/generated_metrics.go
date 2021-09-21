@@ -169,10 +169,13 @@ var M = Metrics
 var Labels = struct {
 	// ScoreboardState (The state of a connection)
 	ScoreboardState string
+	// ServerName (The name of the Apache HTTP server)
+	ServerName string
 	// WorkersState (The state workers)
 	WorkersState string
 }{
 	"state",
+	"server_name",
 	"state",
 }
 

@@ -65,66 +65,82 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
 			dps := m.Sum().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 410, dps.At(0).IntVal())
 		case metadata.M.HttpdCurrentConnections.Name():
 			dps := m.Gauge().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, dps.Len())
 			require.EqualValues(t, 110, dps.At(0).IntVal())
 		case metadata.M.HttpdWorkers.Name():
 			dps := m.Gauge().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 2, m.Gauge().DataPoints().Len())
 
 			workerMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				state, _ := dp.LabelsMap().Get(metadata.L.WorkersState)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
+				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
+				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName, state)
 				workerMetrics[label] = int(dp.IntVal())
 			}
 
 			require.Equal(t, 2, len(workerMetrics))
 			require.Equal(t, map[string]int{
-				"httpd.workers state:busy": 13,
-				"httpd.workers state:idle": 227,
+				"httpd.workers serverName:127.0.0.1 state:busy": 13,
+				"httpd.workers serverName:127.0.0.1 state:idle": 227,
 			}, workerMetrics)
 		case metadata.M.HttpdRequests.Name():
 			dps := m.Gauge().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.EqualValues(t, 719.771, dps.At(0).Value())
 		case metadata.M.HttpdBytes.Name():
 			dps := m.Gauge().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.EqualValues(t, 1129490, dps.At(0).Value())
 		case metadata.M.HttpdTraffic.Name():
 			dps := m.Sum().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 14169, dps.At(0).IntVal())
 		case metadata.M.HttpdScoreboard.Name():
 			dps := m.Gauge().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 11, dps.Len())
 			scoreboardMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				state, _ := dp.LabelsMap().Get(metadata.L.ScoreboardState)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
+				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
+				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName, state)
 				scoreboardMetrics[label] = int(dp.IntVal())
 			}
 			require.Equal(t, 11, len(scoreboardMetrics))
 			require.Equal(t, map[string]int{
-				"httpd.scoreboard state:open":         150,
-				"httpd.scoreboard state:waiting":      217,
-				"httpd.scoreboard state:starting":     1,
-				"httpd.scoreboard state:reading":      4,
-				"httpd.scoreboard state:sending":      12,
-				"httpd.scoreboard state:keepalive":    2,
-				"httpd.scoreboard state:dnslookup":    2,
-				"httpd.scoreboard state:closing":      4,
-				"httpd.scoreboard state:logging":      1,
-				"httpd.scoreboard state:finishing":    3,
-				"httpd.scoreboard state:idle_cleanup": 4,
+				"httpd.scoreboard serverName:127.0.0.1 state:open":         150,
+				"httpd.scoreboard serverName:127.0.0.1 state:waiting":      217,
+				"httpd.scoreboard serverName:127.0.0.1 state:starting":     1,
+				"httpd.scoreboard serverName:127.0.0.1 state:reading":      4,
+				"httpd.scoreboard serverName:127.0.0.1 state:sending":      12,
+				"httpd.scoreboard serverName:127.0.0.1 state:keepalive":    2,
+				"httpd.scoreboard serverName:127.0.0.1 state:dnslookup":    2,
+				"httpd.scoreboard serverName:127.0.0.1 state:closing":      4,
+				"httpd.scoreboard serverName:127.0.0.1 state:logging":      1,
+				"httpd.scoreboard serverName:127.0.0.1 state:finishing":    3,
+				"httpd.scoreboard serverName:127.0.0.1 state:idle_cleanup": 4,
 			}, scoreboardMetrics)
 
 		default:

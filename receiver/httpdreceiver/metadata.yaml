@@ -1,6 +1,8 @@
 name: httpdreceiver
 
 labels:
+  server_name:
+    description: The name of the Apache HTTP server
   workers_state:
     value: state
     description: The state workers
@@ -31,13 +33,13 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: []
+    labels: [ server_name ]
   httpd.current_connections:
     description: The number of active connections currently attached to the HTTP server
     unit: connections
     data:
       type: gauge
-    labels: []
+    labels: [ server_name ]
   httpd.workers:
     description: The number of workers currently attached to the HTTP server
     unit: connections
@@ -49,13 +51,13 @@ metrics:
     unit: /s
     data:
       type: gauge
-    labels: []
+    labels: [ server_name ]
   httpd.bytes:
     description: The number of bytes transferred by the HTTP server per second
     unit: By/s
     data:
       type: gauge
-    labels: []
+    labels: [ server_name ]
   httpd.traffic:
     description: Total HTTP server traffic
     unit: connections
@@ -63,10 +65,10 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: []
+    labels: [ server_name ]
   httpd.scoreboard:
     description: Apache HTTP server scoreboard values
     unit: scoreboard
     data:
       type: gauge
-    labels: [scoreboard_state]
+    labels: [server_name, scoreboard_state]
