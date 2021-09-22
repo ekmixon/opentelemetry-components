@@ -24,8 +24,7 @@ func TestScraper(t *testing.T) {
 			rw.WriteHeader(200)
 			_, err := rw.Write([]byte(`ServerUptimeSeconds: 410
 Total Accesses: 14169
-ReqPerSec: 719.771
-BytesPerSec: 1129490
+Total kBytes: 20910
 BusyWorkers: 13
 IdleWorkers: 227
 ConnsTotal: 110
@@ -58,7 +57,7 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 	ilm := ilms.At(0)
 	ms := ilm.Metrics()
 
-	require.Equal(t, 7, ms.Len())
+	require.Equal(t, len(metadata.M.Names()), ms.Len())
 
 	for i := 0; i < ms.Len(); i++ {
 		m := ms.At(i)
@@ -97,24 +96,19 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 				"httpd.workers serverName:127.0.0.1 state:idle": 227,
 			}, workerMetrics)
 		case metadata.M.HttpdRequests.Name():
-			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.EqualValues(t, 719.771, dps.At(0).Value())
-		case metadata.M.HttpdBytes.Name():
-			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.EqualValues(t, 1129490, dps.At(0).Value())
-		case metadata.M.HttpdTraffic.Name():
 			dps := m.Sum().DataPoints()
 			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
 			require.EqualValues(t, "127.0.0.1", serverName)
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 14169, dps.At(0).IntVal())
+		case metadata.M.HttpdTraffic.Name():
+			dps := m.Sum().DataPoints()
+			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName)
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.True(t, m.Sum().IsMonotonic())
+			require.EqualValues(t, 21411840, dps.At(0).IntVal())
 		case metadata.M.HttpdScoreboard.Name():
 			dps := m.Gauge().DataPoints()
 			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)

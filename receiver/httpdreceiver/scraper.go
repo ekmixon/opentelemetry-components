@@ -49,15 +49,6 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
-	dataPoint := metric.AppendEmpty()
-	dataPoint.SetTimestamp(ts)
-	dataPoint.SetDoubleVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
-	}
-}
-
 func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
@@ -86,8 +77,7 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	uptime := initMetric(ilm.Metrics(), metadata.M.HttpdUptime).Sum().DataPoints()
 	connections := initMetric(ilm.Metrics(), metadata.M.HttpdCurrentConnections).Gauge().DataPoints()
 	workers := initMetric(ilm.Metrics(), metadata.M.HttpdWorkers).Gauge().DataPoints()
-	requests := initMetric(ilm.Metrics(), metadata.M.HttpdRequests).Gauge().DataPoints()
-	bytes := initMetric(ilm.Metrics(), metadata.M.HttpdBytes).Gauge().DataPoints()
+	requests := initMetric(ilm.Metrics(), metadata.M.HttpdRequests).Sum().DataPoints()
 	traffic := initMetric(ilm.Metrics(), metadata.M.HttpdTraffic).Sum().DataPoints()
 	scoreboard := initMetric(ilm.Metrics(), metadata.M.HttpdScoreboard).Gauge().DataPoints()
 
@@ -121,17 +111,14 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 				labels.Insert(metadata.L.WorkersState, "idle")
 				addToIntMetric(workers, labels, i, now)
 			}
-		case "ReqPerSec":
-			if f, ok := r.parseFloat(metricKey, metricValue); ok {
-				addToDoubleMetric(requests, labels, f, now)
-			}
-		case "BytesPerSec":
-			if f, ok := r.parseFloat(metricKey, metricValue); ok {
-				addToDoubleMetric(bytes, labels, f, now)
-			}
 		case "Total Accesses":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				addToIntMetric(traffic, labels, i, now)
+				addToIntMetric(requests, labels, i, now)
+			}
+		case "Total kBytes":
+			if i, ok := r.parseInt(metricKey, metricValue); ok {
+				bytes := kbytesToBytes(i)
+				addToIntMetric(traffic, labels, bytes, now)
 			}
 		case "Scoreboard":
 			scoreboardMap := parseScoreboard(metricValue)
@@ -175,16 +162,6 @@ func parseStats(resp string) map[string]string {
 		metrics[field[:index]] = field[index+2:]
 	}
 	return metrics
-}
-
-// parseFloat converts string to float64.
-func (r *httpdScraper) parseFloat(key, value string) (float64, bool) {
-	f, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		r.logInvalid("float", key, value)
-		return 0, false
-	}
-	return f, true
 }
 
 // parseInt converts string to int64.
@@ -249,4 +226,9 @@ func parseScoreboard(values string) map[string]int64 {
 		}
 	}
 	return scoreboard
+}
+
+// kbytesToBytes converts 1 Kilobyte to 1024 bytes.
+func kbytesToBytes(i int64) int64 {
+	return 1024 * i
 }

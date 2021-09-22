@@ -45,22 +45,18 @@ metrics:
     unit: connections
     data:
       type: gauge
-    labels: [workers_state]
+    labels: [ server_name, workers_state]
   httpd.requests:
     description: The number of requests serviced by the HTTP server per second
-    unit: /s
+    unit: 1
     data:
-      type: gauge
-    labels: [ server_name ]
-  httpd.bytes:
-    description: The number of bytes transferred by the HTTP server per second
-    unit: By/s
-    data:
-      type: gauge
+      type: sum
+      monotonic: true
+      aggregation: cumulative
     labels: [ server_name ]
   httpd.traffic:
     description: Total HTTP server traffic
-    unit: connections
+    unit: By
     data:
       type: sum
       monotonic: true

@@ -79,7 +79,7 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 }
 
 func validateResult(t *testing.T, metrics pdata.MetricSlice) {
-	require.EqualValues(t, 7, metrics.Len())
+	require.EqualValues(t, len(metadata.M.Names()), metrics.Len())
 
 	for i := 0; i < metrics.Len(); i++ {
 		m := metrics.At(i)
@@ -115,13 +115,10 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			}
 			require.Equal(t, 2, len(present))
 		case metadata.M.HttpdRequests.Name():
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
+			serverName, _ := m.Sum().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
 			require.EqualValues(t, "localhost", serverName)
-		case metadata.M.HttpdBytes.Name():
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			serverName, _ := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "localhost", serverName)
+			require.Equal(t, 1, m.Sum().DataPoints().Len())
+			require.True(t, m.Sum().IsMonotonic())
 		case metadata.M.HttpdTraffic.Name():
 			serverName, _ := m.Sum().DataPoints().At(0).LabelsMap().Get(metadata.L.ServerName)
 			require.EqualValues(t, "localhost", serverName)
