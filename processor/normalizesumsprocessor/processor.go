@@ -13,24 +13,21 @@ import (
 )
 
 type NormalizeSumsProcessor struct {
-	logger     *zap.Logger
-	transforms []Transform
+	logger *zap.Logger
 
 	historyMux sync.RWMutex
-	history    map[string]*startPoint
+	history    map[string]*metricHistory
 }
 
-type startPoint struct {
-	dataType        pdata.MetricDataType
-	numberDataPoint *pdata.NumberDataPoint
-	lastDoubleValue float64
+type metricHistory struct {
+	assumedResetPoint *pdata.NumberDataPoint
+	lastPoint         *pdata.NumberDataPoint
 }
 
-func newNormalizeSumsProcessor(logger *zap.Logger, transforms []Transform) *NormalizeSumsProcessor {
+func newNormalizeSumsProcessor(logger *zap.Logger) *NormalizeSumsProcessor {
 	return &NormalizeSumsProcessor{
-		logger:     logger,
-		transforms: transforms,
-		history:    make(map[string]*startPoint),
+		logger:  logger,
+		history: make(map[string]*metricHistory),
 	}
 }
 
@@ -70,7 +67,7 @@ func (nsp *NormalizeSumsProcessor) transformMetrics(rms pdata.ResourceMetrics) [
 		newSlice := pdata.NewMetricSlice()
 		for k := 0; k < ilm.Len(); k++ {
 			metric := ilm.At(k)
-			if shouldTransform, transform := nsp.shouldTransformMetric(metric); shouldTransform {
+			if metric.DataType() == pdata.MetricDataTypeSum {
 				keepMetric, err := nsp.processMetric(rms.Resource(), metric)
 				if err != nil {
 					errors = append(errors, err)
@@ -78,9 +75,6 @@ func (nsp *NormalizeSumsProcessor) transformMetrics(rms pdata.ResourceMetrics) [
 				if keepMetric {
 					newMetric := newSlice.AppendEmpty()
 					metric.CopyTo(newMetric)
-					if transform.NewName != "" {
-						newMetric.SetName(transform.NewName)
-					}
 				}
 			} else {
 				newMetric := newSlice.AppendEmpty()
@@ -94,28 +88,6 @@ func (nsp *NormalizeSumsProcessor) transformMetrics(rms pdata.ResourceMetrics) [
 	return errors
 }
 
-func (nsp *NormalizeSumsProcessor) shouldTransformMetric(metric pdata.Metric) (bool, *Transform) {
-	// Only consider Sums
-	if metric.DataType() != pdata.MetricDataTypeSum {
-		return false, nil
-	}
-
-	// If transforms is empty, transform all Sums
-	if nsp.transforms == nil {
-		t := Transform{MetricName: metric.Name()}
-		return true, &t
-	}
-
-	// Check through the list of transforms for the named metric
-	for _, transform := range nsp.transforms {
-		if transform.MetricName == metric.Name() {
-			return true, &transform
-		}
-	}
-
-	return false, nil
-}
-
 func (nsp *NormalizeSumsProcessor) processMetric(resource pdata.Resource, metric pdata.Metric) (bool, error) {
 	switch t := metric.DataType(); t {
 	case pdata.MetricDataTypeSum:
@@ -127,14 +99,18 @@ func (nsp *NormalizeSumsProcessor) processMetric(resource pdata.Resource, metric
 
 func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, metric pdata.Metric) int {
 	dps := metric.Sum().DataPoints()
-	for i := 0; i < dps.Len(); {
-		reportData := nsp.processSumDataPoint(dps.At(i), resource, metric)
 
-		if !reportData {
-			removeAt(dps, i)
-			continue
+	// Only transform data when the StartTimestamp was not set
+	if dps.Len() > 0 && dps.At(0).StartTimestamp() == 0 {
+		for i := 0; i < dps.Len(); {
+			reportData := nsp.processSumDataPoint(dps.At(i), resource, metric)
+
+			if !reportData {
+				removeAt(dps, i)
+				continue
+			}
+			i++
 		}
-		i++
 	}
 
 	return dps.Len()
@@ -153,10 +129,9 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 		newDP := pdata.NewNumberDataPoint()
 		dps.At(0).CopyTo(newDP)
 
-		newStart := startPoint{
-			dataType:        pdata.MetricDataTypeSum,
-			numberDataPoint: &newDP,
-			lastDoubleValue: newDP.DoubleVal(),
+		newStart := metricHistory{
+			assumedResetPoint: &newDP,
+			lastPoint:         &newDP,
 		}
 		nsp.historyMux.Lock()
 		nsp.history[metricIdentifier] = &newStart
@@ -167,22 +142,32 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 
 	// If this data is older than the start point, we can't
 	// meaningfully report this point
-	if dp.Timestamp() <= start.numberDataPoint.Timestamp() {
+	if dp.Timestamp() <= start.assumedResetPoint.Timestamp() {
+		nsp.logger.Info(
+			"data point being processed older than last recorded reset, will not be emitted",
+			zap.String("lastRecordedReset", start.assumedResetPoint.Timestamp().String()),
+			zap.String("dataPoint", dp.Timestamp().String()),
+		)
 		return false
 	}
 
 	// If data has rolled over or the counter has been restarted for
 	// any other reason, grab a new start point and do not report this data
-	if dp.DoubleVal() < start.lastDoubleValue {
-		dp.CopyTo(*start.numberDataPoint)
-		start.lastDoubleValue = dp.DoubleVal()
+	if (dp.Type() == pdata.MetricValueTypeDouble && dp.DoubleVal() < start.lastPoint.DoubleVal()) || dp.IntVal() < start.lastPoint.IntVal() {
+		dp.CopyTo(*start.assumedResetPoint)
+		start.lastPoint = start.assumedResetPoint
 
 		return false
 	}
 
-	start.lastDoubleValue = dp.DoubleVal()
-	dp.SetDoubleVal(dp.DoubleVal() - start.numberDataPoint.DoubleVal())
-	dp.SetStartTimestamp(start.numberDataPoint.Timestamp())
+	start.lastPoint = &dp
+	if dp.Type() == pdata.MetricValueTypeDouble {
+		dp.SetDoubleVal(dp.DoubleVal() - start.assumedResetPoint.DoubleVal())
+	} else {
+		dp.SetIntVal(dp.IntVal() - start.assumedResetPoint.IntVal())
+	}
+
+	dp.SetStartTimestamp(start.assumedResetPoint.Timestamp())
 
 	return true
 }
