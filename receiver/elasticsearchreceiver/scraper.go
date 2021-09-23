@@ -30,7 +30,7 @@ func newElasticSearchScraper(
 	return &elasticsearchScraper{
 		logger: logger,
 		cfg:    cfg,
-		now:    pdata.TimestampFromTime(time.Now()),
+		now:    pdata.NewTimestampFromTime(time.Now()),
 	}, nil
 }
 
@@ -43,7 +43,7 @@ func (r *elasticsearchScraper) start(_ context.Context, host component.Host) err
 	return nil
 }
 
-func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
+func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.AttributeMap) {
 	intVal, err := getIntFromBody(keys, body)
 	if err != nil {
 		r.logger.Info(err.Error())
@@ -90,7 +90,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	r.now = pdata.TimestampFromTime(time.Now())
+	r.now = pdata.NewTimestampFromTime(time.Now())
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
@@ -140,46 +140,43 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 			continue
 		}
 
-		labels := pdata.NewStringMap()
-		labels.Upsert(metadata.L.ServerName, nodeName)
-		labels.Upsert(metadata.L.CacheName, "query")
-		r.processIntMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "request")
-		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "field")
-		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		labels := pdata.NewAttributeMap()
+		labels.Upsert(metadata.L.ServerName, pdata.NewAttributeValueString(nodeName))
 
-		labels.Upsert(metadata.L.CacheName, "query")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("query"))
+		r.processIntMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		r.processIntMetric([]string{"indices", "query_cache", "evictions"}, nodeData, evictionsMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "request")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("request"))
+		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		r.processIntMetric([]string{"indices", "request_cache", "evictions"}, nodeData, evictionsMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "field")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("field"))
+		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		r.processIntMetric([]string{"indices", "fielddata", "evictions"}, nodeData, evictionsMetric, labels)
 		labels.Delete(metadata.L.CacheName)
 
-		labels.Upsert(metadata.L.GcType, "young")
+		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("young"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_count"}, nodeData, GCCollectionsMetric, labels)
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
-		labels.Upsert(metadata.L.GcType, "old")
+		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("old"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_count"}, nodeData, GCCollectionsMetric, labels)
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
 		labels.Delete(metadata.L.GcType)
 
-		labels.Upsert(metadata.L.MemoryType, "heap")
+		labels.Upsert(metadata.L.MemoryType, pdata.NewAttributeValueString("heap"))
 		r.processIntMetric([]string{"jvm", "mem", "heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.MemoryType, "non-heap")
+		labels.Upsert(metadata.L.MemoryType, pdata.NewAttributeValueString("non-heap"))
 		r.processIntMetric([]string{"jvm", "mem", "non_heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
 		labels.Delete(metadata.L.MemoryType)
 
-		labels.Upsert(metadata.L.Direction, "receive")
+		labels.Upsert(metadata.L.Direction, pdata.NewAttributeValueString("receive"))
 		r.processIntMetric([]string{"transport", "rx_size_in_bytes"}, nodeData, NetworkMetric, labels)
-		labels.Upsert(metadata.L.Direction, "transmit")
+		labels.Upsert(metadata.L.Direction, pdata.NewAttributeValueString("transmit"))
 		r.processIntMetric([]string{"transport", "tx_size_in_bytes"}, nodeData, NetworkMetric, labels)
 		labels.Delete(metadata.L.Direction)
 
-		labels.Upsert(metadata.L.DocumentType, "live")
+		labels.Upsert(metadata.L.DocumentType, pdata.NewAttributeValueString("live"))
 		r.processIntMetric([]string{"indices", "docs", "count"}, nodeData, CurrentDocsMetric, labels)
-		labels.Upsert(metadata.L.DocumentType, "deleted")
+		labels.Upsert(metadata.L.DocumentType, pdata.NewAttributeValueString("deleted"))
 		r.processIntMetric([]string{"indices", "docs", "deleted"}, nodeData, CurrentDocsMetric, labels)
 		labels.Delete(metadata.L.DocumentType)
 
@@ -189,26 +186,26 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 
 		r.processIntMetric([]string{"transport", "server_open"}, nodeData, ServerConnsMetric, labels)
 
-		labels.Upsert(metadata.L.Operation, "index")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("index"))
 		r.processIntMetric([]string{"indices", "indexing", "index_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "delete")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("delete"))
 		r.processIntMetric([]string{"indices", "indexing", "delete_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "get")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("get"))
 		r.processIntMetric([]string{"indices", "get", "total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "query")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "search", "query_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "fetch")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("fetch"))
 		r.processIntMetric([]string{"indices", "search", "fetch_total"}, nodeData, OperationsMetric, labels)
 
-		labels.Upsert(metadata.L.Operation, "index")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("index"))
 		r.processIntMetric([]string{"indices", "indexing", "index_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "delete")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("delete"))
 		r.processIntMetric([]string{"indices", "indexing", "delete_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "get")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("get"))
 		r.processIntMetric([]string{"indices", "get", "time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "query")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "search", "query_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "fetch")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("fetch"))
 		r.processIntMetric([]string{"indices", "search", "fetch_time_in_millis"}, nodeData, OperationTimeMetric, labels)
 		labels.Delete(metadata.L.Operation)
 
@@ -235,7 +232,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 				r.logger.Error("could not reflect thread pool data as a map")
 				continue
 			}
-			labels.Upsert(metadata.L.ThreadPoolName, threadPoolName)
+			labels.Upsert(metadata.L.ThreadPoolName, pdata.NewAttributeValueString(threadPoolName))
 			r.processIntMetric([]string{"threads"}, threadPool, threadPoolThreadsMetric, labels)
 			r.processIntMetric([]string{"queue"}, threadPool, threadPoolQueueMetric, labels)
 			r.processIntMetric([]string{"active"}, threadPool, threadPoolActiveMetric, labels)
@@ -245,7 +242,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		}
 	}
 
-	labels := pdata.NewStringMap()
+	labels := pdata.NewAttributeMap()
 
 	clusterStats, err := r.makeRequest("/_cluster/stats")
 	if err != nil {
@@ -259,13 +256,13 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
-	labels.Upsert(metadata.L.ShardType, "initializing")
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("initializing"))
 	r.processIntMetric([]string{"initializing_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "relocating")
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("relocating"))
 	r.processIntMetric([]string{"relocating_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "active")
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("active"))
 	r.processIntMetric([]string{"active_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "unassigned")
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("unassigned"))
 	r.processIntMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Delete(metadata.L.ShardType)
 
@@ -340,11 +337,11 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }

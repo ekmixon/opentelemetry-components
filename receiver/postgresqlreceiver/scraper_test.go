@@ -39,10 +39,10 @@ func TestScraper(t *testing.T) {
 			metrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				sourceLabel, _ := dp.LabelsMap().Get(metadata.L.Source)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, sourceLabel)
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				sourceLabel, _ := dp.Attributes().Get(metadata.L.Source)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), sourceLabel.AsString())
 				metrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 24, len(metrics))
@@ -78,8 +78,8 @@ func TestScraper(t *testing.T) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, dp.IntVal())
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
 			require.Equal(t, "postgresql.commits otel 1", label)
 
 		case metadata.M.PostgresqlDbSize.Name():
@@ -87,8 +87,8 @@ func TestScraper(t *testing.T) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, dp.Value())
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
 			require.Equal(t, "postgresql.db_size otel 4", label)
 
 		case metadata.M.PostgresqlBackends.Name():
@@ -96,25 +96,25 @@ func TestScraper(t *testing.T) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, dp.Value())
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
 			require.Equal(t, "postgresql.backends otel 3", label)
 
 		case metadata.M.PostgresqlRows.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 6, dps.Len())
 
-			metrics := map[string]float64{}
+			metrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				stateLabel, _ := dp.LabelsMap().Get(metadata.L.State)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, stateLabel)
-				metrics[label] = dp.DoubleVal()
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				stateLabel, _ := dp.Attributes().Get(metadata.L.State)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), stateLabel.AsString())
+				metrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 6, len(metrics))
-			require.Equal(t, map[string]float64{
+			require.Equal(t, map[string]int64{
 				"postgresql.rows otel _global live":       5,
 				"postgresql.rows otel _global dead":       6,
 				"postgresql.rows otel public.table1 live": 7,
@@ -130,10 +130,10 @@ func TestScraper(t *testing.T) {
 			metrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				operationLabel, _ := dp.LabelsMap().Get(metadata.L.Operation)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, operationLabel)
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				operationLabel, _ := dp.Attributes().Get(metadata.L.Operation)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), operationLabel.AsString())
 				metrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 12, len(metrics))
@@ -157,8 +157,8 @@ func TestScraper(t *testing.T) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, dp.DoubleVal())
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
 			require.Equal(t, "postgresql.rollbacks otel 2", label)
 
 		default:

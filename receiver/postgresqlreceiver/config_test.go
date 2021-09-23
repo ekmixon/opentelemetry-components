@@ -46,7 +46,7 @@ func TestValidate(t *testing.T) {
 				Username: "otel",
 				Password: "otel",
 			},
-			expected: multierr.Combine(),
+			expected: nil,
 		},
 	}
 	for _, tC := range testCases {

@@ -23,43 +23,87 @@ import (
 )
 
 func TestMysqlIntegration(t *testing.T) {
-	container := getContainer(t, containerRequest8_0)
-	defer func() {
-		require.NoError(t, container.Terminate(context.Background()))
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
+	t.Run("Running mysql version 5.7", func(t *testing.T) {
+		container := getContainer(t, containerRequest5_7)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
 
-	f := NewFactory()
-	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort(hostname, "3306")
-	cfg.Username = "otel"
-	cfg.Password = "otel"
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "3307")
+		cfg.Username = "otel"
+		cfg.Password = "otel"
 
-	consumer := new(consumertest.MetricsSink)
-	settings := componenttest.NewNopReceiverCreateSettings()
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
-	require.NoError(t, err, "failed creating metrics receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.Eventuallyf(t, func() bool {
-		return len(consumer.AllMetrics()) > 0
-	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
 
-	md := consumer.AllMetrics()[0]
-	require.Equal(t, 1, md.ResourceMetrics().Len())
-	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-	metrics := ilms.At(0).Metrics()
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
 
-	validateResult(t, metrics)
+		validateResult(t, metrics)
+	})
+
+	t.Run("Running mysql version 8.0", func(t *testing.T) {
+		container := getContainer(t, containerRequest8_0)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
+
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "3306")
+		cfg.Username = "otel"
+		cfg.Password = "otel"
+
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
+
+		validateResult(t, metrics)
+	})
 }
 
 var (
+	containerRequest5_7 = testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.mysql.5_7",
+		},
+		ExposedPorts: []string{"3307:3306"},
+		WaitingFor: wait.ForListeningPort("3306").
+			WithStartupTimeout(2 * time.Minute),
+	}
 	containerRequest8_0 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.mysql",
+			Dockerfile: "Dockerfile.mysql.8_0",
 		},
 		ExposedPorts: []string{"3306:3306"},
 		WaitingFor: wait.ForListeningPort("3306").
@@ -95,8 +139,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolPagesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolPagesMetrics[label] = true
 			}
 			require.Equal(t, map[string]bool{
@@ -114,8 +158,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolOperationsMetrics[label] = true
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
@@ -134,8 +178,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolSizeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolSizeMetrics[label] = true
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
@@ -151,8 +195,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			commandsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Command)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				commandsMetrics[label] = true
 			}
 			require.Equal(t, 6, len(commandsMetrics))
@@ -171,8 +215,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			handlersMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Handler)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				handlersMetrics[label] = true
 			}
 			require.Equal(t, 18, len(handlersMetrics))
@@ -203,8 +247,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			doubleWritesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				doubleWritesMetrics[label] = true
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
@@ -219,8 +263,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			logOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.LogOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				logOperationsMetrics[label] = true
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
@@ -236,8 +280,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			operationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Operations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				operationsMetrics[label] = true
 			}
 			require.Equal(t, 3, len(operationsMetrics))
@@ -253,8 +297,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			pageOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.PageOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				pageOperationsMetrics[label] = true
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
@@ -270,8 +314,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowLocksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.RowLocks)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				rowLocksMetrics[label] = true
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
@@ -286,8 +330,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.RowOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				rowOperationsMetrics[label] = true
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
@@ -304,8 +348,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			locksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Locks)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				locksMetrics[label] = true
 			}
 			require.Equal(t, 2, len(locksMetrics))
@@ -320,8 +364,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			sortsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Sorts)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				sortsMetrics[label] = true
 			}
 			require.Equal(t, 4, len(sortsMetrics))
@@ -337,8 +381,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			threadsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Threads)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				threadsMetrics[label] = true
 			}
 			require.Equal(t, 4, len(threadsMetrics))

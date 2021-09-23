@@ -5,12 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configcheck"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.opentelemetry.io/collector/testbed/testbed"
-	"go.uber.org/zap"
 )
 
 func TestType(t *testing.T) {
@@ -21,7 +19,7 @@ func TestType(t *testing.T) {
 
 func TestValidConfig(t *testing.T) {
 	factory := NewFactory()
-	err := configcheck.ValidateConfig(factory.CreateDefaultConfig())
+	err := factory.CreateDefaultConfig().Validate()
 	require.NoError(t, err)
 }
 
@@ -29,7 +27,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	factory := NewFactory()
 	metricsReceiver, err := factory.CreateMetricsReceiver(
 		context.Background(),
-		component.ReceiverCreateSettings{Logger: zap.NewNop()},
+		component.ReceiverCreateSettings{},
 		&Config{
 			ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 				CollectionInterval: 10 * time.Second,

@@ -43,8 +43,8 @@ func TestScrape(t *testing.T) {
 			bufferPoolPagesMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolPages)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolPagesMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 6, len(bufferPoolPagesMetrics))
@@ -63,8 +63,8 @@ func TestScrape(t *testing.T) {
 			bufferPoolOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
@@ -83,8 +83,8 @@ func TestScrape(t *testing.T) {
 			bufferPoolSizeMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.BufferPoolSize)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				bufferPoolSizeMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
@@ -100,8 +100,8 @@ func TestScrape(t *testing.T) {
 			commandsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Command)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Command)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				commandsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 6, len(commandsMetrics))
@@ -120,8 +120,8 @@ func TestScrape(t *testing.T) {
 			handlersMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Handler)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Handler)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				handlersMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 18, len(handlersMetrics))
@@ -152,8 +152,8 @@ func TestScrape(t *testing.T) {
 			doubleWritesMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.DoubleWrites)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				doubleWritesMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
@@ -168,8 +168,8 @@ func TestScrape(t *testing.T) {
 			logOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.LogOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.LogOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				logOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
@@ -185,8 +185,8 @@ func TestScrape(t *testing.T) {
 			operationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Operations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Operations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				operationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(operationsMetrics))
@@ -202,8 +202,8 @@ func TestScrape(t *testing.T) {
 			pageOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.PageOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.PageOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				pageOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
@@ -219,8 +219,8 @@ func TestScrape(t *testing.T) {
 			rowLocksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowLocks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.RowLocks)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				rowLocksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
@@ -235,8 +235,8 @@ func TestScrape(t *testing.T) {
 			rowOperationsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.RowOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.RowOperations)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				rowOperationsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
@@ -253,8 +253,8 @@ func TestScrape(t *testing.T) {
 			locksMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Locks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Locks)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				locksMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 2, len(locksMetrics))
@@ -269,8 +269,8 @@ func TestScrape(t *testing.T) {
 			sortsMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Sorts)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Sorts)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				sortsMetrics[label] = dp.IntVal()
 			}
 			require.Equal(t, 4, len(sortsMetrics))
@@ -286,8 +286,8 @@ func TestScrape(t *testing.T) {
 			threadsMetrics := map[string]float64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.LabelsMap().Get(metadata.L.Threads)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label)
+				value_label, _ := dp.Attributes().Get(metadata.L.Threads)
+				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
 				threadsMetrics[label] = dp.DoubleVal()
 			}
 			require.Equal(t, 4, len(threadsMetrics))

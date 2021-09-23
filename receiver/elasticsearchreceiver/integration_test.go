@@ -154,16 +154,16 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			dp := dps.At(j)
 
 			for _, label := range unenumLabelSet {
-				_, ok := dp.LabelsMap().Get(label)
+				_, ok := dp.Attributes().Get(label)
 				if ok {
 					key = key + " " + label
 				}
 			}
 
 			for _, label := range enumLabelSet {
-				label, ok := dp.LabelsMap().Get(label)
+				labelVal, ok := dp.Attributes().Get(label)
 				if ok {
-					key = key + " " + label
+					key += " " + labelVal.AsString()
 				}
 			}
 			exists[key] = true
