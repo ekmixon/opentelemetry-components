@@ -141,7 +141,7 @@ func (nsp *NormalizeSumsProcessor) processSumMetric(resource pdata.Resource, met
 }
 
 func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint, resource pdata.Resource, metric pdata.Metric) bool {
-	metricIdentifier := dataPointIdentifier(resource, metric, dp.LabelsMap())
+	metricIdentifier := dataPointIdentifier(resource, metric, dp.Attributes())
 
 	nsp.historyMux.RLock()
 	start := nsp.history[metricIdentifier]
@@ -156,7 +156,7 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 		newStart := startPoint{
 			dataType:        pdata.MetricDataTypeSum,
 			numberDataPoint: &newDP,
-			lastDoubleValue: newDP.Value(),
+			lastDoubleValue: newDP.DoubleVal(),
 		}
 		nsp.historyMux.Lock()
 		nsp.history[metricIdentifier] = &newStart
@@ -173,21 +173,21 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 
 	// If data has rolled over or the counter has been restarted for
 	// any other reason, grab a new start point and do not report this data
-	if dp.Value() < start.lastDoubleValue {
+	if dp.DoubleVal() < start.lastDoubleValue {
 		dp.CopyTo(*start.numberDataPoint)
-		start.lastDoubleValue = dp.Value()
+		start.lastDoubleValue = dp.DoubleVal()
 
 		return false
 	}
 
-	start.lastDoubleValue = dp.Value()
-	dp.SetDoubleVal(dp.Value() - start.numberDataPoint.Value())
+	start.lastDoubleValue = dp.DoubleVal()
+	dp.SetDoubleVal(dp.DoubleVal() - start.numberDataPoint.DoubleVal())
 	dp.SetStartTimestamp(start.numberDataPoint.Timestamp())
 
 	return true
 }
 
-func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, labels pdata.StringMap) string {
+func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, labels pdata.AttributeMap) string {
 	var b strings.Builder
 
 	// Resource identifiers
@@ -200,8 +200,8 @@ func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, labels pd
 
 	// Metric identifiers
 	fmt.Fprintf(&b, " - %s", metric.Name())
-	labels.Sort().Range(func(k, v string) bool {
-		fmt.Fprintf(&b, " %s=%s", k, v)
+	labels.Sort().Range(func(k string, v pdata.AttributeValue) bool {
+		fmt.Fprintf(&b, " %s=%s", k, v.AsString())
 		return true
 	})
 	return b.String()
@@ -235,7 +235,7 @@ func addAttributeToIdentityBuilder(b *strings.Builder, v pdata.AttributeValue) {
 			return true
 		})
 		b.WriteString("}")
-	case pdata.AttributeValueTypeNull:
+	case pdata.AttributeValueTypeEmpty:
 		b.WriteString("NULL")
 	case pdata.AttributeValueTypeString:
 		fmt.Fprintf(b, "'%s'", v.StringVal())

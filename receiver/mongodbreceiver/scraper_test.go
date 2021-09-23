@@ -39,84 +39,84 @@ func TestScraper(t *testing.T) {
 		case "mongodb.collections":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.data_size":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, float64(3141), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.extents":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, int64(0), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.index_size":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.indexes":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.objects":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, int64(2), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.storage_size":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.connections":
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
 			require.Equal(t, int64(3), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).LabelsMap().Get(metadata.L.DatabaseName)
+			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
 			if !ok {
 				require.NoError(t, fmt.Errorf("database name label missing"))
 			}
-			require.Equal(t, "fakedatabase", dbName)
+			require.Equal(t, "fakedatabase", dbName.AsString())
 		case "mongodb.memory_usage":
 			require.Equal(t, 4, m.Gauge().DataPoints().Len())
 			dps := m.Gauge().DataPoints()
 			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
 				dp := dps.At(dpIndex)
 
-				dbName, ok := dp.LabelsMap().Get(metadata.L.DatabaseName)
+				dbName, ok := dp.Attributes().Get(metadata.L.DatabaseName)
 				if !ok {
 					require.NoError(t, fmt.Errorf("database name label missing"))
 				}
-				require.Equal(t, "fakedatabase", dbName)
+				require.Equal(t, "fakedatabase", dbName.AsString())
 
-				dpLabel, ok := dp.LabelsMap().Get(metadata.L.MemoryType)
+				dpLabel, ok := dp.Attributes().Get(metadata.L.MemoryType)
 				if !ok {
 					require.NoError(t, fmt.Errorf("Memory type label doesn't exist where it should"))
 				}
-				switch dpLabel {
+				switch dpLabel.AsString() {
 				case "resident":
 					require.Equal(t, int64(79), dp.IntVal())
 				case "virtual":
@@ -143,11 +143,11 @@ func TestScraper(t *testing.T) {
 			dps := m.Sum().DataPoints()
 			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
 				dp := dps.At(dpIndex)
-				dpLabel, ok := dp.LabelsMap().Get(metadata.L.Operation)
+				dpLabel, ok := dp.Attributes().Get(metadata.L.Operation)
 				if !ok {
 					require.NoError(t, fmt.Errorf("Operation label doesn't exist where it should"))
 				}
-				switch dpLabel {
+				switch dpLabel.AsString() {
 				case "insert":
 					require.Equal(t, int64(0), dp.IntVal())
 				case "query":

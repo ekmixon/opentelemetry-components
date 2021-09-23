@@ -61,13 +61,13 @@ func TestScraper(t *testing.T) {
 		if dps.Len() > 1 {
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.State)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				metricValues[label] = dp.Value()
+				state, _ := dp.Attributes().Get(metadata.L.State)
+				label := fmt.Sprintf("%s state:%s", m.Name(), state.AsString())
+				metricValues[label] = dp.DoubleVal()
 			}
 		} else {
 			dp := dps.At(0)
-			metricValues[m.Name()] = dp.Value()
+			metricValues[m.Name()] = dp.DoubleVal()
 		}
 	}
 

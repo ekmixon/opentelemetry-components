@@ -73,7 +73,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/rabbitmq")
-	now := pdata.TimestampFromTime(time.Now())
+	now := pdata.NewTimestampFromTime(time.Now())
 
 	publishRateMetric := initMetric(ilm.Metrics(), metadata.M.RabbitmqPublishRate).Gauge().DataPoints()
 	deliveryRateMetric := initMetric(ilm.Metrics(), metadata.M.RabbitmqDeliveryRate).Gauge().DataPoints()
@@ -86,14 +86,14 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			r.logger.Info("rabbitMQ api response format did not meet expectations")
 			break
 		}
-		labels := pdata.NewStringMap()
+		labels := pdata.NewAttributeMap()
 
 		queueName, ok := queue["name"].(string)
 		if !ok {
 			r.logger.Info("could not parse queue name from body")
 			break
 		}
-		labels.Upsert(metadata.L.Queue, queueName)
+		labels.Upsert(metadata.L.Queue, pdata.NewAttributeValueString(queueName))
 
 		val, err := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
 		if err != nil {
@@ -132,7 +132,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:total"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, "total")
+			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("total"))
 			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 
@@ -143,7 +143,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:unacknowledged"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, "unacknowledged")
+			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("unacknowledged"))
 			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 
@@ -154,7 +154,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:ready"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, "ready")
+			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("ready"))
 			addToDoubleMetric(numMessagesMetric, labels, val, now)
 		}
 	}
@@ -210,11 +210,11 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }

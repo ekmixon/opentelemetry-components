@@ -30,7 +30,7 @@ func newElasticSearchScraper(
 	return &elasticsearchScraper{
 		logger: logger,
 		cfg:    cfg,
-		now:    pdata.TimestampFromTime(time.Now()),
+		now:    pdata.NewTimestampFromTime(time.Now()),
 	}, nil
 }
 
@@ -43,16 +43,7 @@ func (r *elasticsearchScraper) start(_ context.Context, host component.Host) err
 	return nil
 }
 
-func (r *elasticsearchScraper) processFloatMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
-	floatVal, err := getFloatFromBody(keys, body)
-	if err != nil {
-		r.logger.Info(err.Error())
-	} else {
-		addToMetric(metric, labels, floatVal, r.now)
-	}
-}
-
-func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.StringMap) {
+func (r *elasticsearchScraper) processIntMetric(keys []string, body map[string]interface{}, metric pdata.NumberDataPointSlice, labels pdata.AttributeMap) {
 	intVal, err := getIntFromBody(keys, body)
 	if err != nil {
 		r.logger.Info(err.Error())
@@ -99,7 +90,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	r.now = pdata.TimestampFromTime(time.Now())
+	r.now = pdata.NewTimestampFromTime(time.Now())
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
@@ -128,135 +119,114 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
 
 	for nodeName, nodeDataInter := range nodes {
-		labels := pdata.NewStringMap()
-		labels.Upsert(metadata.L.ServerName, nodeName)
+		labels := pdata.NewAttributeMap()
+		labels.Upsert(metadata.L.ServerName, pdata.NewAttributeValueString(nodeName))
 
 		nodeData, ok := nodeDataInter.(map[string]interface{})
 		if !ok {
 			r.logger.Info("could not reflect node data as a map")
 			continue
 		}
-		labels.Upsert(metadata.L.CacheName, "query")
-		r.processFloatMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "request")
-		r.processFloatMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "field")
-		r.processFloatMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("query"))
+		r.processIntMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("request"))
+		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("field"))
+		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 
-		labels.Upsert(metadata.L.CacheName, "query")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "query_cache", "evictions"}, nodeData, evictionsMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "request")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("request"))
 		r.processIntMetric([]string{"indices", "request_cache", "evictions"}, nodeData, evictionsMetric, labels)
-		labels.Upsert(metadata.L.CacheName, "field")
+		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("field"))
 		r.processIntMetric([]string{"indices", "fielddata", "evictions"}, nodeData, evictionsMetric, labels)
 		labels.Delete(metadata.L.CacheName)
 
-		labels.Upsert(metadata.L.GcType, "young")
+		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("young"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_count"}, nodeData, GCCollectionsMetric, labels)
-		labels.Upsert(metadata.L.GcType, "old")
+		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("old"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_count"}, nodeData, GCCollectionsMetric, labels)
 		labels.Delete(metadata.L.GcType)
 
-		labels.Upsert(metadata.L.MemoryType, "heap")
-		r.processFloatMetric([]string{"jvm", "mem", "heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.MemoryType, "non-heap")
-		r.processFloatMetric([]string{"jvm", "mem", "non_heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
+		labels.Upsert(metadata.L.MemoryType, pdata.NewAttributeValueString("heap"))
+		r.processIntMetric([]string{"jvm", "mem", "heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
+		labels.Upsert(metadata.L.MemoryType, pdata.NewAttributeValueString("non-heap"))
+		r.processIntMetric([]string{"jvm", "mem", "non_heap_used_in_bytes"}, nodeData, MemoryUsageMetric, labels)
 		labels.Delete(metadata.L.MemoryType)
 
-		labels.Upsert(metadata.L.Direction, "receive")
+		labels.Upsert(metadata.L.Direction, pdata.NewAttributeValueString("receive"))
 		r.processIntMetric([]string{"transport", "rx_size_in_bytes"}, nodeData, NetworkMetric, labels)
-		labels.Upsert(metadata.L.Direction, "transmit")
+		labels.Upsert(metadata.L.Direction, pdata.NewAttributeValueString("transmit"))
 		r.processIntMetric([]string{"transport", "tx_size_in_bytes"}, nodeData, NetworkMetric, labels)
 		labels.Delete(metadata.L.Direction)
 
-		labels.Upsert(metadata.L.DocumentType, "live")
-		r.processFloatMetric([]string{"indices", "docs", "count"}, nodeData, CurrentDocsMetric, labels)
-		labels.Upsert(metadata.L.DocumentType, "deleted")
-		r.processFloatMetric([]string{"indices", "docs", "deleted"}, nodeData, CurrentDocsMetric, labels)
+		labels.Upsert(metadata.L.DocumentType, pdata.NewAttributeValueString("live"))
+		r.processIntMetric([]string{"indices", "docs", "count"}, nodeData, CurrentDocsMetric, labels)
+		labels.Upsert(metadata.L.DocumentType, pdata.NewAttributeValueString("deleted"))
+		r.processIntMetric([]string{"indices", "docs", "deleted"}, nodeData, CurrentDocsMetric, labels)
 		labels.Delete(metadata.L.DocumentType)
 
-		r.processFloatMetric([]string{"http", "current_open"}, nodeData, HTTPConnsMetric, labels)
+		r.processIntMetric([]string{"http", "current_open"}, nodeData, HTTPConnsMetric, labels)
 
-		r.processFloatMetric([]string{"process", "open_file_descriptors"}, nodeData, OpenFilesMetric, labels)
+		r.processIntMetric([]string{"process", "open_file_descriptors"}, nodeData, OpenFilesMetric, labels)
 
-		r.processFloatMetric([]string{"transport", "server_open"}, nodeData, ServerConnsMetric, labels)
+		r.processIntMetric([]string{"transport", "server_open"}, nodeData, ServerConnsMetric, labels)
 
-		labels.Upsert(metadata.L.Operation, "index")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("index"))
 		r.processIntMetric([]string{"indices", "indexing", "index_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "delete")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("delete"))
 		r.processIntMetric([]string{"indices", "indexing", "delete_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "get")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("get"))
 		r.processIntMetric([]string{"indices", "get", "total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "query")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "search", "query_total"}, nodeData, OperationsMetric, labels)
-		labels.Upsert(metadata.L.Operation, "fetch")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("fetch"))
 		r.processIntMetric([]string{"indices", "search", "fetch_total"}, nodeData, OperationsMetric, labels)
 
-		labels.Upsert(metadata.L.Operation, "index")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("index"))
 		r.processIntMetric([]string{"indices", "indexing", "index_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "delete")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("delete"))
 		r.processIntMetric([]string{"indices", "indexing", "delete_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "get")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("get"))
 		r.processIntMetric([]string{"indices", "get", "time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "query")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "search", "query_time_in_millis"}, nodeData, OperationTimeMetric, labels)
-		labels.Upsert(metadata.L.Operation, "fetch")
+		labels.Upsert(metadata.L.Operation, pdata.NewAttributeValueString("fetch"))
 		r.processIntMetric([]string{"indices", "search", "fetch_time_in_millis"}, nodeData, OperationTimeMetric, labels)
 		labels.Delete(metadata.L.Operation)
 
-		r.processFloatMetric([]string{"jvm", "threads", "peak_count"}, nodeData, peakThreadsMetric, labels)
+		r.processIntMetric([]string{"jvm", "threads", "peak_count"}, nodeData, peakThreadsMetric, labels)
 
-		r.processFloatMetric([]string{"indices", "store", "size_in_bytes"}, nodeData, storageSizeMetric, labels)
+		r.processIntMetric([]string{"indices", "store", "size_in_bytes"}, nodeData, storageSizeMetric, labels)
 
-		r.processFloatMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, labels)
+		r.processIntMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, labels)
 	}
 
-	labels := pdata.NewStringMap()
+	labels := pdata.NewAttributeMap()
 
 	clusterStats, err := r.makeRequest("/_cluster/stats")
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
-	r.processFloatMetric([]string{"nodes", "count", "data"}, clusterStats, DataNodesMetric, labels)
+	r.processIntMetric([]string{"nodes", "count", "data"}, clusterStats, DataNodesMetric, labels)
 
-	r.processFloatMetric([]string{"nodes", "count", "total"}, clusterStats, NodesMetric, labels)
+	r.processIntMetric([]string{"nodes", "count", "total"}, clusterStats, NodesMetric, labels)
 
 	clusterHealth, err := r.makeRequest("/_cluster/health")
 	if err != nil {
 		return pdata.ResourceMetricsSlice{}, err
 	}
-	labels.Upsert(metadata.L.ShardType, "initializing")
-	r.processFloatMetric([]string{"initializing_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "relocating")
-	r.processFloatMetric([]string{"relocating_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "active")
-	r.processFloatMetric([]string{"active_shards"}, clusterHealth, ShardsMetric, labels)
-	labels.Upsert(metadata.L.ShardType, "unassigned")
-	r.processFloatMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("initializing"))
+	r.processIntMetric([]string{"initializing_shards"}, clusterHealth, ShardsMetric, labels)
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("relocating"))
+	r.processIntMetric([]string{"relocating_shards"}, clusterHealth, ShardsMetric, labels)
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("active"))
+	r.processIntMetric([]string{"active_shards"}, clusterHealth, ShardsMetric, labels)
+	labels.Upsert(metadata.L.ShardType, pdata.NewAttributeValueString("unassigned"))
+	r.processIntMetric([]string{"unassigned_shards"}, clusterHealth, ShardsMetric, labels)
 	labels.Delete(metadata.L.ShardType)
 
 	return rms, nil
-}
-
-func getFloatFromBody(keys []string, body map[string]interface{}) (float64, error) {
-	var currentValue interface{} = body
-
-	for _, key := range keys {
-		currentBody, ok := currentValue.(map[string]interface{})
-		if !ok {
-			return 0, fmt.Errorf("could not find key in body")
-		}
-
-		currentValue, ok = currentBody[key]
-		if !ok {
-			return 0, fmt.Errorf("could not find key in body")
-		}
-	}
-	floatVal, ok := parseFloat(currentValue)
-	if !ok {
-		return 0, fmt.Errorf("could not parse value as float")
-	}
-	return floatVal, nil
 }
 
 func getIntFromBody(keys []string, body map[string]interface{}) (int64, error) {
@@ -278,27 +248,6 @@ func getIntFromBody(keys []string, body map[string]interface{}) (int64, error) {
 		return 0, fmt.Errorf("could not parse value as int, keys: %s", keys)
 	}
 	return intVal, nil
-}
-
-// parseFloat converts string to float64.
-func parseFloat(value interface{}) (float64, bool) {
-	switch f := value.(type) {
-	case float64:
-		return f, true
-	case int64:
-		return float64(f), true
-	case float32:
-		return float64(f), true
-	case int32:
-		return float64(f), true
-	case string:
-		fConv, err := strconv.ParseFloat(f, 64)
-		if err != nil {
-			return 0, false
-		}
-		return fConv, true
-	}
-	return 0, false
 }
 
 func parseInt(value interface{}) (int64, bool) {
@@ -327,20 +276,11 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
-	dataPoint := metric.AppendEmpty()
-	dataPoint.SetTimestamp(ts)
-	dataPoint.SetDoubleVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
-	}
-}
-
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }

@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package postgresqlreceiver
@@ -91,10 +92,10 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				sourceLabel, _ := dp.LabelsMap().Get(metadata.L.Source)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, sourceLabel)
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				sourceLabel, _ := dp.Attributes().Get(metadata.L.Source)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), sourceLabel.AsString())
 				metrics[label] = true
 			}
 			require.Equal(t, 24, len(metrics))
@@ -130,8 +131,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, true)
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), true)
 			require.Equal(t, "postgresql.commits otel true", label)
 
 		case metadata.M.PostgresqlDbSize.Name():
@@ -139,8 +140,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, true)
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), true)
 			require.Equal(t, "postgresql.db_size otel true", label)
 
 		case metadata.M.PostgresqlBackends.Name():
@@ -148,8 +149,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, true)
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), true)
 			require.Equal(t, "postgresql.backends otel true", label)
 
 		case metadata.M.PostgresqlRows.Name():
@@ -159,10 +160,10 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				stateLabel, _ := dp.LabelsMap().Get(metadata.L.State)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, stateLabel)
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				stateLabel, _ := dp.Attributes().Get(metadata.L.State)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), stateLabel.AsString())
 				metrics[label] = true
 			}
 			require.Equal(t, 6, len(metrics))
@@ -182,10 +183,10 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-				tableLabel, _ := dp.LabelsMap().Get(metadata.L.Table)
-				operationLabel, _ := dp.LabelsMap().Get(metadata.L.Operation)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel, tableLabel, operationLabel)
+				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
+				operationLabel, _ := dp.Attributes().Get(metadata.L.Operation)
+				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), operationLabel.AsString())
 				metrics[label] = true
 			}
 			require.Equal(t, 12, len(metrics))
@@ -209,8 +210,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			require.Equal(t, 1, dps.Len())
 
 			dp := dps.At(0)
-			dbLabel, _ := dp.LabelsMap().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel, true)
+			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
+			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), true)
 			require.Equal(t, "postgresql.rollbacks otel true", label)
 
 		default:

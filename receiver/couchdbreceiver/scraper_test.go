@@ -78,8 +78,8 @@ func validateScraperResult(t *testing.T, metric pdata.MetricSlice) {
 			requestMethodMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				method, _ := dp.LabelsMap().Get(metadata.L.HTTPMethod)
-				label := fmt.Sprintf("%s method:%s", m.Name(), method)
+				method, _ := dp.Attributes().Get(metadata.L.HTTPMethod)
+				label := fmt.Sprintf("%s method:%s", m.Name(), method.AsString())
 				requestMethodMetrics[label] = dp.IntVal()
 			}
 
@@ -101,8 +101,8 @@ func validateScraperResult(t *testing.T, metric pdata.MetricSlice) {
 			respondCodeMetrics := map[string]int64{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				code, _ := dp.LabelsMap().Get(metadata.L.ResponseCode)
-				label := fmt.Sprintf("%s code:%s", m.Name(), code)
+				code, _ := dp.Attributes().Get(metadata.L.ResponseCode)
+				label := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
 				respondCodeMetrics[label] = dp.IntVal()
 			}
 

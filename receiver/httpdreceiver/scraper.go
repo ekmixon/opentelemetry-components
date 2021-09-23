@@ -49,12 +49,12 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }
 
@@ -72,7 +72,7 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/httpd")
-	now := pdata.TimestampFromTime(time.Now())
+	now := pdata.NewTimestampFromTime(time.Now())
 
 	uptime := initMetric(ilm.Metrics(), metadata.M.HttpdUptime).Sum().DataPoints()
 	connections := initMetric(ilm.Metrics(), metadata.M.HttpdCurrentConnections).Gauge().DataPoints()
@@ -89,8 +89,8 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	serverName := u.Hostname()
 
 	for metricKey, metricValue := range parseStats(stats) {
-		labels := pdata.NewStringMap()
-		labels.Insert(metadata.L.ServerName, serverName)
+		labels := pdata.NewAttributeMap()
+		labels.Insert(metadata.L.ServerName, pdata.NewAttributeValueString(serverName))
 
 		switch metricKey {
 		case "ServerUptimeSeconds":
@@ -103,12 +103,12 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 			}
 		case "BusyWorkers":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				labels.Insert(metadata.L.WorkersState, "busy")
+				labels.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("busy"))
 				addToIntMetric(workers, labels, i, now)
 			}
 		case "IdleWorkers":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				labels.Insert(metadata.L.WorkersState, "idle")
+				labels.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("idle"))
 				addToIntMetric(workers, labels, i, now)
 			}
 		case "Total Accesses":
@@ -123,7 +123,7 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 		case "Scoreboard":
 			scoreboardMap := parseScoreboard(metricValue)
 			for identifier, score := range scoreboardMap {
-				labels.Upsert(metadata.L.ScoreboardState, identifier)
+				labels.Upsert(metadata.L.ScoreboardState, pdata.NewAttributeValueString(identifier))
 				addToIntMetric(scoreboard, labels, score, now)
 			}
 		}

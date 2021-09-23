@@ -64,29 +64,29 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
 			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 410, dps.At(0).IntVal())
 		case metadata.M.HttpdCurrentConnections.Name():
 			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 1, dps.Len())
 			require.EqualValues(t, 110, dps.At(0).IntVal())
 		case metadata.M.HttpdWorkers.Name():
 			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 2, m.Gauge().DataPoints().Len())
 
 			workerMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.WorkersState)
-				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
-				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName, state)
+				state, _ := dp.Attributes().Get(metadata.L.WorkersState)
+				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
+				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName.AsString(), state.AsString())
 				workerMetrics[label] = int(dp.IntVal())
 			}
 
@@ -97,29 +97,29 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 			}, workerMetrics)
 		case metadata.M.HttpdRequests.Name():
 			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 14169, dps.At(0).IntVal())
 		case metadata.M.HttpdTraffic.Name():
 			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 			require.EqualValues(t, 21411840, dps.At(0).IntVal())
 		case metadata.M.HttpdScoreboard.Name():
 			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).LabelsMap().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName)
+			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
+			require.EqualValues(t, "127.0.0.1", serverName.AsString())
 			require.Equal(t, 11, dps.Len())
 			scoreboardMetrics := map[string]int{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.ScoreboardState)
-				serverName, _ := dp.LabelsMap().Get(metadata.L.ServerName)
-				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName, state)
+				state, _ := dp.Attributes().Get(metadata.L.ScoreboardState)
+				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
+				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName.AsString(), state.AsString())
 				scoreboardMetrics[label] = int(dp.IntVal())
 			}
 			require.Equal(t, 11, len(scoreboardMetrics))
