@@ -94,7 +94,10 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/elasticsearch")
-	nodesInter := nodeStats["nodes"]
+	nodesInter, ok := nodeStats["nodes"]
+	if !ok {
+		return pdata.ResourceMetricsSlice{}, fmt.Errorf("no nodes data available")
+	}
 	nodes, ok := nodesInter.(map[string]interface{})
 	if !ok {
 		return pdata.ResourceMetricsSlice{}, fmt.Errorf("could not reflect set of nodes as a map")
@@ -103,6 +106,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	cacheMemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCacheMemoryUsage).Gauge().DataPoints()
 	evictionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchEvictions).Sum().DataPoints()
 	GCCollectionsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollection).Sum().DataPoints()
+	GCCollectionTimeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchGcCollectionTime).Sum().DataPoints()
 	MemoryUsageMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchMemoryUsage).Gauge().DataPoints()
 	NetworkMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchNetwork).Sum().DataPoints()
 	CurrentDocsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchCurrentDocuments).Gauge().DataPoints()
@@ -117,35 +121,45 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	peakThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchPeakThreads).Gauge().DataPoints()
 	storageSizeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchStorageSize).Gauge().DataPoints()
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
+	threadPoolThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolThreads).Gauge().DataPoints()
+	threadPoolQueueMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolQueue).Gauge().DataPoints()
+	threadPoolActiveMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolActive).Gauge().DataPoints()
+	threadPoolRejectedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolRejected).Sum().DataPoints()
+	threadPoolCompletedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolCompleted).Sum().DataPoints()
 
-	for nodeName, nodeDataInter := range nodes {
+	for _, nodeDataInter := range nodes {
+		nodeData, ok := nodeDataInter.(map[string]interface{})
+		if !ok {
+			r.logger.Error("could not reflect node data as a map")
+			continue
+		}
+
+		nodeName, err := getStringFromBody([]string{"name"}, nodeData)
+		if err != nil {
+			r.logger.Error(err.Error())
+			continue
+		}
+
 		labels := pdata.NewAttributeMap()
 		labels.Upsert(metadata.L.ServerName, pdata.NewAttributeValueString(nodeName))
 
-		nodeData, ok := nodeDataInter.(map[string]interface{})
-		if !ok {
-			r.logger.Info("could not reflect node data as a map")
-			continue
-		}
 		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "query_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("request"))
-		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("field"))
-		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
-
-		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("query"))
 		r.processIntMetric([]string{"indices", "query_cache", "evictions"}, nodeData, evictionsMetric, labels)
 		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("request"))
+		r.processIntMetric([]string{"indices", "request_cache", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		r.processIntMetric([]string{"indices", "request_cache", "evictions"}, nodeData, evictionsMetric, labels)
 		labels.Upsert(metadata.L.CacheName, pdata.NewAttributeValueString("field"))
+		r.processIntMetric([]string{"indices", "fielddata", "memory_size_in_bytes"}, nodeData, cacheMemoryUsageMetric, labels)
 		r.processIntMetric([]string{"indices", "fielddata", "evictions"}, nodeData, evictionsMetric, labels)
 		labels.Delete(metadata.L.CacheName)
 
 		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("young"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_count"}, nodeData, GCCollectionsMetric, labels)
+		r.processIntMetric([]string{"jvm", "gc", "collectors", "young", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
 		labels.Upsert(metadata.L.GcType, pdata.NewAttributeValueString("old"))
 		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_count"}, nodeData, GCCollectionsMetric, labels)
+		r.processIntMetric([]string{"jvm", "gc", "collectors", "old", "collection_time_in_millis"}, nodeData, GCCollectionTimeMetric, labels)
 		labels.Delete(metadata.L.GcType)
 
 		labels.Upsert(metadata.L.MemoryType, pdata.NewAttributeValueString("heap"))
@@ -200,6 +214,32 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 		r.processIntMetric([]string{"indices", "store", "size_in_bytes"}, nodeData, storageSizeMetric, labels)
 
 		r.processIntMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, labels)
+
+		threadPools, ok := nodeData["thread_pool"]
+		if !ok {
+			r.logger.Error("no thread pool data available")
+			continue
+		}
+		threadPoolsInter, ok := threadPools.(map[string]interface{})
+		if !ok {
+			r.logger.Error("could not reflect thread pools data as a map")
+			continue
+		}
+
+		for threadPoolName, threadPoolInter := range threadPoolsInter {
+			threadPool, ok := threadPoolInter.(map[string]interface{})
+			if !ok {
+				r.logger.Error("could not reflect thread pool data as a map")
+				continue
+			}
+			labels.Upsert(metadata.L.ThreadPoolName, pdata.NewAttributeValueString(threadPoolName))
+			r.processIntMetric([]string{"threads"}, threadPool, threadPoolThreadsMetric, labels)
+			r.processIntMetric([]string{"queue"}, threadPool, threadPoolQueueMetric, labels)
+			r.processIntMetric([]string{"active"}, threadPool, threadPoolActiveMetric, labels)
+			r.processIntMetric([]string{"rejected"}, threadPool, threadPoolRejectedMetric, labels)
+			r.processIntMetric([]string{"completed"}, threadPool, threadPoolCompletedMetric, labels)
+			labels.Delete(metadata.L.ThreadPoolName)
+		}
 	}
 
 	labels := pdata.NewAttributeMap()
@@ -227,6 +267,27 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	labels.Delete(metadata.L.ShardType)
 
 	return rms, nil
+}
+
+func getStringFromBody(keys []string, body map[string]interface{}) (string, error) {
+	var currentValue interface{} = body
+
+	for _, key := range keys {
+		currentBody, ok := currentValue.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("could not find key in body")
+		}
+
+		currentValue, ok = currentBody[key]
+		if !ok {
+			return "", fmt.Errorf("could not find key in body")
+		}
+	}
+	stringVal, ok := currentValue.(string)
+	if !ok {
+		return "", fmt.Errorf("could not parse value as string")
+	}
+	return stringVal, nil
 }
 
 func getIntFromBody(keys []string, body map[string]interface{}) (int64, error) {
