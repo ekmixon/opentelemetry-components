@@ -3,12 +3,13 @@ package mysqlreceiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
-
-	"github.com/observiq/opentelemetry-components/receiver/mysqlreceiver/internal/metadata"
 )
 
 func TestScrape(t *testing.T) {
@@ -20,283 +21,109 @@ func TestScrape(t *testing.T) {
 	})
 	sc.client = &mysqlMock
 
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscrape/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
+	}
 
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		switch m.Name() {
-		case metadata.M.MysqlBufferPoolPages.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 6, dps.Len())
-			bufferPoolPagesMetrics := map[string]float64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolPagesMetrics[label] = dp.DoubleVal()
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
+
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
 			}
-			require.Equal(t, 6, len(bufferPoolPagesMetrics))
-			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_pages :data":    981,
-				"mysql.buffer_pool_pages :dirty":   0,
-				"mysql.buffer_pool_pages :flushed": 168,
-				"mysql.buffer_pool_pages :free":    7207,
-				"mysql.buffer_pool_pages :misc":    4,
-				"mysql.buffer_pool_pages :total":   8192,
-			}, bufferPoolPagesMetrics)
-		case metadata.M.MysqlBufferPoolOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 7, dps.Len())
-			bufferPoolOperationsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolOperationsMetrics[label] = dp.IntVal()
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
 			}
-			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.buffer_pool_operations :read_ahead":         0,
-				"mysql.buffer_pool_operations :read_ahead_evicted": 0,
-				"mysql.buffer_pool_operations :read_ahead_rnd":     0,
-				"mysql.buffer_pool_operations :read_requests":      14837,
-				"mysql.buffer_pool_operations :reads":              838,
-				"mysql.buffer_pool_operations :wait_free":          0,
-				"mysql.buffer_pool_operations :write_requests":     1669,
-			}, bufferPoolOperationsMetrics)
-		case metadata.M.MysqlBufferPoolSize.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 3, dps.Len())
-			bufferPoolSizeMetrics := map[string]float64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolSizeMetrics[label] = dp.DoubleVal()
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
+
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
+
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
+				}
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
+				}
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
+				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
 			}
-			require.Equal(t, 3, len(bufferPoolSizeMetrics))
-			require.Equal(t, map[string]float64{
-				"mysql.buffer_pool_size :data":  16072704,
-				"mysql.buffer_pool_size :dirty": 0,
-				"mysql.buffer_pool_size :size":  134217728,
-			}, bufferPoolSizeMetrics)
-		case metadata.M.MysqlCommands.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 6, dps.Len())
-			commandsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Command)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				commandsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 6, len(commandsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.commands :close":          0,
-				"mysql.commands :execute":        0,
-				"mysql.commands :fetch":          0,
-				"mysql.commands :prepare":        0,
-				"mysql.commands :reset":          0,
-				"mysql.commands :send_long_data": 0,
-			}, commandsMetrics)
-		case metadata.M.MysqlHandlers.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 18, dps.Len())
-			handlersMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Handler)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				handlersMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 18, len(handlersMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.handlers :commit":             564,
-				"mysql.handlers :delete":             0,
-				"mysql.handlers :discover":           0,
-				"mysql.handlers :lock":               7127,
-				"mysql.handlers :mrr_init":           0,
-				"mysql.handlers :prepare":            0,
-				"mysql.handlers :read_first":         52,
-				"mysql.handlers :read_key":           1680,
-				"mysql.handlers :read_last":          0,
-				"mysql.handlers :read_next":          3960,
-				"mysql.handlers :read_prev":          0,
-				"mysql.handlers :read_rnd":           0,
-				"mysql.handlers :read_rnd_next":      505063,
-				"mysql.handlers :rollback":           0,
-				"mysql.handlers :savepoint":          0,
-				"mysql.handlers :savepoint_rollback": 0,
-				"mysql.handlers :update":             315,
-				"mysql.handlers :write":              256734,
-			}, handlersMetrics)
-		case metadata.M.MysqlDoubleWrites.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 2, dps.Len())
-			doubleWritesMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				doubleWritesMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 2, len(doubleWritesMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.double_writes :writes":  8,
-				"mysql.double_writes :written": 27,
-			}, doubleWritesMetrics)
-		case metadata.M.MysqlLogOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 3, dps.Len())
-			logOperationsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.LogOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				logOperationsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 3, len(logOperationsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.log_operations :requests": 646,
-				"mysql.log_operations :waits":    0,
-				"mysql.log_operations :writes":   14,
-			}, logOperationsMetrics)
-		case metadata.M.MysqlOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 3, dps.Len())
-			operationsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Operations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				operationsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 3, len(operationsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.operations :fsyncs": 46,
-				"mysql.operations :reads":  860,
-				"mysql.operations :writes": 215,
-			}, operationsMetrics)
-		case metadata.M.MysqlPageOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 3, dps.Len())
-			pageOperationsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.PageOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				pageOperationsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 3, len(pageOperationsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.page_operations :created": 144,
-				"mysql.page_operations :read":    837,
-				"mysql.page_operations :written": 168,
-			}, pageOperationsMetrics)
-		case metadata.M.MysqlRowLocks.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 2, dps.Len())
-			rowLocksMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.RowLocks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				rowLocksMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 2, len(rowLocksMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.row_locks :time":  0,
-				"mysql.row_locks :waits": 0,
-			}, rowLocksMetrics)
-		case metadata.M.MysqlRowOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 4, dps.Len())
-			rowOperationsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.RowOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				rowOperationsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 4, len(rowOperationsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.row_operations :deleted":  0,
-				"mysql.row_operations :inserted": 0,
-				"mysql.row_operations :read":     0,
-				"mysql.row_operations :updated":  0,
-			}, rowOperationsMetrics)
-		case metadata.M.MysqlLocks.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 2, dps.Len())
-			locksMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Locks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				locksMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 2, len(locksMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.locks :immediate": 521,
-				"mysql.locks :waited":    0,
-			}, locksMetrics)
-		case metadata.M.MysqlSorts.Name():
-			dps := m.Sum().DataPoints()
-			require.True(t, m.Sum().IsMonotonic())
-			require.Equal(t, 4, dps.Len())
-			sortsMetrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Sorts)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				sortsMetrics[label] = dp.IntVal()
-			}
-			require.Equal(t, 4, len(sortsMetrics))
-			require.Equal(t, map[string]int64{
-				"mysql.sorts :merge_passes": 0,
-				"mysql.sorts :range":        0,
-				"mysql.sorts :rows":         0,
-				"mysql.sorts :scan":         0,
-			}, sortsMetrics)
-		case metadata.M.MysqlThreads.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 4, dps.Len())
-			threadsMetrics := map[string]float64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Threads)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				threadsMetrics[label] = dp.DoubleVal()
-			}
-			require.Equal(t, 4, len(threadsMetrics))
-			require.Equal(t, map[string]float64{
-				"mysql.threads :cached":    0,
-				"mysql.threads :connected": 1,
-				"mysql.threads :created":   1,
-				"mysql.threads :running":   2,
-			}, threadsMetrics)
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
 		}
 	}
+	return nil
 }

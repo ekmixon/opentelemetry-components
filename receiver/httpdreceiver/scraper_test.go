@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,9 +14,9 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
-
-	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver/internal/metadata"
 )
 
 func TestScraper(t *testing.T) {
@@ -45,102 +46,111 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 	require.NoError(t, err)
 	assert.NotNil(t, sc.httpClient)
 
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
+	}
 
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		switch m.Name() {
-		case metadata.M.HttpdUptime.Name():
-			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.True(t, m.Sum().IsMonotonic())
-			require.EqualValues(t, 410, dps.At(0).IntVal())
-		case metadata.M.HttpdCurrentConnections.Name():
-			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 1, dps.Len())
-			require.EqualValues(t, 110, dps.At(0).IntVal())
-		case metadata.M.HttpdWorkers.Name():
-			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 2, m.Gauge().DataPoints().Len())
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
 
-			workerMetrics := map[string]int{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.Attributes().Get(metadata.L.WorkersState)
-				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
-				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName.AsString(), state.AsString())
-				workerMetrics[label] = int(dp.IntVal())
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
 			}
-
-			require.Equal(t, 2, len(workerMetrics))
-			require.Equal(t, map[string]int{
-				"httpd.workers serverName:127.0.0.1 state:busy": 13,
-				"httpd.workers serverName:127.0.0.1 state:idle": 227,
-			}, workerMetrics)
-		case metadata.M.HttpdRequests.Name():
-			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.True(t, m.Sum().IsMonotonic())
-			require.EqualValues(t, 14169, dps.At(0).IntVal())
-		case metadata.M.HttpdTraffic.Name():
-			dps := m.Sum().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.True(t, m.Sum().IsMonotonic())
-			require.EqualValues(t, 21411840, dps.At(0).IntVal())
-		case metadata.M.HttpdScoreboard.Name():
-			dps := m.Gauge().DataPoints()
-			serverName, _ := dps.At(0).Attributes().Get(metadata.L.ServerName)
-			require.EqualValues(t, "127.0.0.1", serverName.AsString())
-			require.Equal(t, 11, dps.Len())
-			scoreboardMetrics := map[string]int{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.Attributes().Get(metadata.L.ScoreboardState)
-				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
-				label := fmt.Sprintf("%s serverName:%s state:%s", m.Name(), serverName.AsString(), state.AsString())
-				scoreboardMetrics[label] = int(dp.IntVal())
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
 			}
-			require.Equal(t, 11, len(scoreboardMetrics))
-			require.Equal(t, map[string]int{
-				"httpd.scoreboard serverName:127.0.0.1 state:open":         150,
-				"httpd.scoreboard serverName:127.0.0.1 state:waiting":      217,
-				"httpd.scoreboard serverName:127.0.0.1 state:starting":     1,
-				"httpd.scoreboard serverName:127.0.0.1 state:reading":      4,
-				"httpd.scoreboard serverName:127.0.0.1 state:sending":      12,
-				"httpd.scoreboard serverName:127.0.0.1 state:keepalive":    2,
-				"httpd.scoreboard serverName:127.0.0.1 state:dnslookup":    2,
-				"httpd.scoreboard serverName:127.0.0.1 state:closing":      4,
-				"httpd.scoreboard serverName:127.0.0.1 state:logging":      1,
-				"httpd.scoreboard serverName:127.0.0.1 state:finishing":    3,
-				"httpd.scoreboard serverName:127.0.0.1 state:idle_cleanup": 4,
-			}, scoreboardMetrics)
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
 
-		default:
-			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
+
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
+				}
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
+				}
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
+				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
+			}
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
 		}
 	}
+	return nil
 }
 
 func TestScraperFailedStart(t *testing.T) {
