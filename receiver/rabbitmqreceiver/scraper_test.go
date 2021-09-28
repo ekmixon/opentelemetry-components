@@ -8,11 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 )
 
@@ -38,47 +39,112 @@ func TestScraper(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	require.Equal(t, 4, ms.Len())
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-	metricValues := make(map[string]float64, 7)
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-
-		dps := m.Gauge().DataPoints()
-		if dps.Len() > 1 {
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.Attributes().Get(metadata.L.State)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state.AsString())
-				metricValues[label] = dp.DoubleVal()
-			}
-		} else {
-			dp := dps.At(0)
-			metricValues[m.Name()] = dp.DoubleVal()
-		}
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
 	}
 
-	require.Equal(t, map[string]float64{
-		"rabbitmq.publish_rate":                      1,
-		"rabbitmq.delivery_rate":                     1.4,
-		"rabbitmq.consumers":                         1,
-		"rabbitmq.num_messages state:ready":          6,
-		"rabbitmq.num_messages state:total":          7,
-		"rabbitmq.num_messages state:unacknowledged": 1,
-	}, metricValues)
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
+
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
+			}
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
+			}
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
+
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
+
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
+				}
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
+				}
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
+				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
+			}
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
+		}
+	}
+	return nil
 }
 
 func TestScraperFailedStart(t *testing.T) {

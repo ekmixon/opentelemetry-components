@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/observiq/opentelemetry-components/receiver/elasticsearchreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/model/otlp"
 	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 )
@@ -55,237 +55,112 @@ func TestScraper(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-	metricValues := make(map[string]interface{}, 7)
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		name := m.Name()
-
-		switch m.DataType() {
-		case pdata.MetricDataTypeGauge:
-			dps := m.Gauge().DataPoints()
-			switch name {
-			case "elasticsearch.cache_memory_usage":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.CacheName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.memory_usage":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.MemoryType)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.current_documents":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.DocumentType)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.http_connections":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.open_files":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.server_connections":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.peak_threads":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.storage_size":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.threads":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.data_nodes":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.nodes":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					label := fmt.Sprint(m.Name())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.shards":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ShardType)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.thread_pool.threads":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ThreadPoolName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.thread_pool.queue":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ThreadPoolName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.thread_pool.active":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ThreadPoolName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			}
-		case pdata.MetricDataTypeSum:
-			m.Sum().DataPoints()
-			dps := m.Sum().DataPoints()
-			switch name {
-			case "elasticsearch.evictions":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.CacheName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.gc_collection":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.GcType)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.gc_collection_time":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.GcType)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.network":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.Direction)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.operations":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.Operation)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.operation_time":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.Operation)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.thread_pool.rejected":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ThreadPoolName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			case "elasticsearch.thread_pool.completed":
-				for i := 0; i < dps.Len(); i++ {
-					dp := dps.At(i)
-					dbLabel, _ := dp.Attributes().Get(metadata.L.ThreadPoolName)
-					label := fmt.Sprintf("%s %s", m.Name(), dbLabel.AsString())
-					metricValues[label] = dp.IntVal()
-				}
-			}
-		}
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
 	}
 
-	require.Equal(t, map[string]interface{}{
-		"elasticsearch.cache_memory_usage field":      int64(0),
-		"elasticsearch.cache_memory_usage query":      int64(0),
-		"elasticsearch.cache_memory_usage request":    int64(0),
-		"elasticsearch.current_documents deleted":     int64(0),
-		"elasticsearch.current_documents live":        int64(0),
-		"elasticsearch.data_nodes":                    int64(1),
-		"elasticsearch.gc_collection old":             int64(10),
-		"elasticsearch.gc_collection_time old":        int64(5),
-		"elasticsearch.gc_collection young":           int64(20),
-		"elasticsearch.gc_collection_time young":      int64(930),
-		"elasticsearch.http_connections":              int64(2),
-		"elasticsearch.memory_usage heap":             int64(3.05152e+08),
-		"elasticsearch.memory_usage non-heap":         int64(1.28825192e+08),
-		"elasticsearch.network receive":               int64(0),
-		"elasticsearch.network transmit":              int64(0),
-		"elasticsearch.nodes":                         int64(1),
-		"elasticsearch.open_files":                    int64(270),
-		"elasticsearch.operation_time delete":         int64(0),
-		"elasticsearch.operation_time fetch":          int64(0),
-		"elasticsearch.operation_time get":            int64(0),
-		"elasticsearch.operation_time index":          int64(0),
-		"elasticsearch.operation_time query":          int64(0),
-		"elasticsearch.operations delete":             int64(0),
-		"elasticsearch.operations fetch":              int64(0),
-		"elasticsearch.operations get":                int64(0),
-		"elasticsearch.operations index":              int64(0),
-		"elasticsearch.operations query":              int64(0),
-		"elasticsearch.peak_threads":                  int64(28),
-		"elasticsearch.server_connections":            int64(0),
-		"elasticsearch.shards active":                 int64(0),
-		"elasticsearch.shards initializing":           int64(0),
-		"elasticsearch.shards relocating":             int64(0),
-		"elasticsearch.shards unassigned":             int64(0),
-		"elasticsearch.storage_size":                  int64(0),
-		"elasticsearch.threads":                       int64(27),
-		"elasticsearch.evictions field":               int64(0),
-		"elasticsearch.evictions query":               int64(0),
-		"elasticsearch.evictions request":             int64(0),
-		"elasticsearch.thread_pool.active analyze":    int64(3),
-		"elasticsearch.thread_pool.completed analyze": int64(6),
-		"elasticsearch.thread_pool.queue analyze":     int64(2),
-		"elasticsearch.thread_pool.rejected analyze":  int64(4),
-		"elasticsearch.thread_pool.threads analyze":   int64(1),
-	}, metricValues)
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
+
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
+			}
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
+			}
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
+
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
+
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
+				}
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
+				}
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
+				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
+			}
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
+		}
+	}
+	return nil
 }
 
 func TestScraperFailedStart(t *testing.T) {

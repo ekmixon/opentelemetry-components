@@ -3,12 +3,13 @@ package postgresqlreceiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
-
-	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver/internal/metadata"
 )
 
 func TestScraper(t *testing.T) {
@@ -16,153 +17,109 @@ func TestScraper(t *testing.T) {
 	sc := newPostgreSQLScraper(zap.NewNop(), &Config{})
 	sc.client = &postgresqlMock
 
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-	require.Equal(t, len(metadata.M.Names()), ms.Len())
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
+	}
 
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		switch m.Name() {
-		case metadata.M.PostgresqlBlocksRead.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 24, dps.Len())
-			metrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
-				sourceLabel, _ := dp.Attributes().Get(metadata.L.Source)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), sourceLabel.AsString())
-				metrics[label] = dp.IntVal()
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
+
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
 			}
-			require.Equal(t, 24, len(metrics))
-			require.Equal(t, map[string]int64{
-				"postgresql.blocks_read otel _global heap_read":        11,
-				"postgresql.blocks_read otel _global heap_hit":         12,
-				"postgresql.blocks_read otel _global idx_read":         13,
-				"postgresql.blocks_read otel _global idx_hit":          14,
-				"postgresql.blocks_read otel _global toast_read":       15,
-				"postgresql.blocks_read otel _global toast_hit":        16,
-				"postgresql.blocks_read otel _global tidx_read":        17,
-				"postgresql.blocks_read otel _global tidx_hit":         18,
-				"postgresql.blocks_read otel public.table1 heap_read":  19,
-				"postgresql.blocks_read otel public.table1 heap_hit":   20,
-				"postgresql.blocks_read otel public.table1 idx_read":   21,
-				"postgresql.blocks_read otel public.table1 idx_hit":    22,
-				"postgresql.blocks_read otel public.table1 toast_read": 23,
-				"postgresql.blocks_read otel public.table1 toast_hit":  24,
-				"postgresql.blocks_read otel public.table1 tidx_read":  25,
-				"postgresql.blocks_read otel public.table1 tidx_hit":   26,
-				"postgresql.blocks_read otel public.table2 heap_read":  27,
-				"postgresql.blocks_read otel public.table2 heap_hit":   28,
-				"postgresql.blocks_read otel public.table2 idx_read":   29,
-				"postgresql.blocks_read otel public.table2 idx_hit":    30,
-				"postgresql.blocks_read otel public.table2 toast_read": 31,
-				"postgresql.blocks_read otel public.table2 toast_hit":  32,
-				"postgresql.blocks_read otel public.table2 tidx_read":  33,
-				"postgresql.blocks_read otel public.table2 tidx_hit":   34,
-			}, metrics)
-
-		case metadata.M.PostgresqlCommits.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
-			require.Equal(t, "postgresql.commits otel 1", label)
-
-		case metadata.M.PostgresqlDbSize.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
-			require.Equal(t, "postgresql.db_size otel 4", label)
-
-		case metadata.M.PostgresqlBackends.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
-			require.Equal(t, "postgresql.backends otel 3", label)
-
-		case metadata.M.PostgresqlRows.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 6, dps.Len())
-
-			metrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
-				stateLabel, _ := dp.Attributes().Get(metadata.L.State)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), stateLabel.AsString())
-				metrics[label] = dp.IntVal()
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
 			}
-			require.Equal(t, 6, len(metrics))
-			require.Equal(t, map[string]int64{
-				"postgresql.rows otel _global live":       5,
-				"postgresql.rows otel _global dead":       6,
-				"postgresql.rows otel public.table1 live": 7,
-				"postgresql.rows otel public.table1 dead": 8,
-				"postgresql.rows otel public.table2 live": 9,
-				"postgresql.rows otel public.table2 dead": 10,
-			}, metrics)
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
 
-		case metadata.M.PostgresqlOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 12, dps.Len())
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
 
-			metrics := map[string]int64{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-				tableLabel, _ := dp.Attributes().Get(metadata.L.Table)
-				operationLabel, _ := dp.Attributes().Get(metadata.L.Operation)
-				label := fmt.Sprintf("%s %s %s %s", m.Name(), dbLabel.AsString(), tableLabel.AsString(), operationLabel.AsString())
-				metrics[label] = dp.IntVal()
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
+				}
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
+				}
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
+				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
 			}
-			require.Equal(t, 12, len(metrics))
-			require.Equal(t, map[string]int64{
-				"postgresql.operations otel _global seq":                 35,
-				"postgresql.operations otel _global seq_tup_read":        36,
-				"postgresql.operations otel _global idx":                 37,
-				"postgresql.operations otel _global idx_tup_fetch":       38,
-				"postgresql.operations otel public.table1 seq":           39,
-				"postgresql.operations otel public.table1 seq_tup_read":  40,
-				"postgresql.operations otel public.table1 idx":           41,
-				"postgresql.operations otel public.table1 idx_tup_fetch": 42,
-				"postgresql.operations otel public.table2 seq":           43,
-				"postgresql.operations otel public.table2 seq_tup_read":  44,
-				"postgresql.operations otel public.table2 idx":           45,
-				"postgresql.operations otel public.table2 idx_tup_fetch": 46,
-			}, metrics)
-
-		case metadata.M.PostgresqlRollbacks.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbLabel, _ := dp.Attributes().Get(metadata.L.Database)
-			label := fmt.Sprintf("%s %s %v", m.Name(), dbLabel.AsString(), dp.IntVal())
-			require.Equal(t, "postgresql.rollbacks otel 2", label)
-
-		default:
-			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
 		}
 	}
+	return nil
 }

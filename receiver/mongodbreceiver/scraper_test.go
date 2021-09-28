@@ -3,11 +3,13 @@ package mongodbreceiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"testing"
 
-	"github.com/observiq/opentelemetry-components/receiver/mongodbreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 )
 
@@ -20,152 +22,110 @@ func TestScraper(t *testing.T) {
 
 	sc := newMongodbScraper(zap.NewNop(), cfg)
 	sc.client = &fakeClient{}
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
+	actualMetrics := pdata.NewMetrics()
+	rms := actualMetrics.ResourceMetrics()
+	scrapedRMS, err := sc.scrape(context.Background())
+	require.NoError(t, err)
+	scrapedRMS.CopyTo(rms)
 
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
+	unmarshaller := otlp.NewJSONMetricsUnmarshaler()
+	expectedMetrics, err := unmarshaller.UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
 
-	require.Equal(t, 13, ms.Len())
+	aMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	eMetricSlice := actualMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		switch m.Name() {
-		case "mongodb.collections":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.data_size":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, float64(3141), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.extents":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, int64(0), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.index_size":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.indexes":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, int64(1), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.objects":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, int64(2), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.storage_size":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, float64(16384), m.Gauge().DataPoints().At(0).DoubleVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.connections":
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.Equal(t, int64(3), m.Gauge().DataPoints().At(0).IntVal())
-			dbName, ok := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.DatabaseName)
-			if !ok {
-				require.NoError(t, fmt.Errorf("database name label missing"))
-			}
-			require.Equal(t, "fakedatabase", dbName.AsString())
-		case "mongodb.memory_usage":
-			require.Equal(t, 4, m.Gauge().DataPoints().Len())
-			dps := m.Gauge().DataPoints()
-			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
-				dp := dps.At(dpIndex)
+	require.NoError(t, compareMetrics(eMetricSlice, aMetricSlice))
+}
 
-				dbName, ok := dp.Attributes().Get(metadata.L.DatabaseName)
-				if !ok {
-					require.NoError(t, fmt.Errorf("database name label missing"))
+func compareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
+	if actualAll.Len() != expectedAll.Len() {
+		return fmt.Errorf("metrics not of same length")
+	}
+
+	lessFunc := func(a, b pdata.Metric) bool {
+		return a.Name() < b.Name()
+	}
+
+	actualMetrics := actualAll.Sort(lessFunc)
+	expectedMetrics := expectedAll.Sort(lessFunc)
+
+	for i := 0; i < actualMetrics.Len(); i++ {
+		actual := actualMetrics.At(i)
+		expected := expectedMetrics.At(i)
+
+		if actual.Name() != expected.Name() {
+			return fmt.Errorf("metric name does not match expected: %s, actual: %s", expected.Name(), actual.Name())
+		}
+		if actual.DataType() != expected.DataType() {
+			return fmt.Errorf("metric datatype does not match expected: %s, actual: %s", expected.DataType(), actual.DataType())
+		}
+		if actual.Description() != expected.Description() {
+			return fmt.Errorf("metric description does not match expected: %s, actual: %s", expected.Description(), actual.Description())
+		}
+		if actual.Unit() != expected.Unit() {
+			return fmt.Errorf("metric Unit does not match expected: %s, actual: %s", expected.Unit(), actual.Unit())
+		}
+
+		var actualDataPoints pdata.NumberDataPointSlice
+		var expectedDataPoints pdata.NumberDataPointSlice
+
+		switch actual.DataType() {
+		case pdata.MetricDataTypeGauge:
+			actualDataPoints = actual.Gauge().DataPoints()
+			expectedDataPoints = expected.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			if actual.Sum().AggregationTemporality() != expected.Sum().AggregationTemporality() {
+				return fmt.Errorf("metric AggregationTemporality does not match expected: %s, actual: %s", expected.Sum().AggregationTemporality(), actual.Sum().AggregationTemporality())
+			}
+			if actual.Sum().IsMonotonic() != expected.Sum().IsMonotonic() {
+				return fmt.Errorf("metric IsMonotonic does not match expected: %t, actual: %t", expected.Sum().IsMonotonic(), actual.Sum().IsMonotonic())
+			}
+			actualDataPoints = actual.Sum().DataPoints()
+			expectedDataPoints = expected.Sum().DataPoints()
+		}
+
+		if actualDataPoints.Len() != expectedDataPoints.Len() {
+			return fmt.Errorf("length of datapoints don't match")
+		}
+
+		dataPointMatches := 0
+		for j := 0; j < expectedDataPoints.Len(); j++ {
+			edp := expectedDataPoints.At(j)
+			for k := 0; k < actualDataPoints.Len(); k++ {
+				adp := actualDataPoints.At(k)
+				adpAttributes := adp.Attributes()
+				labelMatches := true
+
+				if edp.Attributes().Len() != adpAttributes.Len() {
+					break
 				}
-				require.Equal(t, "fakedatabase", dbName.AsString())
-
-				dpLabel, ok := dp.Attributes().Get(metadata.L.MemoryType)
-				if !ok {
-					require.NoError(t, fmt.Errorf("Memory type label doesn't exist where it should"))
+				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
+						return true
+					}
+					labelMatches = false
+					return false
+				})
+				if !labelMatches {
+					continue
 				}
-				switch dpLabel.AsString() {
-				case "resident":
-					require.Equal(t, int64(79), dp.IntVal())
-				case "virtual":
-					require.Equal(t, int64(1089), dp.IntVal())
-				case "mapped":
-					require.Equal(t, int64(0), dp.IntVal())
-				case "mappedWithJournal":
-					require.Equal(t, int64(0), dp.IntVal())
-				default:
-					require.NoError(t, fmt.Errorf("Incorrect memory type"))
+				if edp.IntVal() != adp.IntVal() {
+					return fmt.Errorf("metric datapoint IntVal doesn't match expected: %d, actual: %d", edp.IntVal(), adp.IntVal())
 				}
+				if edp.DoubleVal() != adp.DoubleVal() {
+					return fmt.Errorf("metric datapoint DoubleVal doesn't match expected: %f, actual: %f", edp.DoubleVal(), adp.DoubleVal())
+				}
+				dataPointMatches++
+				break
 			}
-		case "mongodb.global_lock_hold_time":
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.Equal(t, int64(58964000), m.Sum().DataPoints().At(0).IntVal())
-		case "mongodb.cache_misses":
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.Equal(t, int64(18), m.Sum().DataPoints().At(0).IntVal())
-		case "mongodb.cache_hits":
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.Equal(t, int64(197), m.Sum().DataPoints().At(0).IntVal())
-		case "mongodb.operation_count":
-			require.Equal(t, 6, m.Sum().DataPoints().Len())
-			dps := m.Sum().DataPoints()
-			for dpIndex := 0; dpIndex < dps.Len(); dpIndex++ {
-				dp := dps.At(dpIndex)
-				dpLabel, ok := dp.Attributes().Get(metadata.L.Operation)
-				if !ok {
-					require.NoError(t, fmt.Errorf("Operation label doesn't exist where it should"))
-				}
-				switch dpLabel.AsString() {
-				case "insert":
-					require.Equal(t, int64(0), dp.IntVal())
-				case "query":
-					require.Equal(t, int64(2), dp.IntVal())
-				case "update":
-					require.Equal(t, int64(0), dp.IntVal())
-				case "delete":
-					require.Equal(t, int64(0), dp.IntVal())
-				case "getmore":
-					require.Equal(t, int64(0), dp.IntVal())
-				case "command":
-					require.Equal(t, int64(20), dp.IntVal())
-				default:
-					require.NoError(t, fmt.Errorf("Incorrect operation"))
-				}
-			}
-		default:
-			t.Errorf("Incorrect name or untracked metric name %s", m.Name())
+		}
+		if dataPointMatches != expectedDataPoints.Len() {
+			return fmt.Errorf("missing Datapoints")
 		}
 	}
+	return nil
 }
