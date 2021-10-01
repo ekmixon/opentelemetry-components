@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
@@ -33,7 +33,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 				CollectionInterval: 10 * time.Second,
 			},
 		},
-		&testbed.MockMetricConsumer{},
+		consumertest.NewNop(),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, metricsReceiver)
