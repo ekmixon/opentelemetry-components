@@ -86,14 +86,14 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			r.logger.Info("rabbitMQ api response format did not meet expectations")
 			break
 		}
-		labels := pdata.NewAttributeMap()
+		attributes := pdata.NewAttributeMap()
 
 		queueName, ok := queue["name"].(string)
 		if !ok {
 			r.logger.Info("could not parse queue name from body")
 			break
 		}
-		labels.Upsert(metadata.L.Queue, pdata.NewAttributeValueString(queueName))
+		attributes.Upsert(metadata.L.Queue, pdata.NewAttributeValueString(queueName))
 
 		val, err := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
 		if err != nil {
@@ -102,7 +102,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "publish_rate"),
 			)
 		} else {
-			addToDoubleMetric(publishRateMetric, labels, val, now)
+			addToDoubleMetric(publishRateMetric, attributes, val, now)
 		}
 
 		val, err = getValFromBody([]string{"message_stats", "deliver_details", "rate"}, queue)
@@ -112,7 +112,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "delivery_rate"),
 			)
 		} else {
-			addToDoubleMetric(deliveryRateMetric, labels, val, now)
+			addToDoubleMetric(deliveryRateMetric, attributes, val, now)
 		}
 
 		val, err = getValFromBody([]string{"consumers"}, queue)
@@ -122,7 +122,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "consumers"),
 			)
 		} else {
-			addToDoubleMetric(consumersMetric, labels, val, now)
+			addToDoubleMetric(consumersMetric, attributes, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages"}, queue)
@@ -132,8 +132,8 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:total"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("total"))
-			addToDoubleMetric(numMessagesMetric, labels, val, now)
+			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("total"))
+			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages_unacknowledged"}, queue)
@@ -143,8 +143,8 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:unacknowledged"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("unacknowledged"))
-			addToDoubleMetric(numMessagesMetric, labels, val, now)
+			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("unacknowledged"))
+			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 
 		val, err = getValFromBody([]string{"messages_ready"}, queue)
@@ -154,8 +154,8 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:ready"),
 			)
 		} else {
-			labels.Upsert(metadata.L.State, pdata.NewAttributeValueString("ready"))
-			addToDoubleMetric(numMessagesMetric, labels, val, now)
+			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("ready"))
+			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 	}
 
@@ -210,11 +210,11 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value float64, ts pdata.Timestamp) {
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, attributes pdata.AttributeMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetDoubleVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.Attributes())
+	if attributes.Len() > 0 {
+		attributes.CopyTo(dataPoint.Attributes())
 	}
 }

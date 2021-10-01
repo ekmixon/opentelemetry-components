@@ -139,9 +139,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolPagesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolPagesMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				bufferPoolPagesMetrics[attribute] = true
 			}
 			require.Equal(t, map[string]bool{
 				"mysql.buffer_pool_pages :data":    true,
@@ -158,9 +158,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolOperationsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				bufferPoolOperationsMetrics[attribute] = true
 			}
 			require.Equal(t, 7, len(bufferPoolOperationsMetrics))
 			require.Equal(t, map[string]bool{
@@ -178,9 +178,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolSizeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				bufferPoolSizeMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				bufferPoolSizeMetrics[attribute] = true
 			}
 			require.Equal(t, 3, len(bufferPoolSizeMetrics))
 			require.Equal(t, map[string]bool{
@@ -195,9 +195,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			commandsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Command)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				commandsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Command)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				commandsMetrics[attribute] = true
 			}
 			require.Equal(t, 6, len(commandsMetrics))
 			require.Equal(t, map[string]bool{
@@ -215,9 +215,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			handlersMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Handler)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				handlersMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Handler)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				handlersMetrics[attribute] = true
 			}
 			require.Equal(t, 18, len(handlersMetrics))
 			require.Equal(t, map[string]bool{
@@ -247,9 +247,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			doubleWritesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				doubleWritesMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				doubleWritesMetrics[attribute] = true
 			}
 			require.Equal(t, 2, len(doubleWritesMetrics))
 			require.Equal(t, map[string]bool{
@@ -263,9 +263,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			logOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.LogOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				logOperationsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.LogOperations)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				logOperationsMetrics[attribute] = true
 			}
 			require.Equal(t, 3, len(logOperationsMetrics))
 			require.Equal(t, map[string]bool{
@@ -280,9 +280,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			operationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Operations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				operationsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Operations)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				operationsMetrics[attribute] = true
 			}
 			require.Equal(t, 3, len(operationsMetrics))
 			require.Equal(t, map[string]bool{
@@ -297,9 +297,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			pageOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.PageOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				pageOperationsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.PageOperations)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				pageOperationsMetrics[attribute] = true
 			}
 			require.Equal(t, 3, len(pageOperationsMetrics))
 			require.Equal(t, map[string]bool{
@@ -314,9 +314,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowLocksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.RowLocks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				rowLocksMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.RowLocks)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				rowLocksMetrics[attribute] = true
 			}
 			require.Equal(t, 2, len(rowLocksMetrics))
 			require.Equal(t, map[string]bool{
@@ -330,9 +330,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.RowOperations)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				rowOperationsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.RowOperations)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				rowOperationsMetrics[attribute] = true
 			}
 			require.Equal(t, 4, len(rowOperationsMetrics))
 			require.Equal(t, map[string]bool{
@@ -348,9 +348,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			locksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Locks)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				locksMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Locks)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				locksMetrics[attribute] = true
 			}
 			require.Equal(t, 2, len(locksMetrics))
 			require.Equal(t, map[string]bool{
@@ -364,9 +364,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			sortsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Sorts)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				sortsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Sorts)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				sortsMetrics[attribute] = true
 			}
 			require.Equal(t, 4, len(sortsMetrics))
 			require.Equal(t, map[string]bool{
@@ -381,9 +381,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			threadsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_label, _ := dp.Attributes().Get(metadata.L.Threads)
-				label := fmt.Sprintf("%s :%s", m.Name(), value_label.AsString())
-				threadsMetrics[label] = true
+				value_attribute, _ := dp.Attributes().Get(metadata.L.Threads)
+				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
+				threadsMetrics[attribute] = true
 			}
 			require.Equal(t, 4, len(threadsMetrics))
 			require.Equal(t, map[string]bool{

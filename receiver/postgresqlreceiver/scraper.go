@@ -57,24 +57,24 @@ func (p *postgreSQLScraper) shutdown(context.Context) error {
 	return err
 }
 
-// initMetric initializes a metric with a metadata label.
+// initMetric initializes a metric with a metadata attribute.
 func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	m := ms.AppendEmpty()
 	mi.Init(m)
 	return m
 }
 
-// addToIntMetric adds and labels a int sum datapoint to metricslice.
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
+// addToIntMetric adds and attributes a int sum datapoint to metricslice.
+func addToIntMetric(metric pdata.NumberDataPointSlice, attributes pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.Attributes())
+	if attributes.Len() > 0 {
+		attributes.CopyTo(dataPoint.Attributes())
 	}
 }
 
-// scrape scrapes the metric stats, transforms them and labels them into a metric slices.
+// scrape scrapes the metric stats, transforms them and attributes them into a metric slices.
 func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
 
 	if p.client == nil {
@@ -101,12 +101,12 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch blocks read", zap.Error(err))
 	} else {
 		for k, v := range blocksReadMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if i, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(blocksReadMetric.database))
-				labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(blocksReadMetric.table))
-				labels.Insert(metadata.L.Source, pdata.NewAttributeValueString(k))
-				addToIntMetric(blocks_read, labels, i, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(blocksReadMetric.database))
+				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(blocksReadMetric.table))
+				attributes.Insert(metadata.L.Source, pdata.NewAttributeValueString(k))
+				addToIntMetric(blocks_read, attributes, i, now)
 			}
 		}
 	}
@@ -119,11 +119,11 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		for _, table := range blocksReadByTableMetrics {
 			for k, v := range table.stats {
 				if i, ok := p.parseInt(k, v); ok {
-					labels := pdata.NewAttributeMap()
-					labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
-					labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
-					labels.Insert(metadata.L.Source, pdata.NewAttributeValueString(k))
-					addToIntMetric(blocks_read, labels, i, now)
+					attributes := pdata.NewAttributeMap()
+					attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
+					attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
+					attributes.Insert(metadata.L.Source, pdata.NewAttributeValueString(k))
+					addToIntMetric(blocks_read, attributes, i, now)
 				}
 			}
 		}
@@ -135,10 +135,10 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch commits", zap.Error(err))
 	} else {
 		for k, v := range commitsMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if i, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(commitsMetric.database))
-				addToIntMetric(commits, labels, i, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(commitsMetric.database))
+				addToIntMetric(commits, attributes, i, now)
 			}
 		}
 	}
@@ -149,10 +149,10 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch database size", zap.Error(err))
 	} else {
 		for k, v := range databaseSizeMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if f, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(databaseSizeMetric.database))
-				addToIntMetric(databaseSize, labels, f, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(databaseSizeMetric.database))
+				addToIntMetric(databaseSize, attributes, f, now)
 			}
 		}
 	}
@@ -163,10 +163,10 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch backends", zap.Error(err))
 	} else {
 		for k, v := range backendsMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if f, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(backendsMetric.database))
-				addToIntMetric(backends, labels, f, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(backendsMetric.database))
+				addToIntMetric(backends, attributes, f, now)
 			}
 		}
 	}
@@ -177,12 +177,12 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch database rows", zap.Error(err))
 	} else {
 		for k, v := range databaseRowsMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if f, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(databaseRowsMetric.database))
-				labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(databaseRowsMetric.table))
-				labels.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
-				addToIntMetric(databaseRows, labels, f, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(databaseRowsMetric.database))
+				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(databaseRowsMetric.table))
+				attributes.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
+				addToIntMetric(databaseRows, attributes, f, now)
 			}
 		}
 	}
@@ -195,11 +195,11 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		for _, table := range databaseRowsByTableMetrics {
 			for k, v := range table.stats {
 				if f, ok := p.parseInt(k, v); ok {
-					labels := pdata.NewAttributeMap()
-					labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
-					labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
-					labels.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
-					addToIntMetric(databaseRows, labels, f, now)
+					attributes := pdata.NewAttributeMap()
+					attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
+					attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
+					attributes.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
+					addToIntMetric(databaseRows, attributes, f, now)
 				}
 			}
 		}
@@ -211,12 +211,12 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch operations", zap.Error(err))
 	} else {
 		for k, v := range operationsMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if i, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(operationsMetric.database))
-				labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(operationsMetric.table))
-				labels.Insert(metadata.L.Operation, pdata.NewAttributeValueString(k))
-				addToIntMetric(operations, labels, i, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(operationsMetric.database))
+				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(operationsMetric.table))
+				attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(k))
+				addToIntMetric(operations, attributes, i, now)
 			}
 		}
 	}
@@ -229,11 +229,11 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		for _, table := range operationsByTableMetrics {
 			for k, v := range table.stats {
 				if i, ok := p.parseInt(k, v); ok {
-					labels := pdata.NewAttributeMap()
-					labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
-					labels.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
-					labels.Insert(metadata.L.Operation, pdata.NewAttributeValueString(k))
-					addToIntMetric(operations, labels, i, now)
+					attributes := pdata.NewAttributeMap()
+					attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(table.database))
+					attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(table.table))
+					attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(k))
+					addToIntMetric(operations, attributes, i, now)
 				}
 			}
 		}
@@ -245,10 +245,10 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		p.logger.Error("Failed to fetch rollbacks", zap.Error(err))
 	} else {
 		for k, v := range rollbacksMetric.stats {
-			labels := pdata.NewAttributeMap()
+			attributes := pdata.NewAttributeMap()
 			if f, ok := p.parseInt(k, v); ok {
-				labels.Insert(metadata.L.Database, pdata.NewAttributeValueString(rollbacksMetric.database))
-				addToIntMetric(rollbacks, labels, f, now)
+				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(rollbacksMetric.database))
+				addToIntMetric(rollbacks, attributes, f, now)
 			}
 		}
 	}

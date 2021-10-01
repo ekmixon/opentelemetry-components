@@ -144,8 +144,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				method, _ := dp.Attributes().Get(metadata.L.HTTPMethod)
-				label := fmt.Sprintf("%s method:%s", m.Name(), method.AsString())
-				requestMethodMetrics[label] = true
+				attribute := fmt.Sprintf("%s method:%s", m.Name(), method.AsString())
+				requestMethodMetrics[attribute] = true
 			}
 
 			require.Equal(t, 7, len(requestMethodMetrics))
@@ -167,8 +167,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
 				code, _ := dp.Attributes().Get(metadata.L.ResponseCode)
-				label := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
-				respondCodeMetrics[label] = true
+				attribute := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
+				respondCodeMetrics[attribute] = true
 			}
 
 			require.Equal(t, 24, len(respondCodeMetrics))

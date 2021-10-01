@@ -172,7 +172,7 @@ func (nsp *NormalizeSumsProcessor) processSumDataPoint(dp pdata.NumberDataPoint,
 	return true
 }
 
-func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, labels pdata.AttributeMap) string {
+func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, attributes pdata.AttributeMap) string {
 	var b strings.Builder
 
 	// Resource identifiers
@@ -185,7 +185,7 @@ func dataPointIdentifier(resource pdata.Resource, metric pdata.Metric, labels pd
 
 	// Metric identifiers
 	fmt.Fprintf(&b, " - %s", metric.Name())
-	labels.Sort().Range(func(k string, v pdata.AttributeValue) bool {
+	attributes.Sort().Range(func(k string, v pdata.AttributeValue) bool {
 		fmt.Fprintf(&b, " %s=%s", k, v.AsString())
 		return true
 	})

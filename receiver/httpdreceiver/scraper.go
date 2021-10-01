@@ -49,12 +49,12 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 	return m
 }
 
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, attributes pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
-	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.Attributes())
+	if attributes.Len() > 0 {
+		attributes.CopyTo(dataPoint.Attributes())
 	}
 }
 
@@ -89,42 +89,42 @@ func (r *httpdScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, erro
 	serverName := u.Hostname()
 
 	for metricKey, metricValue := range parseStats(stats) {
-		labels := pdata.NewAttributeMap()
-		labels.Insert(metadata.L.ServerName, pdata.NewAttributeValueString(serverName))
+		attributes := pdata.NewAttributeMap()
+		attributes.Insert(metadata.L.ServerName, pdata.NewAttributeValueString(serverName))
 
 		switch metricKey {
 		case "ServerUptimeSeconds":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				addToIntMetric(uptime, labels, i, now)
+				addToIntMetric(uptime, attributes, i, now)
 			}
 		case "ConnsTotal":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				addToIntMetric(connections, labels, i, now)
+				addToIntMetric(connections, attributes, i, now)
 			}
 		case "BusyWorkers":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				labels.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("busy"))
-				addToIntMetric(workers, labels, i, now)
+				attributes.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("busy"))
+				addToIntMetric(workers, attributes, i, now)
 			}
 		case "IdleWorkers":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				labels.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("idle"))
-				addToIntMetric(workers, labels, i, now)
+				attributes.Insert(metadata.L.WorkersState, pdata.NewAttributeValueString("idle"))
+				addToIntMetric(workers, attributes, i, now)
 			}
 		case "Total Accesses":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
-				addToIntMetric(requests, labels, i, now)
+				addToIntMetric(requests, attributes, i, now)
 			}
 		case "Total kBytes":
 			if i, ok := r.parseInt(metricKey, metricValue); ok {
 				bytes := kbytesToBytes(i)
-				addToIntMetric(traffic, labels, bytes, now)
+				addToIntMetric(traffic, attributes, bytes, now)
 			}
 		case "Scoreboard":
 			scoreboardMap := parseScoreboard(metricValue)
 			for identifier, score := range scoreboardMap {
-				labels.Upsert(metadata.L.ScoreboardState, pdata.NewAttributeValueString(identifier))
-				addToIntMetric(scoreboard, labels, score, now)
+				attributes.Upsert(metadata.L.ScoreboardState, pdata.NewAttributeValueString(identifier))
+				addToIntMetric(scoreboard, attributes, score, now)
 			}
 		}
 	}

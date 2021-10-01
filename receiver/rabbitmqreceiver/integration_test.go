@@ -88,11 +88,11 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	require.Equal(t, len(metadata.M.Names()), metrics.Len())
 	exists := make(map[string]bool)
 
-	unenumLabelSet := []string{
+	unenumAttributeSet := []string{
 		metadata.L.Queue,
 	}
 
-	enumLabelSet := []string{
+	enumAttributeSet := []string{
 		metadata.L.State,
 	}
 
@@ -114,17 +114,17 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			key := m.Name()
 			dp := dps.At(j)
 
-			for _, label := range unenumLabelSet {
-				_, ok := dp.Attributes().Get(label)
+			for _, attribute := range unenumAttributeSet {
+				_, ok := dp.Attributes().Get(attribute)
 				if ok {
-					key = key + " " + label
+					key = key + " " + attribute
 				}
 			}
 
-			for _, label := range enumLabelSet {
-				labelVal, ok := dp.Attributes().Get(label)
+			for _, attribute := range enumAttributeSet {
+				attributeVal, ok := dp.Attributes().Get(attribute)
 				if ok {
-					key += " " + labelVal.AsString()
+					key += " " + attributeVal.AsString()
 				}
 			}
 			exists[key] = true

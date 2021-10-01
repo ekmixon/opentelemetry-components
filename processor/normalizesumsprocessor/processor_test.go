@@ -491,11 +491,11 @@ type metricBuilder struct {
 	metric pdata.Metric
 }
 
-func (mb metricBuilder) addDoubleDataPoint(value float64, labels map[string]pdata.AttributeValue, timestamp int64, startTimestamp int64) {
+func (mb metricBuilder) addDoubleDataPoint(value float64, attributes map[string]pdata.AttributeValue, timestamp int64, startTimestamp int64) {
 	switch mb.metric.DataType() {
 	case pdata.MetricDataTypeSum:
 		ddp := mb.metric.Sum().DataPoints().AppendEmpty()
-		ddp.Attributes().InitFromMap(labels)
+		ddp.Attributes().InitFromMap(attributes)
 		ddp.SetDoubleVal(value)
 		ddp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(timestamp, 0)))
 		if startTimestamp > 0 {
@@ -503,7 +503,7 @@ func (mb metricBuilder) addDoubleDataPoint(value float64, labels map[string]pdat
 		}
 	case pdata.MetricDataTypeGauge:
 		ddp := mb.metric.Gauge().DataPoints().AppendEmpty()
-		ddp.Attributes().InitFromMap(labels)
+		ddp.Attributes().InitFromMap(attributes)
 		ddp.SetDoubleVal(value)
 		ddp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(timestamp, 0)))
 		if startTimestamp > 0 {
@@ -512,11 +512,11 @@ func (mb metricBuilder) addDoubleDataPoint(value float64, labels map[string]pdat
 	}
 }
 
-func (mb metricBuilder) addIntDataPoint(value int64, labels map[string]pdata.AttributeValue, timestamp int64, startTimestamp int64) {
+func (mb metricBuilder) addIntDataPoint(value int64, attributes map[string]pdata.AttributeValue, timestamp int64, startTimestamp int64) {
 	switch mb.metric.DataType() {
 	case pdata.MetricDataTypeSum:
 		ddp := mb.metric.Sum().DataPoints().AppendEmpty()
-		ddp.Attributes().InitFromMap(labels)
+		ddp.Attributes().InitFromMap(attributes)
 		ddp.SetIntVal(value)
 		ddp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(timestamp, 0)))
 		if startTimestamp > 0 {
@@ -524,7 +524,7 @@ func (mb metricBuilder) addIntDataPoint(value int64, labels map[string]pdata.Att
 		}
 	case pdata.MetricDataTypeGauge:
 		ddp := mb.metric.Gauge().DataPoints().AppendEmpty()
-		ddp.Attributes().InitFromMap(labels)
+		ddp.Attributes().InitFromMap(attributes)
 		ddp.SetIntVal(value)
 		ddp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(timestamp, 0)))
 		if startTimestamp > 0 {
@@ -626,16 +626,16 @@ func requireEqualNumberDataPointSlice(t *testing.T, metricName string, ddpsAct, 
 
 // dataPointKey returns a key representing the data point
 func dataPointKey(metricName string, dataPoint pdata.NumberDataPoint) string {
-	otherLabelsLen := dataPoint.Attributes().Len()
+	otherAttributesLen := dataPoint.Attributes().Len()
 
-	idx, otherLabels := 0, make([]string, otherLabelsLen)
+	idx, otherAttributes := 0, make([]string, otherAttributesLen)
 	dataPoint.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
-		otherLabels[idx] = fmt.Sprintf("%s=%v", k, v.AsString())
+		otherAttributes[idx] = fmt.Sprintf("%s=%v", k, v.AsString())
 		idx++
 		return true
 	})
-	// sort the slice so that we consider labelsets
+	// sort the slice so that we consider AttributeSets
 	// the same regardless of order
-	sort.StringSlice(otherLabels).Sort()
-	return metricName + "/" + dataPoint.StartTimestamp().String() + "-" + dataPoint.Timestamp().String() + "/" + strings.Join(otherLabels, ";")
+	sort.StringSlice(otherAttributes).Sort()
+	return metricName + "/" + dataPoint.StartTimestamp().String() + "-" + dataPoint.Timestamp().String() + "/" + strings.Join(otherAttributes, ";")
 }

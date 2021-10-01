@@ -31,10 +31,10 @@ const (
 )
 
 type mongoMetric struct {
-	metricDef     metadata.MetricIntf
-	path          []string
-	staticLabels  map[string]string
-	dataPointType numberType
+	metricDef        metadata.MetricIntf
+	path             []string
+	staticAttributes map[string]string
+	dataPointType    numberType
 }
 
 var dbStatsMetrics = []mongoMetric{
@@ -82,28 +82,28 @@ var serverStatusMetrics = []mongoMetric{
 		dataPointType: integer,
 	},
 	{
-		metricDef:     metadata.M.MongodbMemoryUsage,
-		path:          []string{"mem", "resident"},
-		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident},
-		dataPointType: integer,
+		metricDef:        metadata.M.MongodbMemoryUsage,
+		path:             []string{"mem", "resident"},
+		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident},
+		dataPointType:    integer,
 	},
 	{
-		metricDef:     metadata.M.MongodbMemoryUsage,
-		path:          []string{"mem", "virtual"},
-		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual},
-		dataPointType: integer,
+		metricDef:        metadata.M.MongodbMemoryUsage,
+		path:             []string{"mem", "virtual"},
+		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual},
+		dataPointType:    integer,
 	},
 	{
-		metricDef:     metadata.M.MongodbMemoryUsage,
-		path:          []string{"mem", "mapped"},
-		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped},
-		dataPointType: integer,
+		metricDef:        metadata.M.MongodbMemoryUsage,
+		path:             []string{"mem", "mapped"},
+		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped},
+		dataPointType:    integer,
 	},
 	{
-		metricDef:     metadata.M.MongodbMemoryUsage,
-		path:          []string{"mem", "mappedWithJournal"},
-		staticLabels:  map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal},
-		dataPointType: integer,
+		metricDef:        metadata.M.MongodbMemoryUsage,
+		path:             []string{"mem", "mappedWithJournal"},
+		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal},
+		dataPointType:    integer,
 	},
 }
 
@@ -241,9 +241,9 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 		if err != nil {
 			r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbOperationCount.Name()))
 		} else {
-			labels := pdata.NewAttributeMap()
-			labels.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
-			mm.addIntDataPoint(metadata.M.MongodbOperationCount, count, labels)
+			attributes := pdata.NewAttributeMap()
+			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
+			mm.addIntDataPoint(metadata.M.MongodbOperationCount, count, attributes)
 		}
 	}
 }
@@ -256,10 +256,10 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 	document bson.M,
 ) {
 	for _, metricRequest := range metricsRequested {
-		labels := pdata.NewAttributeMap()
-		labels.Insert(metadata.L.DatabaseName, pdata.NewAttributeValueString(databaseName))
-		for k, v := range metricRequest.staticLabels {
-			labels.Insert(k, pdata.NewAttributeValueString(v))
+		attributes := pdata.NewAttributeMap()
+		attributes.Insert(metadata.L.DatabaseName, pdata.NewAttributeValueString(databaseName))
+		for k, v := range metricRequest.staticAttributes {
+			attributes.Insert(k, pdata.NewAttributeValueString(v))
 		}
 
 		switch metricRequest.dataPointType {
@@ -269,14 +269,14 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
-			mm.addIntDataPoint(metricRequest.metricDef, value, labels)
+			mm.addIntDataPoint(metricRequest.metricDef, value, attributes)
 		case double:
 			value, err := getDoubleMetricValue(document, metricRequest.path)
 			if err != nil {
 				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
-			mm.addDoubleDataPoint(metricRequest.metricDef, value, labels)
+			mm.addDoubleDataPoint(metricRequest.metricDef, value, attributes)
 		}
 	}
 }
@@ -341,20 +341,20 @@ func newMetricManager(logger *zap.Logger, ilm pdata.InstrumentationLibraryMetric
 	}
 }
 
-func (m *metricManager) addIntDataPoint(metricDef metadata.MetricIntf, value int64, labels pdata.AttributeMap) {
+func (m *metricManager) addIntDataPoint(metricDef metadata.MetricIntf, value int64, attributes pdata.AttributeMap) {
 	dataPoints := m.getOrInit(metricDef)
 	dataPoint := dataPoints.AppendEmpty()
 	dataPoint.SetTimestamp(m.now)
 	dataPoint.SetIntVal(value)
-	labels.CopyTo(dataPoint.Attributes())
+	attributes.CopyTo(dataPoint.Attributes())
 }
 
-func (m *metricManager) addDoubleDataPoint(metricDef metadata.MetricIntf, value float64, labels pdata.AttributeMap) {
+func (m *metricManager) addDoubleDataPoint(metricDef metadata.MetricIntf, value float64, attributes pdata.AttributeMap) {
 	dataPoints := m.getOrInit(metricDef)
 	dataPoint := dataPoints.AppendEmpty()
 	dataPoint.SetTimestamp(m.now)
 	dataPoint.SetDoubleVal(value)
-	labels.CopyTo(dataPoint.Attributes())
+	attributes.CopyTo(dataPoint.Attributes())
 }
 
 func (m *metricManager) getOrInit(metricDef metadata.MetricIntf) pdata.NumberDataPointSlice {
