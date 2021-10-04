@@ -3,15 +3,13 @@
 set -e
 
 USER="otel"
-ROOT_PASS="otel"
 CODE=1
 
 
 setup_permissions() {
-    # NOTE: -pPASSWORD is missing a space on purpose
-    mysql -u root -p"${ROOT_PASS}" -e "GRANT PROCESS ON *.* TO ${USER}" > /dev/null
-    mysql -u root -p"${ROOT_PASS}" -e "GRANT SELECT ON INFORMATION_SCHEMA.INNODB_METRICS TO ${USER}" > /dev/null
-    mysql -u root -p"${ROOT_PASS}" -e "FLUSH PRIVILEGES" > /dev/null
+    mysql -u root -e "CREATE USER ${USER}" > /dev/null
+    mysql -u root -e "GRANT PROCESS ON *.* TO ${USER}" > /dev/null
+    mysql -u root -e "FLUSH PRIVILEGES" > /dev/null
 }
 
 echo "Configuring ${USER} permissions. . ."
