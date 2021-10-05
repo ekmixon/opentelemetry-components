@@ -6,6 +6,7 @@ package postgresqlreceiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"path"
 	"testing"
@@ -15,10 +16,10 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 
+	"github.com/observiq/opentelemetry-components/receiver/helper"
 	"github.com/observiq/opentelemetry-components/receiver/postgresqlreceiver/internal/metadata"
 )
 
@@ -37,23 +38,10 @@ func TestPostgreSQLIntegration(t *testing.T) {
 	cfg.Username = "otel"
 	cfg.Password = "otel"
 
-	consumer := new(consumertest.MetricsSink)
-	settings := componenttest.NewNopReceiverCreateSettings()
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
-	require.NoError(t, err, "failed creating metrics receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.Eventuallyf(t, func() bool {
-		return len(consumer.AllMetrics()) > 0
-	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testintegration/expected_metrics.json")
+	require.NoError(t, err)
 
-	md := consumer.AllMetrics()[0]
-	require.Equal(t, 1, md.ResourceMetrics().Len())
-	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-	metrics := ilms.At(0).Metrics()
-	require.NoError(t, rcvr.Shutdown(context.Background()))
-
-	validateResult(t, metrics)
+	helper.IntegrationTestHelper(t, cfg, f, expectedFileBytes, map[string]bool{})
 }
 
 var (
