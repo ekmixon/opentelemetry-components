@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package postgresqlreceiver
 
 import (
@@ -16,7 +13,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 
 	"github.com/observiq/opentelemetry-components/receiver/helper"
@@ -66,146 +62,6 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 		})
 	require.NoError(t, err)
 	return container
-}
-
-func validateResult(t *testing.T, metrics pdata.MetricSlice) {
-	require.Equal(t, len(metadata.M.Names()), metrics.Len())
-
-	for i := 0; i < metrics.Len(); i++ {
-		m := metrics.At(i)
-		switch m.Name() {
-		case metadata.M.PostgresqlBlocksRead.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 24, dps.Len())
-			metrics := map[string]bool{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-				tableAttribute, _ := dp.Attributes().Get(metadata.L.Table)
-				sourceAttribute, _ := dp.Attributes().Get(metadata.L.Source)
-				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), sourceAttribute.AsString())
-				metrics[attribute] = true
-			}
-			require.Equal(t, 24, len(metrics))
-			require.Equal(t, map[string]bool{
-				"postgresql.blocks_read otel _global heap_read":        true,
-				"postgresql.blocks_read otel _global heap_hit":         true,
-				"postgresql.blocks_read otel _global idx_read":         true,
-				"postgresql.blocks_read otel _global idx_hit":          true,
-				"postgresql.blocks_read otel _global toast_read":       true,
-				"postgresql.blocks_read otel _global toast_hit":        true,
-				"postgresql.blocks_read otel _global tidx_read":        true,
-				"postgresql.blocks_read otel _global tidx_hit":         true,
-				"postgresql.blocks_read otel public.table1 heap_read":  true,
-				"postgresql.blocks_read otel public.table1 heap_hit":   true,
-				"postgresql.blocks_read otel public.table1 idx_read":   true,
-				"postgresql.blocks_read otel public.table1 idx_hit":    true,
-				"postgresql.blocks_read otel public.table1 toast_read": true,
-				"postgresql.blocks_read otel public.table1 toast_hit":  true,
-				"postgresql.blocks_read otel public.table1 tidx_read":  true,
-				"postgresql.blocks_read otel public.table1 tidx_hit":   true,
-				"postgresql.blocks_read otel public.table2 heap_read":  true,
-				"postgresql.blocks_read otel public.table2 heap_hit":   true,
-				"postgresql.blocks_read otel public.table2 idx_read":   true,
-				"postgresql.blocks_read otel public.table2 idx_hit":    true,
-				"postgresql.blocks_read otel public.table2 toast_read": true,
-				"postgresql.blocks_read otel public.table2 toast_hit":  true,
-				"postgresql.blocks_read otel public.table2 tidx_read":  true,
-				"postgresql.blocks_read otel public.table2 tidx_hit":   true,
-			}, metrics)
-
-		case metadata.M.PostgresqlCommits.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-			attribute := fmt.Sprintf("%s %s %v", m.Name(), dbAttribute.AsString(), true)
-			require.Equal(t, "postgresql.commits otel true", attribute)
-
-		case metadata.M.PostgresqlDbSize.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-			attribute := fmt.Sprintf("%s %s %v", m.Name(), dbAttribute.AsString(), true)
-			require.Equal(t, "postgresql.db_size otel true", attribute)
-
-		case metadata.M.PostgresqlBackends.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-			attribute := fmt.Sprintf("%s %s %v", m.Name(), dbAttribute.AsString(), true)
-			require.Equal(t, "postgresql.backends otel true", attribute)
-
-		case metadata.M.PostgresqlRows.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 6, dps.Len())
-
-			metrics := map[string]bool{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-				tableAttribute, _ := dp.Attributes().Get(metadata.L.Table)
-				stateAttribute, _ := dp.Attributes().Get(metadata.L.State)
-				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), stateAttribute.AsString())
-				metrics[attribute] = true
-			}
-			require.Equal(t, 6, len(metrics))
-			require.Equal(t, map[string]bool{
-				"postgresql.rows otel _global live":       true,
-				"postgresql.rows otel _global dead":       true,
-				"postgresql.rows otel public.table1 live": true,
-				"postgresql.rows otel public.table1 dead": true,
-				"postgresql.rows otel public.table2 live": true,
-				"postgresql.rows otel public.table2 dead": true,
-			}, metrics)
-
-		case metadata.M.PostgresqlOperations.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 12, dps.Len())
-
-			metrics := map[string]bool{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-				tableAttribute, _ := dp.Attributes().Get(metadata.L.Table)
-				operationAttribute, _ := dp.Attributes().Get(metadata.L.Operation)
-				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), operationAttribute.AsString())
-				metrics[attribute] = true
-			}
-			require.Equal(t, 12, len(metrics))
-			require.Equal(t, map[string]bool{
-				"postgresql.operations otel _global seq":                 true,
-				"postgresql.operations otel _global seq_tup_read":        true,
-				"postgresql.operations otel _global idx":                 true,
-				"postgresql.operations otel _global idx_tup_fetch":       true,
-				"postgresql.operations otel public.table1 seq":           true,
-				"postgresql.operations otel public.table1 seq_tup_read":  true,
-				"postgresql.operations otel public.table1 idx":           true,
-				"postgresql.operations otel public.table1 idx_tup_fetch": true,
-				"postgresql.operations otel public.table2 seq":           true,
-				"postgresql.operations otel public.table2 seq_tup_read":  true,
-				"postgresql.operations otel public.table2 idx":           true,
-				"postgresql.operations otel public.table2 idx_tup_fetch": true,
-			}, metrics)
-
-		case metadata.M.PostgresqlRollbacks.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-
-			dp := dps.At(0)
-			dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-			attribute := fmt.Sprintf("%s %s %v", m.Name(), dbAttribute.AsString(), true)
-			require.Equal(t, "postgresql.rollbacks otel true", attribute)
-
-		default:
-			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
-		}
-	}
 }
 
 func TestPostgreSQLStartStop(t *testing.T) {
