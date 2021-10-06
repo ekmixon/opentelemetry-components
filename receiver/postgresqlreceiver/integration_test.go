@@ -13,6 +13,9 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 
 	"github.com/observiq/opentelemetry-components/receiver/helper"
@@ -37,7 +40,36 @@ func TestPostgreSQLIntegration(t *testing.T) {
 	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testintegration/expected_metrics.json")
 	require.NoError(t, err)
 
-	helper.IntegrationTestHelper(t, cfg, f, expectedFileBytes, map[string]bool{})
+	consumer := new(consumertest.MetricsSink)
+	settings := componenttest.NewNopReceiverCreateSettings()
+	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+	require.NoError(t, err, "failed creating metrics receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.Eventuallyf(t, func() bool {
+		return len(consumer.AllMetrics()) > 0
+	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+	md := consumer.AllMetrics()[0]
+
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+	require.Equal(t, 1, ilms.Len())
+	actual := ilms.At(0).Metrics()
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+
+	expected, err := otlp.NewJSONMetricsUnmarshaler().UnmarshalMetrics(expectedFileBytes)
+	require.NoError(t, err)
+
+	eMetricSlice := expected.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+
+	// The number of backends can't be ensured so we remove the datapoints and focus on the typing of the metric
+	for i := 0; i < actual.Len(); i++ {
+		if actual.At(i).Name() == metadata.M.PostgresqlBackends.Name() {
+			actual.At(i).Gauge().DataPoints().RemoveIf(func(ndp pdata.NumberDataPoint) bool { return true })
+		}
+	}
+
+	require.NoError(t, helper.CompareMetrics(eMetricSlice, actual, false, map[string]bool{}))
 }
 
 var (
