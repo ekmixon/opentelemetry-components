@@ -1,4 +1,4 @@
-FROM postgres:9.6.22-stretch
+FROM postgres:10.18
 
 ENV POSTGRES_USER=root
 ENV POSTGRES_PASSWORD=otel
