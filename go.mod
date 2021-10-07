@@ -3,6 +3,7 @@ module github.com/observiq/opentelemetry-components
 go 1.16
 
 require (
+	github.com/GoogleCloudPlatform/opentelemetry-operations-collector v0.0.3-0.20211006225201-9fda76b49539
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/lib/pq v1.9.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.36.0

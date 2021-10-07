@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-collector/processor/normalizesumsprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter"
@@ -19,7 +20,6 @@ import (
 	"go.opentelemetry.io/collector/extension/zpagesextension"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
-	"github.com/observiq/opentelemetry-components/processor/normalizesumsprocessor"
 	"github.com/observiq/opentelemetry-components/receiver/couchdbreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/elasticsearchreceiver"
 	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver"
@@ -52,10 +52,10 @@ func components() (component.Factories, error) {
 	processors, err := component.MakeProcessorFactoryMap(
 		attributesprocessor.NewFactory(),
 		filterprocessor.NewFactory(),
-		normalizesumsprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
 		resourcedetectionprocessor.NewFactory(),
 		metricstransformprocessor.NewFactory(),
+		normalizesumsprocessor.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
