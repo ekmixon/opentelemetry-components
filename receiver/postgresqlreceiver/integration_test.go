@@ -23,44 +23,88 @@ import (
 )
 
 func TestPostgreSQLIntegration(t *testing.T) {
-	container := getContainer(t, containerRequest9_6)
-	defer func() {
-		require.NoError(t, container.Terminate(context.Background()))
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
+	t.Run("running postresql version 10.18", func(t *testing.T) {
+		container := getContainer(t, containerRequest10_18)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
 
-	f := NewFactory()
-	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort(hostname, "5432")
-	cfg.Database = "otel"
-	cfg.Username = "otel"
-	cfg.Password = "otel"
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "5433")
+		cfg.Database = "otel"
+		cfg.Username = "otel"
+		cfg.Password = "otel"
 
-	consumer := new(consumertest.MetricsSink)
-	settings := componenttest.NewNopReceiverCreateSettings()
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
-	require.NoError(t, err, "failed creating metrics receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.Eventuallyf(t, func() bool {
-		return len(consumer.AllMetrics()) > 0
-	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
 
-	md := consumer.AllMetrics()[0]
-	require.Equal(t, 1, md.ResourceMetrics().Len())
-	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-	metrics := ilms.At(0).Metrics()
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
 
-	validateResult(t, metrics)
+		validateResult(t, metrics)
+	})
+	t.Run("running postresql version 14.0", func(t *testing.T) {
+		container := getContainer(t, containerRequest14_0)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
+
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "5432")
+		cfg.Database = "otel"
+		cfg.Username = "otel"
+		cfg.Password = "otel"
+
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
+
+		validateResult(t, metrics)
+	})
 }
 
 var (
-	containerRequest9_6 = testcontainers.ContainerRequest{
+	containerRequest10_18 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.postgresql",
+			Dockerfile: "Dockerfile.postgresql.10_18",
+		},
+		ExposedPorts: []string{"5433:5432"},
+		WaitingFor: wait.ForListeningPort("5432").
+			WithStartupTimeout(2 * time.Minute),
+	}
+	containerRequest14_0 = testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.postgresql.14_0",
 		},
 		ExposedPorts: []string{"5432:5432"},
 		WaitingFor: wait.ForListeningPort("5432").
@@ -221,7 +265,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 }
 
 func TestPostgreSQLStartStop(t *testing.T) {
-	container := getContainer(t, containerRequest9_6)
+	container := getContainer(t, containerRequest10_18)
 	defer func() {
 		require.NoError(t, container.Terminate(context.Background()))
 	}()
