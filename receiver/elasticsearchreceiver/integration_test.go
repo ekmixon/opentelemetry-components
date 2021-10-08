@@ -53,7 +53,7 @@ func TestElasticSearch7_13(t *testing.T) {
 	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testintegration7_13/expected_metrics.json")
 	require.NoError(t, err)
 
-	helper.IntegrationTestHelper(t, cfg, f, expectedFileBytes, map[string]bool{
+	helper.ValidateIntegrationTestResults(t, cfg, f, expectedFileBytes, map[string]bool{
 		"server_name": true,
 	})
 }
