@@ -36,7 +36,7 @@ func TestCouchdbIntegration(t *testing.T) {
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testintegration/expected_metrics.json")
 		require.NoError(t, err)
 
-		helper.IntegrationTestHelper(t, cfg, f, expectedFileBytes, map[string]bool{})
+		helper.ValidateIntegrationTestResults(t, cfg, f, expectedFileBytes, map[string]bool{})
 	})
 
 	t.Run("Running docker version 3.1.1 on port 5984", func(t *testing.T) {

@@ -33,7 +33,7 @@ func ScraperTest(t *testing.T, actualScraper scraperhelper.ScrapeResourceMetrics
 
 // IntegrationTestHelper tests that a receiver collects the expected metrics against a given array of expectedbytes representing
 // a pdata.Metrics struct
-func IntegrationTestHelper(t *testing.T, cfg config.Receiver, f component.ReceiverFactory, expectedFileBytes []byte, checkAttributesExist map[string]bool) {
+func ValidateIntegrationTestResults(t *testing.T, cfg config.Receiver, f component.ReceiverFactory, expectedFileBytes []byte, checkAttributesExist map[string]bool) {
 	consumer := new(consumertest.MetricsSink)
 	settings := componenttest.NewNopReceiverCreateSettings()
 	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
@@ -60,7 +60,7 @@ func IntegrationTestHelper(t *testing.T, cfg config.Receiver, f component.Receiv
 }
 
 // CompareMetrics Compares two pdata metric slices to ensure all parts are equal excluding timestamps
-func CompareMetrics(expectedAll, actualAll pdata.MetricSlice, checkValues bool, checkAttributeExists map[string]bool) error {
+func CompareMetrics(expectedAll, actualAll pdata.MetricSlice, requireEqualValues bool, allowAnyAttributeValue map[string]bool) error {
 	if actualAll.Len() != expectedAll.Len() {
 		return fmt.Errorf("metrics not of same length")
 	}
@@ -124,11 +124,7 @@ func CompareMetrics(expectedAll, actualAll pdata.MetricSlice, checkValues bool, 
 				}
 				edp.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
 					attributeVal, ok := adpAttributes.Get(k)
-					if checkAttributeExists[k] && ok {
-						return true
-					}
-
-					if ok && attributeVal.StringVal() == v.StringVal() {
+					if ok && (allowAnyAttributeValue[k] || attributeVal.StringVal() == v.StringVal()) {
 						return true
 					}
 					labelMatches = false
@@ -140,7 +136,7 @@ func CompareMetrics(expectedAll, actualAll pdata.MetricSlice, checkValues bool, 
 				if edp.Type() != adp.Type() {
 					return fmt.Errorf("metric datapoint type doesn't match expected: %v, actual: %v", edp.Type(), adp.Type())
 				}
-				if checkValues {
+				if requireEqualValues {
 					switch edp.Type() {
 					case pdata.MetricValueTypeDouble:
 						if edp.DoubleVal() != adp.DoubleVal() {

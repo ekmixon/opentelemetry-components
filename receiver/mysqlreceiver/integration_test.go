@@ -59,7 +59,7 @@ func TestMysqlIntegration(t *testing.T) {
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testintegration/expected_metrics.json")
 		require.NoError(t, err)
 
-		helper.IntegrationTestHelper(t, cfg, f, expectedFileBytes, map[string]bool{})
+		helper.ValidateIntegrationTestResults(t, cfg, f, expectedFileBytes, map[string]bool{})
 	})
 }
 
