@@ -49,6 +49,7 @@ type metricStruct struct {
 	CouchdbOpenFiles               MetricIntf
 	CouchdbReads                   MetricIntf
 	CouchdbRequestTime             MetricIntf
+	CouchdbRequests                MetricIntf
 	CouchdbViewReads               MetricIntf
 	CouchdbWrites                  MetricIntf
 }
@@ -64,6 +65,7 @@ func (m *metricStruct) Names() []string {
 		"couchdb.open_files",
 		"couchdb.reads",
 		"couchdb.request_time",
+		"couchdb.requests",
 		"couchdb.view_reads",
 		"couchdb.writes",
 	}
@@ -78,27 +80,13 @@ var metricsByName = map[string]MetricIntf{
 	"couchdb.open_files":                 Metrics.CouchdbOpenFiles,
 	"couchdb.reads":                      Metrics.CouchdbReads,
 	"couchdb.request_time":               Metrics.CouchdbRequestTime,
+	"couchdb.requests":                   Metrics.CouchdbRequests,
 	"couchdb.view_reads":                 Metrics.CouchdbViewReads,
 	"couchdb.writes":                     Metrics.CouchdbWrites,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
-}
-
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.CouchdbHttpdBulkRequests.Name():       Metrics.CouchdbHttpdBulkRequests.Init,
-		Metrics.CouchdbHttpdRequestMethods.Name():     Metrics.CouchdbHttpdRequestMethods.Init,
-		Metrics.CouchdbHttpdResponseCodes.Name():      Metrics.CouchdbHttpdResponseCodes.Init,
-		Metrics.CouchdbHttpdTemporaryViewReads.Name(): Metrics.CouchdbHttpdTemporaryViewReads.Init,
-		Metrics.CouchdbOpenDatabases.Name():           Metrics.CouchdbOpenDatabases.Init,
-		Metrics.CouchdbOpenFiles.Name():               Metrics.CouchdbOpenFiles.Init,
-		Metrics.CouchdbReads.Name():                   Metrics.CouchdbReads.Init,
-		Metrics.CouchdbRequestTime.Name():             Metrics.CouchdbRequestTime.Init,
-		Metrics.CouchdbViewReads.Name():               Metrics.CouchdbViewReads.Init,
-		Metrics.CouchdbWrites.Name():                  Metrics.CouchdbWrites.Init,
-	}
 }
 
 // Metrics contains a set of methods for each metric that help with
@@ -182,6 +170,15 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.request_time")
 			metric.SetDescription("The average request time.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
+		},
+	},
+	&metricImpl{
+		"couchdb.requests",
+		func(metric pdata.Metric) {
+			metric.SetName("couchdb.requests")
+			metric.SetDescription("The requests count.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},

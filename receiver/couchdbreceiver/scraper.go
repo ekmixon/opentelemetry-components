@@ -83,6 +83,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	requestTime := initMetric(ilm.Metrics(), metadata.M.CouchdbRequestTime).Gauge().DataPoints()
 	httpdBulkRequests := initMetric(ilm.Metrics(), metadata.M.CouchdbHttpdBulkRequests).Sum().DataPoints()
+	requests := initMetric(ilm.Metrics(), metadata.M.CouchdbRequests).Gauge().DataPoints()
 	httpdRequestMethods := initMetric(ilm.Metrics(), metadata.M.CouchdbHttpdRequestMethods).Sum().DataPoints()
 	httpdResponseCodes := initMetric(ilm.Metrics(), metadata.M.CouchdbHttpdResponseCodes).Sum().DataPoints()
 	httpdTemporaryViewReads := initMetric(ilm.Metrics(), metadata.M.CouchdbHttpdTemporaryViewReads).Sum().DataPoints()
@@ -118,6 +119,20 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 		)
 	} else {
 		addToIntMetric(httpdBulkRequests, httpdBulkRequestAttributes, httpdBulkRequestValue, now)
+	}
+
+	// requests
+	requestsAttributes := pdata.NewAttributeMap()
+	requestsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	requestsKeys := []string{"httpd", "requests", "value"}
+	requestsValue, err := getFloatFromBody(requestsKeys, stats)
+	if err != nil {
+		c.logger.Info(
+			err.Error(),
+			zap.String("metric", "requests"),
+		)
+	} else {
+		addToDoubleMetric(requests, requestsAttributes, requestsValue, now)
 	}
 
 	// httpd_request_methods
