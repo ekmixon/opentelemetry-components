@@ -23,6 +23,7 @@ import (
 
 func TestCouchbaseIntegration(t *testing.T) {
 	t.Run("Running docker version 6.6", func(t *testing.T) {
+		t.Parallel()
 		container := getContainer(t, containerRequest6_6)
 		defer func() {
 			require.NoError(t, container.Terminate(context.Background()))
@@ -32,7 +33,7 @@ func TestCouchbaseIntegration(t *testing.T) {
 
 		f := NewFactory()
 		cfg := f.CreateDefaultConfig().(*Config)
-		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "8091"))
+		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "8092"))
 		cfg.Username = "otelu"
 		cfg.Password = "otelpassword"
 
@@ -56,6 +57,7 @@ func TestCouchbaseIntegration(t *testing.T) {
 	})
 
 	t.Run("Running docker version 7.0", func(t *testing.T) {
+		t.Parallel()
 		container := getContainer(t, containerRequest7_0)
 		defer func() {
 			require.NoError(t, container.Terminate(context.Background()))
@@ -95,9 +97,9 @@ var (
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.couchbase.6_6",
 		},
-		ExposedPorts: []string{"8091:8091"},
+		ExposedPorts: []string{"8092:8091"},
 		WaitingFor: wait.ForListeningPort("8091").
-			WithStartupTimeout(5 * time.Minute),
+			WithStartupTimeout(2 * time.Minute),
 	}
 	containerRequest7_0 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -106,7 +108,7 @@ var (
 		},
 		ExposedPorts: []string{"8091:8091"},
 		WaitingFor: wait.ForListeningPort("8091").
-			WithStartupTimeout(5 * time.Minute),
+			WithStartupTimeout(2 * time.Minute),
 	}
 )
 
@@ -123,8 +125,6 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
 	require.NoError(t, err)
 	require.Equal(t, 0, code)
-
-	require.NoError(t, container.StopLogProducer())
 	return container
 }
 

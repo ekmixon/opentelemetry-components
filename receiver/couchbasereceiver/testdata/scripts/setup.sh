@@ -55,7 +55,7 @@ couchbase-cli user-manage -c 127.0.0.1:8091 -u otelu -p otelpassword --set --rba
 
 # Need to wait until query service is ready to process N1QL queries
 log "$(date +"%T") Waiting ........."
-sleep 20
+sleep 5
 
 # Create otelb indexes
 echo "$(date +"%T") Create otelb indexes ........."
