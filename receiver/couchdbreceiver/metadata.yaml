@@ -25,6 +25,12 @@ metrics:
       monotonic: true
       aggregation: cumulative
     labels: [ node_name ]
+  couchdb.requests:
+    description: The requests count.
+    unit: 1
+    data:
+      type: gauge
+    labels: [ node_name ]
   couchdb.httpd_request_methods:
     description: The HTTP request method count.
     unit: 1

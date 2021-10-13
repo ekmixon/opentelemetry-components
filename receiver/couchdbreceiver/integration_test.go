@@ -136,6 +136,9 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 		case metadata.M.CouchdbHttpdBulkRequests.Name():
 			dps := m.Sum().DataPoints()
 			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchdbRequests.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
 		case metadata.M.CouchdbHttpdRequestMethods.Name():
 			dps := m.Sum().DataPoints()
 			require.Equal(t, 7, dps.Len())
