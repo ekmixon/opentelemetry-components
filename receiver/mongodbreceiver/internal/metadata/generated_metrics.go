@@ -52,7 +52,7 @@ type metricStruct struct {
 	MongodbIndexes            MetricIntf
 	MongodbMemoryUsage        MetricIntf
 	MongodbObjects            MetricIntf
-	MongodbOperationCount     MetricIntf
+	MongodbOperations         MetricIntf
 	MongodbStorageSize        MetricIntf
 }
 
@@ -70,7 +70,7 @@ func (m *metricStruct) Names() []string {
 		"mongodb.indexes",
 		"mongodb.memory_usage",
 		"mongodb.objects",
-		"mongodb.operation_count",
+		"mongodb.operations",
 		"mongodb.storage_size",
 	}
 }
@@ -87,30 +87,12 @@ var metricsByName = map[string]MetricIntf{
 	"mongodb.indexes":               Metrics.MongodbIndexes,
 	"mongodb.memory_usage":          Metrics.MongodbMemoryUsage,
 	"mongodb.objects":               Metrics.MongodbObjects,
-	"mongodb.operation_count":       Metrics.MongodbOperationCount,
+	"mongodb.operations":            Metrics.MongodbOperations,
 	"mongodb.storage_size":          Metrics.MongodbStorageSize,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
-}
-
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.MongodbCacheHits.Name():          Metrics.MongodbCacheHits.Init,
-		Metrics.MongodbCacheMisses.Name():        Metrics.MongodbCacheMisses.Init,
-		Metrics.MongodbCollections.Name():        Metrics.MongodbCollections.Init,
-		Metrics.MongodbConnections.Name():        Metrics.MongodbConnections.Init,
-		Metrics.MongodbDataSize.Name():           Metrics.MongodbDataSize.Init,
-		Metrics.MongodbExtents.Name():            Metrics.MongodbExtents.Init,
-		Metrics.MongodbGlobalLockHoldTime.Name(): Metrics.MongodbGlobalLockHoldTime.Init,
-		Metrics.MongodbIndexSize.Name():          Metrics.MongodbIndexSize.Init,
-		Metrics.MongodbIndexes.Name():            Metrics.MongodbIndexes.Init,
-		Metrics.MongodbMemoryUsage.Name():        Metrics.MongodbMemoryUsage.Init,
-		Metrics.MongodbObjects.Name():            Metrics.MongodbObjects.Init,
-		Metrics.MongodbOperationCount.Name():     Metrics.MongodbOperationCount.Init,
-		Metrics.MongodbStorageSize.Name():        Metrics.MongodbStorageSize.Init,
-	}
 }
 
 // Metrics contains a set of methods for each metric that help with
@@ -120,7 +102,7 @@ var Metrics = &metricStruct{
 		"mongodb.cache_hits",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.cache_hits")
-			metric.SetDescription("The number of cache hits")
+			metric.SetDescription("The number of cache hits.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -131,7 +113,7 @@ var Metrics = &metricStruct{
 		"mongodb.cache_misses",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.cache_misses")
-			metric.SetDescription("The number of cache misses")
+			metric.SetDescription("The number of cache misses.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -142,7 +124,7 @@ var Metrics = &metricStruct{
 		"mongodb.collections",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.collections")
-			metric.SetDescription("The number of collections")
+			metric.SetDescription("The number of collections.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -151,7 +133,7 @@ var Metrics = &metricStruct{
 		"mongodb.connections",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.connections")
-			metric.SetDescription("The number of active server connections")
+			metric.SetDescription("The number of active server connections.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -160,7 +142,7 @@ var Metrics = &metricStruct{
 		"mongodb.data_size",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.data_size")
-			metric.SetDescription("The data size")
+			metric.SetDescription("The data size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -169,7 +151,7 @@ var Metrics = &metricStruct{
 		"mongodb.extents",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.extents")
-			metric.SetDescription("The number of extents")
+			metric.SetDescription("The number of extents.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -178,7 +160,7 @@ var Metrics = &metricStruct{
 		"mongodb.global_lock_hold_time",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.global_lock_hold_time")
-			metric.SetDescription("The time the global lock has been held")
+			metric.SetDescription("The time the global lock has been held.")
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -189,7 +171,7 @@ var Metrics = &metricStruct{
 		"mongodb.index_size",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.index_size")
-			metric.SetDescription("The index size")
+			metric.SetDescription("The index size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -198,7 +180,7 @@ var Metrics = &metricStruct{
 		"mongodb.indexes",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.indexes")
-			metric.SetDescription("The number of indexes")
+			metric.SetDescription("The number of indexes.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -207,7 +189,7 @@ var Metrics = &metricStruct{
 		"mongodb.memory_usage",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.memory_usage")
-			metric.SetDescription("The amount of memory used")
+			metric.SetDescription("The amount of memory used.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -216,16 +198,16 @@ var Metrics = &metricStruct{
 		"mongodb.objects",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.objects")
-			metric.SetDescription("The number of objects")
+			metric.SetDescription("The number of objects.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 	&metricImpl{
-		"mongodb.operation_count",
+		"mongodb.operations",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.operation_count")
-			metric.SetDescription("The number of operations executed")
+			metric.SetName("mongodb.operations")
+			metric.SetDescription("The number of operations executed.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -236,7 +218,7 @@ var Metrics = &metricStruct{
 		"mongodb.storage_size",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.storage_size")
-			metric.SetDescription("The storage size")
+			metric.SetDescription("The storage size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -249,11 +231,11 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
-	// DatabaseName (The name of a database)
+	// DatabaseName (The name of a database.)
 	DatabaseName string
-	// MemoryType (The type of memory used)
+	// MemoryType (The type of memory used.)
 	MemoryType string
-	// Operation (The mongoDB operation being counted)
+	// Operation (The mongoDB operation being counted.)
 	Operation string
 }{
 	"database_name",
