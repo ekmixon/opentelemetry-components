@@ -125,34 +125,6 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
 }
 
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.ElasticsearchCacheMemoryUsage.Name():    Metrics.ElasticsearchCacheMemoryUsage.Init,
-		Metrics.ElasticsearchCurrentDocuments.Name():    Metrics.ElasticsearchCurrentDocuments.Init,
-		Metrics.ElasticsearchDataNodes.Name():           Metrics.ElasticsearchDataNodes.Init,
-		Metrics.ElasticsearchEvictions.Name():           Metrics.ElasticsearchEvictions.Init,
-		Metrics.ElasticsearchGcCollection.Name():        Metrics.ElasticsearchGcCollection.Init,
-		Metrics.ElasticsearchGcCollectionTime.Name():    Metrics.ElasticsearchGcCollectionTime.Init,
-		Metrics.ElasticsearchHTTPConnections.Name():     Metrics.ElasticsearchHTTPConnections.Init,
-		Metrics.ElasticsearchMemoryUsage.Name():         Metrics.ElasticsearchMemoryUsage.Init,
-		Metrics.ElasticsearchNetwork.Name():             Metrics.ElasticsearchNetwork.Init,
-		Metrics.ElasticsearchNodes.Name():               Metrics.ElasticsearchNodes.Init,
-		Metrics.ElasticsearchOpenFiles.Name():           Metrics.ElasticsearchOpenFiles.Init,
-		Metrics.ElasticsearchOperationTime.Name():       Metrics.ElasticsearchOperationTime.Init,
-		Metrics.ElasticsearchOperations.Name():          Metrics.ElasticsearchOperations.Init,
-		Metrics.ElasticsearchPeakThreads.Name():         Metrics.ElasticsearchPeakThreads.Init,
-		Metrics.ElasticsearchServerConnections.Name():   Metrics.ElasticsearchServerConnections.Init,
-		Metrics.ElasticsearchShards.Name():              Metrics.ElasticsearchShards.Init,
-		Metrics.ElasticsearchStorageSize.Name():         Metrics.ElasticsearchStorageSize.Init,
-		Metrics.ElasticsearchThreadPoolActive.Name():    Metrics.ElasticsearchThreadPoolActive.Init,
-		Metrics.ElasticsearchThreadPoolCompleted.Name(): Metrics.ElasticsearchThreadPoolCompleted.Init,
-		Metrics.ElasticsearchThreadPoolQueue.Name():     Metrics.ElasticsearchThreadPoolQueue.Init,
-		Metrics.ElasticsearchThreadPoolRejected.Name():  Metrics.ElasticsearchThreadPoolRejected.Init,
-		Metrics.ElasticsearchThreadPoolThreads.Name():   Metrics.ElasticsearchThreadPoolThreads.Init,
-		Metrics.ElasticsearchThreads.Name():             Metrics.ElasticsearchThreads.Init,
-	}
-}
-
 // Metrics contains a set of methods for each metric that help with
 // manipulating those metrics.
 var Metrics = &metricStruct{
@@ -187,7 +159,7 @@ var Metrics = &metricStruct{
 		"elasticsearch.evictions",
 		func(metric pdata.Metric) {
 			metric.SetName("elasticsearch.evictions")
-			metric.SetDescription("Evictions from each cache")
+			metric.SetDescription("Evictions from each cache.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -267,7 +239,7 @@ var Metrics = &metricStruct{
 		"elasticsearch.operation_time",
 		func(metric pdata.Metric) {
 			metric.SetName("elasticsearch.operation_time")
-			metric.SetDescription("Time in ms spent on operations")
+			metric.SetDescription("Time in ms spent on operations.")
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -278,7 +250,7 @@ var Metrics = &metricStruct{
 		"elasticsearch.operations",
 		func(metric pdata.Metric) {
 			metric.SetName("elasticsearch.operations")
-			metric.SetDescription("Number of operations completed")
+			metric.SetDescription("Number of operations completed.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -307,7 +279,7 @@ var Metrics = &metricStruct{
 		"elasticsearch.shards",
 		func(metric pdata.Metric) {
 			metric.SetName("elasticsearch.shards")
-			metric.SetDescription("Number of shards")
+			metric.SetDescription("Number of shards.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -337,7 +309,7 @@ var Metrics = &metricStruct{
 			metric.SetDescription("Number of tasks completed by the thread pool executor.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(false)
+			metric.Sum().SetIsMonotonic(true)
 			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
@@ -357,7 +329,7 @@ var Metrics = &metricStruct{
 			metric.SetDescription("Number of tasks rejected by the thread pool executor.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(false)
+			metric.Sum().SetIsMonotonic(true)
 			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
@@ -387,23 +359,23 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
-	// CacheName (Type of cache)
+	// CacheName (Type of cache.)
 	CacheName string
-	// Direction (Data direction)
+	// Direction (Data direction.)
 	Direction string
-	// DocumentType (Type of document count)
+	// DocumentType (Type of document count.)
 	DocumentType string
-	// GcType (Type of garbage collection)
+	// GcType (Type of garbage collection.)
 	GcType string
-	// MemoryType (Type of memory)
+	// MemoryType (Type of memory.)
 	MemoryType string
-	// Operation (Type of operation)
+	// Operation (Type of operation.)
 	Operation string
 	// ServerName (The name of the server or node the metric is based on.)
 	ServerName string
-	// ShardType (State of the shard)
+	// ShardType (State of the shard.)
 	ShardType string
-	// ThreadPoolName (Thread pool name)
+	// ThreadPoolName (Thread pool name.)
 	ThreadPoolName string
 }{
 	"cache_name",

@@ -4,35 +4,35 @@ labels:
   server_name:
     description: The name of the server or node the metric is based on.
   cache_name:
-    description: Type of cache
+    description: Type of cache.
     enum:
     - field
     - query
     - request
   gc_type:
-    description: Type of garbage collection
+    description: Type of garbage collection.
     enum:
     - young
     - old
   direction:
-    description: Data direction
+    description: Data direction.
     enum:
     - receive
     - transmit
   document_type:
-    description: Type of document count
+    description: Type of document count.
     enum:
     - live
     - deleted
   shard_type:
-    description: State of the shard
+    description: State of the shard.
     enum:
     - active
     - relocating
     - initializing
     - unassigned
   operation:
-    description: Type of operation
+    description: Type of operation.
     enum:
     - get 
     - delete
@@ -40,12 +40,12 @@ labels:
     - query
     - fetch
   memory_type:
-    description: Type of memory
+    description: Type of memory.
     enum:
     - heap
     - non-heap
   thread_pool_name:
-    description: Thread pool name
+    description: Thread pool name.
 
 metrics:
   # these metrics are from node stats
@@ -56,7 +56,7 @@ metrics:
       type: gauge
     labels: [server_name, cache_name]
   elasticsearch.evictions:
-    description: Evictions from each cache
+    description: Evictions from each cache.
     unit: 1
     data:
       type: sum
@@ -118,7 +118,7 @@ metrics:
       type: gauge
     labels: [server_name]
   elasticsearch.operations:
-    description: Number of operations completed
+    description: Number of operations completed.
     unit: 1
     data:
       type: sum
@@ -126,7 +126,7 @@ metrics:
       aggregation: cumulative
     labels: [server_name, operation]
   elasticsearch.operation_time:
-    description: Time in ms spent on operations
+    description: Time in ms spent on operations.
     unit: ms
     data:
       type: sum
@@ -168,7 +168,7 @@ metrics:
 
   # these metrics are from cluster health
   elasticsearch.shards:
-    description: Number of shards
+    description: Number of shards.
     unit: 1
     data:
       type: gauge
@@ -198,6 +198,7 @@ metrics:
     unit: 1
     data:
       type: sum
+      monotonic: true
       aggregation: cumulative
     labels: [thread_pool_name]
   elasticsearch.thread_pool.completed:
@@ -205,5 +206,6 @@ metrics:
     unit: 1
     data:
       type: sum
+      monotonic: true
       aggregation: cumulative
     labels: [thread_pool_name]
