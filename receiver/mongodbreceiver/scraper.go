@@ -239,11 +239,11 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 	} {
 		count, err := getIntMetricValue(document, []string{"opcounters", operation})
 		if err != nil {
-			r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbOperationCount.Name()))
+			r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
 		} else {
 			attributes := pdata.NewAttributeMap()
 			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
-			mm.addIntDataPoint(metadata.M.MongodbOperationCount, count, attributes)
+			mm.addIntDataPoint(metadata.M.MongodbOperations, count, attributes)
 		}
 	}
 }

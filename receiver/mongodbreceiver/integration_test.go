@@ -141,12 +141,12 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		"mongodb.memory_usage database_name resident":          true,
 		"mongodb.memory_usage database_name virtual":           true,
 		"mongodb.objects database_name":                        true,
-		"mongodb.operation_count command":                      true,
-		"mongodb.operation_count delete":                       true,
-		"mongodb.operation_count getmore":                      true,
-		"mongodb.operation_count insert":                       true,
-		"mongodb.operation_count query":                        true,
-		"mongodb.operation_count update":                       true,
+		"mongodb.operations command":                           true,
+		"mongodb.operations delete":                            true,
+		"mongodb.operations getmore":                           true,
+		"mongodb.operations insert":                            true,
+		"mongodb.operations query":                             true,
+		"mongodb.operations update":                            true,
 		"mongodb.storage_size database_name":                   true,
 	}, exists)
 }
