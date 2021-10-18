@@ -44,8 +44,15 @@ labels:
     enum:
     - heap
     - non-heap
-  thread_pool_name:
-    description: Thread pool name.
+  thread_type:
+    description: Type of the Thread pool.
+    enum:
+    - total
+    - queue
+    - active
+    - rejected
+    - largest
+    - completed
 
 metrics:
   # these metrics are from node stats
@@ -151,6 +158,12 @@ metrics:
     data:
       type: gauge
     labels: [server_name]
+  elasticsearch.thread_pools:
+    description: Number of tasks in the threads pool.
+    unit: 1
+    data:
+      type: gauge
+    labels: [server_name, thread_type]
   
   # these metrics are from cluster stats
   elasticsearch.data_nodes:
@@ -173,39 +186,3 @@ metrics:
     data:
       type: gauge
     labels: [shard_type]
-
-  # thread pool metrics
-  elasticsearch.thread_pool.threads:
-    description: Number of threads in the pool.
-    unit: 1
-    data:
-      type: gauge
-    labels: [thread_pool_name]
-  elasticsearch.thread_pool.queue:
-    description: Number of tasks in the queue for the thread pool.
-    unit: 1
-    data:
-      type: gauge
-    labels: [thread_pool_name]
-  elasticsearch.thread_pool.active:
-    description: Number of active threads in the thread pool.
-    unit: 1
-    data:
-      type: gauge
-    labels: [thread_pool_name]
-  elasticsearch.thread_pool.rejected:
-    description: Number of tasks rejected by the thread pool executor.
-    unit: 1
-    data:
-      type: sum
-      monotonic: true
-      aggregation: cumulative
-    labels: [thread_pool_name]
-  elasticsearch.thread_pool.completed:
-    description: Number of tasks completed by the thread pool executor.
-    unit: 1
-    data:
-      type: sum
-      monotonic: true
-      aggregation: cumulative
-    labels: [thread_pool_name]

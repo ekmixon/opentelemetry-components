@@ -41,29 +41,25 @@ func (m *metricImpl) Init(metric pdata.Metric) {
 }
 
 type metricStruct struct {
-	ElasticsearchCacheMemoryUsage    MetricIntf
-	ElasticsearchCurrentDocuments    MetricIntf
-	ElasticsearchDataNodes           MetricIntf
-	ElasticsearchEvictions           MetricIntf
-	ElasticsearchGcCollection        MetricIntf
-	ElasticsearchGcCollectionTime    MetricIntf
-	ElasticsearchHTTPConnections     MetricIntf
-	ElasticsearchMemoryUsage         MetricIntf
-	ElasticsearchNetwork             MetricIntf
-	ElasticsearchNodes               MetricIntf
-	ElasticsearchOpenFiles           MetricIntf
-	ElasticsearchOperationTime       MetricIntf
-	ElasticsearchOperations          MetricIntf
-	ElasticsearchPeakThreads         MetricIntf
-	ElasticsearchServerConnections   MetricIntf
-	ElasticsearchShards              MetricIntf
-	ElasticsearchStorageSize         MetricIntf
-	ElasticsearchThreadPoolActive    MetricIntf
-	ElasticsearchThreadPoolCompleted MetricIntf
-	ElasticsearchThreadPoolQueue     MetricIntf
-	ElasticsearchThreadPoolRejected  MetricIntf
-	ElasticsearchThreadPoolThreads   MetricIntf
-	ElasticsearchThreads             MetricIntf
+	ElasticsearchCacheMemoryUsage  MetricIntf
+	ElasticsearchCurrentDocuments  MetricIntf
+	ElasticsearchDataNodes         MetricIntf
+	ElasticsearchEvictions         MetricIntf
+	ElasticsearchGcCollection      MetricIntf
+	ElasticsearchGcCollectionTime  MetricIntf
+	ElasticsearchHTTPConnections   MetricIntf
+	ElasticsearchMemoryUsage       MetricIntf
+	ElasticsearchNetwork           MetricIntf
+	ElasticsearchNodes             MetricIntf
+	ElasticsearchOpenFiles         MetricIntf
+	ElasticsearchOperationTime     MetricIntf
+	ElasticsearchOperations        MetricIntf
+	ElasticsearchPeakThreads       MetricIntf
+	ElasticsearchServerConnections MetricIntf
+	ElasticsearchShards            MetricIntf
+	ElasticsearchStorageSize       MetricIntf
+	ElasticsearchThreadPools       MetricIntf
+	ElasticsearchThreads           MetricIntf
 }
 
 // Names returns a list of all the metric name strings.
@@ -86,39 +82,31 @@ func (m *metricStruct) Names() []string {
 		"elasticsearch.server_connections",
 		"elasticsearch.shards",
 		"elasticsearch.storage_size",
-		"elasticsearch.thread_pool.active",
-		"elasticsearch.thread_pool.completed",
-		"elasticsearch.thread_pool.queue",
-		"elasticsearch.thread_pool.rejected",
-		"elasticsearch.thread_pool.threads",
+		"elasticsearch.thread_pools",
 		"elasticsearch.threads",
 	}
 }
 
 var metricsByName = map[string]MetricIntf{
-	"elasticsearch.cache_memory_usage":    Metrics.ElasticsearchCacheMemoryUsage,
-	"elasticsearch.current_documents":     Metrics.ElasticsearchCurrentDocuments,
-	"elasticsearch.data_nodes":            Metrics.ElasticsearchDataNodes,
-	"elasticsearch.evictions":             Metrics.ElasticsearchEvictions,
-	"elasticsearch.gc_collection":         Metrics.ElasticsearchGcCollection,
-	"elasticsearch.gc_collection_time":    Metrics.ElasticsearchGcCollectionTime,
-	"elasticsearch.http_connections":      Metrics.ElasticsearchHTTPConnections,
-	"elasticsearch.memory_usage":          Metrics.ElasticsearchMemoryUsage,
-	"elasticsearch.network":               Metrics.ElasticsearchNetwork,
-	"elasticsearch.nodes":                 Metrics.ElasticsearchNodes,
-	"elasticsearch.open_files":            Metrics.ElasticsearchOpenFiles,
-	"elasticsearch.operation_time":        Metrics.ElasticsearchOperationTime,
-	"elasticsearch.operations":            Metrics.ElasticsearchOperations,
-	"elasticsearch.peak_threads":          Metrics.ElasticsearchPeakThreads,
-	"elasticsearch.server_connections":    Metrics.ElasticsearchServerConnections,
-	"elasticsearch.shards":                Metrics.ElasticsearchShards,
-	"elasticsearch.storage_size":          Metrics.ElasticsearchStorageSize,
-	"elasticsearch.thread_pool.active":    Metrics.ElasticsearchThreadPoolActive,
-	"elasticsearch.thread_pool.completed": Metrics.ElasticsearchThreadPoolCompleted,
-	"elasticsearch.thread_pool.queue":     Metrics.ElasticsearchThreadPoolQueue,
-	"elasticsearch.thread_pool.rejected":  Metrics.ElasticsearchThreadPoolRejected,
-	"elasticsearch.thread_pool.threads":   Metrics.ElasticsearchThreadPoolThreads,
-	"elasticsearch.threads":               Metrics.ElasticsearchThreads,
+	"elasticsearch.cache_memory_usage": Metrics.ElasticsearchCacheMemoryUsage,
+	"elasticsearch.current_documents":  Metrics.ElasticsearchCurrentDocuments,
+	"elasticsearch.data_nodes":         Metrics.ElasticsearchDataNodes,
+	"elasticsearch.evictions":          Metrics.ElasticsearchEvictions,
+	"elasticsearch.gc_collection":      Metrics.ElasticsearchGcCollection,
+	"elasticsearch.gc_collection_time": Metrics.ElasticsearchGcCollectionTime,
+	"elasticsearch.http_connections":   Metrics.ElasticsearchHTTPConnections,
+	"elasticsearch.memory_usage":       Metrics.ElasticsearchMemoryUsage,
+	"elasticsearch.network":            Metrics.ElasticsearchNetwork,
+	"elasticsearch.nodes":              Metrics.ElasticsearchNodes,
+	"elasticsearch.open_files":         Metrics.ElasticsearchOpenFiles,
+	"elasticsearch.operation_time":     Metrics.ElasticsearchOperationTime,
+	"elasticsearch.operations":         Metrics.ElasticsearchOperations,
+	"elasticsearch.peak_threads":       Metrics.ElasticsearchPeakThreads,
+	"elasticsearch.server_connections": Metrics.ElasticsearchServerConnections,
+	"elasticsearch.shards":             Metrics.ElasticsearchShards,
+	"elasticsearch.storage_size":       Metrics.ElasticsearchStorageSize,
+	"elasticsearch.thread_pools":       Metrics.ElasticsearchThreadPools,
+	"elasticsearch.threads":            Metrics.ElasticsearchThreads,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -294,50 +282,10 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"elasticsearch.thread_pool.active",
+		"elasticsearch.thread_pools",
 		func(metric pdata.Metric) {
-			metric.SetName("elasticsearch.thread_pool.active")
-			metric.SetDescription("Number of active threads in the thread pool.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
-	&metricImpl{
-		"elasticsearch.thread_pool.completed",
-		func(metric pdata.Metric) {
-			metric.SetName("elasticsearch.thread_pool.completed")
-			metric.SetDescription("Number of tasks completed by the thread pool executor.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
-		},
-	},
-	&metricImpl{
-		"elasticsearch.thread_pool.queue",
-		func(metric pdata.Metric) {
-			metric.SetName("elasticsearch.thread_pool.queue")
-			metric.SetDescription("Number of tasks in the queue for the thread pool.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
-	&metricImpl{
-		"elasticsearch.thread_pool.rejected",
-		func(metric pdata.Metric) {
-			metric.SetName("elasticsearch.thread_pool.rejected")
-			metric.SetDescription("Number of tasks rejected by the thread pool executor.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
-		},
-	},
-	&metricImpl{
-		"elasticsearch.thread_pool.threads",
-		func(metric pdata.Metric) {
-			metric.SetName("elasticsearch.thread_pool.threads")
-			metric.SetDescription("Number of threads in the pool.")
+			metric.SetName("elasticsearch.thread_pools")
+			metric.SetDescription("Number of tasks in the threads pool.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -375,8 +323,8 @@ var Labels = struct {
 	ServerName string
 	// ShardType (State of the shard.)
 	ShardType string
-	// ThreadPoolName (Thread pool name.)
-	ThreadPoolName string
+	// ThreadType (Type of the Thread pool.)
+	ThreadType string
 }{
 	"cache_name",
 	"direction",
@@ -386,7 +334,7 @@ var Labels = struct {
 	"operation",
 	"server_name",
 	"shard_type",
-	"thread_pool_name",
+	"thread_type",
 }
 
 // L contains the possible metric labels that can be used. L is an alias for
@@ -466,4 +414,21 @@ var LabelShardType = struct {
 	"relocating",
 	"initializing",
 	"unassigned",
+}
+
+// LabelThreadType are the possible values that the label "thread_type" can have.
+var LabelThreadType = struct {
+	Total     string
+	Queue     string
+	Active    string
+	Rejected  string
+	Largest   string
+	Completed string
+}{
+	"total",
+	"queue",
+	"active",
+	"rejected",
+	"largest",
+	"completed",
 }

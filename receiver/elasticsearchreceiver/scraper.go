@@ -121,11 +121,7 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 	peakThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchPeakThreads).Gauge().DataPoints()
 	storageSizeMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchStorageSize).Gauge().DataPoints()
 	threadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreads).Gauge().DataPoints()
-	threadPoolThreadsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolThreads).Gauge().DataPoints()
-	threadPoolQueueMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolQueue).Gauge().DataPoints()
-	threadPoolActiveMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolActive).Gauge().DataPoints()
-	threadPoolRejectedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolRejected).Sum().DataPoints()
-	threadPoolCompletedMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPoolCompleted).Sum().DataPoints()
+	threadPoolsMetric := initMetric(ilm.Metrics(), metadata.M.ElasticsearchThreadPools).Gauge().DataPoints()
 
 	for _, nodeDataInter := range nodes {
 		nodeData, ok := nodeDataInter.(map[string]interface{})
@@ -215,31 +211,19 @@ func (r *elasticsearchScraper) scrape(context.Context) (pdata.ResourceMetricsSli
 
 		r.processIntMetric([]string{"jvm", "threads", "count"}, nodeData, threadsMetric, attributes)
 
-		threadPools, ok := nodeData["thread_pool"]
-		if !ok {
-			r.logger.Error("no thread pool data available")
-			continue
-		}
-		threadPoolsInter, ok := threadPools.(map[string]interface{})
-		if !ok {
-			r.logger.Error("could not reflect thread pools data as a map")
-			continue
-		}
-
-		for threadPoolName, threadPoolInter := range threadPoolsInter {
-			threadPool, ok := threadPoolInter.(map[string]interface{})
-			if !ok {
-				r.logger.Error("could not reflect thread pool data as a map")
-				continue
-			}
-			attributes.Upsert(metadata.L.ThreadPoolName, pdata.NewAttributeValueString(threadPoolName))
-			r.processIntMetric([]string{"threads"}, threadPool, threadPoolThreadsMetric, attributes)
-			r.processIntMetric([]string{"queue"}, threadPool, threadPoolQueueMetric, attributes)
-			r.processIntMetric([]string{"active"}, threadPool, threadPoolActiveMetric, attributes)
-			r.processIntMetric([]string{"rejected"}, threadPool, threadPoolRejectedMetric, attributes)
-			r.processIntMetric([]string{"completed"}, threadPool, threadPoolCompletedMetric, attributes)
-			attributes.Delete(metadata.L.ThreadPoolName)
-		}
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("total"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "threads"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("queue"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "queue"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("active"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "active"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("largest"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "largest"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("rejected"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "rejected"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Upsert(metadata.L.ThreadType, pdata.NewAttributeValueString("completed"))
+		r.processIntMetric([]string{"thread_pool", "analyze", "completed"}, nodeData, threadPoolsMetric, attributes)
+		attributes.Delete(metadata.L.ThreadType)
 	}
 
 	attributes := pdata.NewAttributeMap()
