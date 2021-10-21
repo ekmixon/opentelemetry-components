@@ -6,43 +6,43 @@ labels:
 
 metrics:
   couchbase.b_data_used:
-    description: Bytes in memory used by Index in this buckets.
+    description: Bytes in memory used by Index.
     unit: by
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_disk_fetches:
-    description: Number of reads per second from disk for this bucket.
+    description: Number of reads per second from disk.
     unit: number/sec
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_disk_used:
-    description: Bytes on disk used by Index in this buckets.
+    description: Bytes on disk used by Index.
     unit: by
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_item_count:
-    description: Number of items in this bucket.
+    description: Number of items.
     unit: number/sec
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_mem_used:
-    description: Total memory used in bytes for this buckets.
+    description: Total memory used in bytes.
     unit: by
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_ops:
-    description: Number of operations from per second for this buckets.
+    description: Number of operations per second.
     unit: number/sec
     data:
       type: gauge
     labels: [ buckets ]
   couchbase.b_quota_used:
-    description: Percentage of index RAM quota in use for this buckets.
+    description: Percentage of index RAM quota.
     unit: 1
     data:
       type: gauge
@@ -54,7 +54,7 @@ metrics:
       type: gauge
     labels: []
   couchbase.cpu_utilization_rate:
-    description: Percentage of CPU in use across all available cores on this server.
+    description: Percentage of CPU in use across all available cores.
     unit: 1
     data:
       type: gauge
@@ -84,13 +84,13 @@ metrics:
       type: gauge
     labels: []
   couchbase.mem_free:
-    description: Bytes of RAM available to Couchbase on this server.
+    description: Bytes of RAM available.
     unit: by
     data:
       type: gauge
     labels: []
   couchbase.mem_total:
-    description: Total bytes capacity of RAM on this server.
+    description: Total bytes capacity of RAM.
     unit: by
     data:
       type: gauge
@@ -102,19 +102,19 @@ metrics:
       type: gauge
     labels: []
   couchbase.ops:
-    description: Number of operations from per second.
+    description: Number of operations per second.
     unit: number/sec
     data:
       type: gauge
     labels: []
   couchbase.swap_total:
-    description: Total bytes capacity on this server.
+    description: Total bytes capacity.
     unit: by
     data:
       type: gauge
     labels: []
   couchbase.swap_used:
-    description: Bytes of swap space in use on this server.
+    description: Bytes of swap space in use.
     unit: by
     data:
       type: gauge

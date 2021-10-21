@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
-	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 )
 
@@ -23,10 +22,6 @@ func TestScraper(t *testing.T) {
 		sc.client = &fakeClient{
 			nodeStatsFilename:    "node_stats_6_6.json",
 			bucketsStatsFilename: "buckets_stats_6_6.json"}
-
-		scrapedMetrics, _ := sc.scrape(context.Background())
-		actualMetrics := pdata.NewMetrics()
-		scrapedMetrics.CopyTo(actualMetrics.ResourceMetrics())
 
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
 		require.NoError(t, err)
@@ -38,9 +33,6 @@ func TestScraper(t *testing.T) {
 		sc.client = &fakeClient{
 			nodeStatsFilename:    "node_stats_7_0.json",
 			bucketsStatsFilename: "buckets_stats_7_0.json"}
-		scrapedMetrics, _ := sc.scrape(context.Background())
-		actualMetrics := pdata.NewMetrics()
-		scrapedMetrics.CopyTo(actualMetrics.ResourceMetrics())
 
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
 		require.NoError(t, err)
