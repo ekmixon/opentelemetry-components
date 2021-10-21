@@ -140,8 +140,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -156,8 +156,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -172,8 +172,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -188,8 +188,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -204,8 +204,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -220,8 +220,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))
@@ -236,8 +236,8 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			metricsMap := map[string]bool{}
 			for i := 0; i < dps.Len(); i++ {
 				dp := dps.At(i)
-				method, _ := dp.LabelsMap().Get(metadata.Labels.Buckets)
-				label := fmt.Sprintf("%s method: %s", m.Name(), method)
+				attribute, _ := dp.Attributes().Get(metadata.Labels.Buckets)
+				label := fmt.Sprintf("%s method: %s", m.Name(), attribute.AsString())
 				metricsMap[label] = true
 			}
 			require.Equal(t, 2, len(metricsMap))

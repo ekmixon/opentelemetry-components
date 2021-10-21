@@ -44,22 +44,22 @@ func initMetric(ms pdata.MetricSlice, mi metadata.MetricIntf) pdata.Metric {
 }
 
 // addToDoubleMetric adds and labels a double gauge datapoint to a metricslice.
-func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value float64, ts pdata.Timestamp) {
+func addToDoubleMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value float64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetDoubleVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }
 
 // addToIntMetric adds and labels a int sum datapoint to metricslice.
-func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.StringMap, value int64, ts pdata.Timestamp) {
+func addToIntMetric(metric pdata.NumberDataPointSlice, labels pdata.AttributeMap, value int64, ts pdata.Timestamp) {
 	dataPoint := metric.AppendEmpty()
 	dataPoint.SetTimestamp(ts)
 	dataPoint.SetIntVal(value)
 	if labels.Len() > 0 {
-		labels.CopyTo(dataPoint.LabelsMap())
+		labels.CopyTo(dataPoint.Attributes())
 	}
 }
 
@@ -78,7 +78,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otel/couchbase")
-	now := pdata.TimestampFromTime(time.Now())
+	now := pdata.NewTimestampFromTime(time.Now())
 
 	bDataUsed := initMetric(ilm.Metrics(), metadata.M.CouchbaseBDataUsed).Gauge().DataPoints()
 	bDiskFetches := initMetric(ilm.Metrics(), metadata.M.CouchbaseBDiskFetches).Gauge().DataPoints()
@@ -103,8 +103,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bDataUsed
 	for _, bucket := range stats.BucketsStats {
-		bDataUsedLabels := pdata.NewStringMap()
-		bDataUsedLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bDataUsedLabels := pdata.NewAttributeMap()
+		bDataUsedLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bDataUsedValues := bucket.BasicStats.DataUsed
 		if bDataUsedValues == nil {
 			c.logger.Info(
@@ -118,8 +118,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bDiskFetches
 	for _, bucket := range stats.BucketsStats {
-		bDiskFetchesLabels := pdata.NewStringMap()
-		bDiskFetchesLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bDiskFetchesLabels := pdata.NewAttributeMap()
+		bDiskFetchesLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bDiskFetchesValues := bucket.BasicStats.DiskFetches
 		if bDiskFetchesValues == nil {
 			c.logger.Info(
@@ -133,8 +133,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bDiskUsed
 	for _, bucket := range stats.BucketsStats {
-		bDiskUsedLabels := pdata.NewStringMap()
-		bDiskUsedLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bDiskUsedLabels := pdata.NewAttributeMap()
+		bDiskUsedLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bDiskUsedValues := bucket.BasicStats.DiskUsed
 		if bDiskUsedValues == nil {
 			c.logger.Info(
@@ -148,8 +148,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bItemCount
 	for _, bucket := range stats.BucketsStats {
-		bItemCountLabels := pdata.NewStringMap()
-		bItemCountLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bItemCountLabels := pdata.NewAttributeMap()
+		bItemCountLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bItemCountValues := bucket.BasicStats.ItemCount
 		if bItemCountValues == nil {
 			c.logger.Info(
@@ -163,8 +163,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bMemUsed
 	for _, bucket := range stats.BucketsStats {
-		bMemUsedLabels := pdata.NewStringMap()
-		bMemUsedLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bMemUsedLabels := pdata.NewAttributeMap()
+		bMemUsedLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bMemUsedValues := bucket.BasicStats.MemUsed
 		if bMemUsedValues == nil {
 			c.logger.Info(
@@ -177,8 +177,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 	// bOps
 	for _, bucket := range stats.BucketsStats {
-		bOpsLabels := pdata.NewStringMap()
-		bOpsLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bOpsLabels := pdata.NewAttributeMap()
+		bOpsLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bOpsValues := bucket.BasicStats.OpsPerSec
 		if bOpsValues == nil {
 			c.logger.Info(
@@ -192,8 +192,8 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 
 	// bQuotaUsed
 	for _, bucket := range stats.BucketsStats {
-		bQuotaUsedLabels := pdata.NewStringMap()
-		bQuotaUsedLabels.Insert(metadata.Labels.Buckets, bucket.Name)
+		bQuotaUsedLabels := pdata.NewAttributeMap()
+		bQuotaUsedLabels.Insert(metadata.Labels.Buckets, pdata.NewAttributeValueString(bucket.Name))
 		bQuotaUsedValues := bucket.BasicStats.QuotaPercentUsed
 		if bQuotaUsedValues == nil {
 			c.logger.Info(
@@ -206,7 +206,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// cmdGet
-	cmdGetLabels := pdata.NewStringMap()
+	cmdGetLabels := pdata.NewAttributeMap()
 	cmdGetValues := stats.NodeStats.Nodes[0].InterestingStats.CmdGet
 	if cmdGetValues == nil {
 		c.logger.Info(
@@ -218,7 +218,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// cpuUtilizationRate
-	cpuUtilizationRateLabels := pdata.NewStringMap()
+	cpuUtilizationRateLabels := pdata.NewAttributeMap()
 	cpuUtilizationRateValues := stats.NodeStats.Nodes[0].SystemStats.CPUUtilizationRate
 	if cpuUtilizationRateValues == nil {
 		c.logger.Info(
@@ -230,7 +230,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// currItems
-	currItemsLabels := pdata.NewStringMap()
+	currItemsLabels := pdata.NewAttributeMap()
 	currItemsValues := stats.NodeStats.Nodes[0].InterestingStats.CurrItems
 	if currItemsValues == nil {
 		c.logger.Info(
@@ -242,7 +242,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// currItemsTot
-	currItemsTotLabels := pdata.NewStringMap()
+	currItemsTotLabels := pdata.NewAttributeMap()
 	currItemsTotValues := stats.NodeStats.Nodes[0].InterestingStats.CurrItemsTot
 	if currItemsTotValues == nil {
 		c.logger.Info(
@@ -254,7 +254,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// diskFetches
-	diskFetchesLabels := pdata.NewStringMap()
+	diskFetchesLabels := pdata.NewAttributeMap()
 	diskFetchesValues := stats.NodeStats.Nodes[0].InterestingStats.EpBgFetched
 	if currItemsTotValues == nil {
 		c.logger.Info(
@@ -266,7 +266,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// getHits
-	getHitsLabels := pdata.NewStringMap()
+	getHitsLabels := pdata.NewAttributeMap()
 	getHitsValues := stats.NodeStats.Nodes[0].InterestingStats.GetHits
 	if getHitsValues == nil {
 		c.logger.Info(
@@ -278,7 +278,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// memFree
-	memFreeLabels := pdata.NewStringMap()
+	memFreeLabels := pdata.NewAttributeMap()
 	memFreeValues := stats.NodeStats.Nodes[0].SystemStats.MemFree
 	if memFreeValues == nil {
 		c.logger.Info(
@@ -290,7 +290,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// memTotal
-	memTotalLabels := pdata.NewStringMap()
+	memTotalLabels := pdata.NewAttributeMap()
 	memTotalValues := stats.NodeStats.Nodes[0].SystemStats.MemTotal
 	if memTotalValues == nil {
 		c.logger.Info(
@@ -302,7 +302,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// memUsed
-	memUsedLabels := pdata.NewStringMap()
+	memUsedLabels := pdata.NewAttributeMap()
 	memUsedValues := stats.NodeStats.Nodes[0].InterestingStats.MemUsed
 	if memUsedValues == nil {
 		c.logger.Info(
@@ -314,7 +314,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// ops
-	opsLabels := pdata.NewStringMap()
+	opsLabels := pdata.NewAttributeMap()
 	opsValues := stats.NodeStats.Nodes[0].InterestingStats.Ops
 	if opsValues == nil {
 		c.logger.Info(
@@ -326,7 +326,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// swapTotal
-	swapTotalLabels := pdata.NewStringMap()
+	swapTotalLabels := pdata.NewAttributeMap()
 	swapTotalValues := stats.NodeStats.Nodes[0].SystemStats.SwapTotal
 	if swapTotalValues == nil {
 		c.logger.Info(
@@ -338,7 +338,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// swapUsed
-	swapUsedLabels := pdata.NewStringMap()
+	swapUsedLabels := pdata.NewAttributeMap()
 	swapUsedValues := stats.NodeStats.Nodes[0].SystemStats.SwapUsed
 	if swapUsedValues == nil {
 		c.logger.Info(
@@ -350,7 +350,7 @@ func (c *couchbaseScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, 
 	}
 
 	// uptime
-	uptimeLabels := pdata.NewStringMap()
+	uptimeLabels := pdata.NewAttributeMap()
 	uptimeValues, ok := c.parseInt("uptime", stats.NodeStats.Nodes[0].Uptime)
 	if !ok {
 		c.logger.Info(

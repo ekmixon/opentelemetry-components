@@ -8,11 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
-	"go.opentelemetry.io/collector/config/configcheck"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.opentelemetry.io/collector/testbed/testbed"
-	"go.uber.org/zap"
 )
 
 func TestType(t *testing.T) {
@@ -23,15 +21,18 @@ func TestType(t *testing.T) {
 
 func TestValidConfig(t *testing.T) {
 	factory := NewFactory()
-	err := configcheck.ValidateConfig(factory.CreateDefaultConfig())
-	require.NoError(t, err)
+	cfg := factory.CreateDefaultConfig().(*Config)
+	cfg.Endpoint = "localhost:8091"
+	cfg.Username = "otel"
+	cfg.Password = "otel"
+	require.NoError(t, cfg.Validate())
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
 	factory := NewFactory()
 	metricsReceiver, err := factory.CreateMetricsReceiver(
 		context.Background(),
-		component.ReceiverCreateSettings{Logger: zap.NewNop()},
+		component.ReceiverCreateSettings{},
 		&Config{
 			ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 				ReceiverSettings:   config.NewReceiverSettings(config.NewID("couchbase")),
@@ -43,7 +44,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 			Username: "otelu",
 			Password: "otelp",
 		},
-		&testbed.MockMetricConsumer{},
+		consumertest.NewNop(),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, metricsReceiver)
