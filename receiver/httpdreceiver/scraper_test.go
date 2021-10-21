@@ -3,19 +3,18 @@ package httpdreceiver
 import (
 	"context"
 	"errors"
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/observiq/opentelemetry-components/receiver/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.uber.org/zap"
-
-	"github.com/observiq/opentelemetry-components/receiver/httpdreceiver/internal/metadata"
 )
 
 func TestScraper(t *testing.T) {
@@ -24,8 +23,7 @@ func TestScraper(t *testing.T) {
 			rw.WriteHeader(200)
 			_, err := rw.Write([]byte(`ServerUptimeSeconds: 410
 Total Accesses: 14169
-ReqPerSec: 719.771
-BytesPerSec: 1129490
+Total kBytes: 20910
 BusyWorkers: 13
 IdleWorkers: 227
 ConnsTotal: 110
@@ -38,7 +36,7 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 	}))
 	sc := newHttpdScraper(zap.NewNop(), &Config{
 		HTTPClientSettings: confighttp.HTTPClientSettings{
-			Endpoint: httpdMock.URL + "/server-status?auto",
+			Endpoint: httpdMock.URL,
 		},
 	})
 
@@ -46,91 +44,10 @@ Scoreboard: S_DD_L_GGG_____W__IIII_C________________W___________________________
 	require.NoError(t, err)
 	assert.NotNil(t, sc.httpClient)
 
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
-
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, 7, ms.Len())
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		switch m.Name() {
-		case metadata.M.HttpdUptime.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.True(t, m.Sum().IsMonotonic())
-			require.EqualValues(t, 410, dps.At(0).IntVal())
-		case metadata.M.HttpdCurrentConnections.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, dps.Len())
-			require.EqualValues(t, 110, dps.At(0).IntVal())
-		case metadata.M.HttpdWorkers.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 2, m.Gauge().DataPoints().Len())
-
-			workerMetrics := map[string]int{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.WorkersState)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				workerMetrics[label] = int(dp.IntVal())
-			}
-
-			require.Equal(t, 2, len(workerMetrics))
-			require.Equal(t, map[string]int{
-				"httpd.workers state:busy": 13,
-				"httpd.workers state:idle": 227,
-			}, workerMetrics)
-		case metadata.M.HttpdRequests.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.EqualValues(t, 719.771, dps.At(0).Value())
-		case metadata.M.HttpdBytes.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			require.EqualValues(t, 1129490, dps.At(0).Value())
-		case metadata.M.HttpdTraffic.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			require.True(t, m.Sum().IsMonotonic())
-			require.EqualValues(t, 14169, dps.At(0).IntVal())
-		case metadata.M.HttpdScoreboard.Name():
-			dps := m.Gauge().DataPoints()
-			require.Equal(t, 11, dps.Len())
-			scoreboardMetrics := map[string]int{}
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.ScoreboardState)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				scoreboardMetrics[label] = int(dp.IntVal())
-			}
-			require.Equal(t, 11, len(scoreboardMetrics))
-			require.Equal(t, map[string]int{
-				"httpd.scoreboard state:open":         150,
-				"httpd.scoreboard state:waiting":      217,
-				"httpd.scoreboard state:starting":     1,
-				"httpd.scoreboard state:reading":      4,
-				"httpd.scoreboard state:sending":      12,
-				"httpd.scoreboard state:keepalive":    2,
-				"httpd.scoreboard state:dnslookup":    2,
-				"httpd.scoreboard state:closing":      4,
-				"httpd.scoreboard state:logging":      1,
-				"httpd.scoreboard state:finishing":    3,
-				"httpd.scoreboard state:idle_cleanup": 4,
-			}, scoreboardMetrics)
-
-		default:
-			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
-		}
-	}
+	helper.ScraperTest(t, sc.scrape, expectedFileBytes)
 }
 
 func TestScraperFailedStart(t *testing.T) {

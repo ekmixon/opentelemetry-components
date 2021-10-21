@@ -41,7 +41,6 @@ func (m *metricImpl) Init(metric pdata.Metric) {
 }
 
 type metricStruct struct {
-	HttpdBytes              MetricIntf
 	HttpdCurrentConnections MetricIntf
 	HttpdRequests           MetricIntf
 	HttpdScoreboard         MetricIntf
@@ -53,7 +52,6 @@ type metricStruct struct {
 // Names returns a list of all the metric name strings.
 func (m *metricStruct) Names() []string {
 	return []string{
-		"httpd.bytes",
 		"httpd.current_connections",
 		"httpd.requests",
 		"httpd.scoreboard",
@@ -64,7 +62,6 @@ func (m *metricStruct) Names() []string {
 }
 
 var metricsByName = map[string]MetricIntf{
-	"httpd.bytes":               Metrics.HttpdBytes,
 	"httpd.current_connections": Metrics.HttpdCurrentConnections,
 	"httpd.requests":            Metrics.HttpdRequests,
 	"httpd.scoreboard":          Metrics.HttpdScoreboard,
@@ -79,7 +76,6 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 
 func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 	return map[string]func(pdata.Metric){
-		Metrics.HttpdBytes.Name():              Metrics.HttpdBytes.Init,
 		Metrics.HttpdCurrentConnections.Name(): Metrics.HttpdCurrentConnections.Init,
 		Metrics.HttpdRequests.Name():           Metrics.HttpdRequests.Init,
 		Metrics.HttpdScoreboard.Name():         Metrics.HttpdScoreboard.Init,
@@ -92,15 +88,6 @@ func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
 // Metrics contains a set of methods for each metric that help with
 // manipulating those metrics.
 var Metrics = &metricStruct{
-	&metricImpl{
-		"httpd.bytes",
-		func(metric pdata.Metric) {
-			metric.SetName("httpd.bytes")
-			metric.SetDescription("The number of bytes transferred by the HTTP server per second")
-			metric.SetUnit("By/s")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
 	&metricImpl{
 		"httpd.current_connections",
 		func(metric pdata.Metric) {
@@ -115,8 +102,10 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.requests")
 			metric.SetDescription("The number of requests serviced by the HTTP server per second")
-			metric.SetUnit("/s")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -133,7 +122,7 @@ var Metrics = &metricStruct{
 		func(metric pdata.Metric) {
 			metric.SetName("httpd.traffic")
 			metric.SetDescription("Total HTTP server traffic")
-			metric.SetUnit("connections")
+			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
 			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
@@ -169,10 +158,13 @@ var M = Metrics
 var Labels = struct {
 	// ScoreboardState (The state of a connection)
 	ScoreboardState string
+	// ServerName (The name of the Apache HTTP server)
+	ServerName string
 	// WorkersState (The state workers)
 	WorkersState string
 }{
 	"state",
+	"server_name",
 	"state",
 }
 

@@ -2,13 +2,12 @@ package rabbitmqreceiver
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/observiq/opentelemetry-components/receiver/rabbitmqreceiver/internal/metadata"
+	"github.com/observiq/opentelemetry-components/receiver/helper"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
@@ -38,47 +37,11 @@ func TestScraper(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
-	rms, err := sc.scrape(context.Background())
-	require.Nil(t, err)
 
-	require.Equal(t, 1, rms.Len())
-	rm := rms.At(0)
+	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
+	require.NoError(t, err)
 
-	ilms := rm.InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-
-	ilm := ilms.At(0)
-	ms := ilm.Metrics()
-
-	require.Equal(t, 4, ms.Len())
-
-	metricValues := make(map[string]float64, 7)
-
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-
-		dps := m.Gauge().DataPoints()
-		if dps.Len() > 1 {
-			for j := 0; j < dps.Len(); j++ {
-				dp := dps.At(j)
-				state, _ := dp.LabelsMap().Get(metadata.L.State)
-				label := fmt.Sprintf("%s state:%s", m.Name(), state)
-				metricValues[label] = dp.Value()
-			}
-		} else {
-			dp := dps.At(0)
-			metricValues[m.Name()] = dp.Value()
-		}
-	}
-
-	require.Equal(t, map[string]float64{
-		"rabbitmq.publish_rate":                      1,
-		"rabbitmq.delivery_rate":                     1.4,
-		"rabbitmq.consumers":                         1,
-		"rabbitmq.num_messages state:ready":          6,
-		"rabbitmq.num_messages state:total":          7,
-		"rabbitmq.num_messages state:unacknowledged": 1,
-	}, metricValues)
+	helper.ScraperTest(t, sc.scrape, expectedFileBytes)
 }
 
 func TestScraperFailedStart(t *testing.T) {

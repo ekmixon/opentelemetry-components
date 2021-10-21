@@ -33,7 +33,7 @@ install-tools:
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) golang.org/x/tools/cmd/goimports
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.40.1
 	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/client9/misspell/cmd/misspell
-	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) go.opentelemetry.io/collector/cmd/mdatagen@v0.31.0
+	cd $(TOOLS_MOD_DIR) && $(GOINSTALL) github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen@v0.36.0
 
 # Default build target; making this should build for the current os/arch
 .PHONY: build
@@ -60,6 +60,10 @@ arm64_linux:
 .PHONY: amd64_windows
 amd64_windows:
 	GOOS=windows GOARCH=amd64 $(MAKE) build
+
+.PHONY: container-image
+container-image:
+	docker build --progress=plain . -t otelcompcol:latest
 
 .PHONY: vet
 vet:

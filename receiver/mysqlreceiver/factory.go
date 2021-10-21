@@ -4,7 +4,6 @@ package mysqlreceiver
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -31,6 +30,7 @@ func createDefaultConfig() config.Receiver {
 			ReceiverSettings:   config.NewReceiverSettings(config.NewID(typeStr)),
 			CollectionInterval: 10 * time.Second,
 		},
+		Endpoint: "localhost:3306",
 	}
 }
 
@@ -42,11 +42,6 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
 
-	err := validateConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
 	ns := newMySQLScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start),
 		scraperhelper.WithShutdown(ns.shutdown))
@@ -55,24 +50,4 @@ func createMetricsReceiver(
 		&cfg.ScraperControllerSettings, params.Logger, consumer,
 		scraperhelper.AddScraper(scraper),
 	)
-}
-
-// Errors for missing required config parameters.
-const (
-	ErrNoUsername = "invalid config: missing username"
-	ErrNoPassword = "invalid config: missing password"
-	ErrNoEndpoint = "invalid config: missing endpoint"
-)
-
-func validateConfig(cfg *Config) error {
-	if cfg.Username == "" {
-		return errors.New(ErrNoUsername)
-	}
-	if cfg.Password == "" {
-		return errors.New(ErrNoPassword)
-	}
-	if cfg.Endpoint == "" {
-		return errors.New(ErrNoEndpoint)
-	}
-	return nil
 }

@@ -9,7 +9,8 @@ CODE=1
 
 setup_permissions() {
     # NOTE: -pPASSWORD is missing a space on purpose
-    mysql -u root -p"${ROOT_PASS}" -e "GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO ${USER}" > /dev/null
+    mysql -u root -p"${ROOT_PASS}" -e "GRANT PROCESS ON *.* TO ${USER}" > /dev/null
+    mysql -u root -p"${ROOT_PASS}" -e "GRANT SELECT ON INFORMATION_SCHEMA.INNODB_METRICS TO ${USER}" > /dev/null
     mysql -u root -p"${ROOT_PASS}" -e "FLUSH PRIVILEGES" > /dev/null
 }
 

@@ -1,8 +1,6 @@
 name: mysqlreceiver
 
 labels:
-  database:
-    description: The name of the database
   buffer_pool_pages:
     value: kind
     description: The buffer pool pages types
@@ -66,7 +64,7 @@ metrics:
     unit: 1
     data:
       type: gauge
-    labels: [database, buffer_pool_pages]
+    labels: [ buffer_pool_pages]
   mysql.buffer_pool_operations:
     description: Buffer pool operation count
     unit: 1
@@ -74,13 +72,13 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, buffer_pool_operations]
+    labels: [ buffer_pool_operations]
   mysql.buffer_pool_size:
     description: Buffer pool size
     unit: 1
     data:
       type: gauge
-    labels: [database, buffer_pool_size]
+    labels: [ buffer_pool_size]
   mysql.commands:
     description: MySQL command count
     unit: 1
@@ -88,7 +86,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, command]
+    labels: [ command]
   mysql.handlers:
     description: MySQL handler count
     unit: 1
@@ -96,7 +94,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, handler]
+    labels: [ handler]
   mysql.double_writes:
     description: InnoDB doublewrite buffer count
     unit: 1
@@ -104,7 +102,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, double_writes]
+    labels: [ double_writes]
   mysql.log_operations:
     description: InndoDB log operation count
     unit: 1
@@ -112,7 +110,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, log_operations]
+    labels: [ log_operations]
   mysql.operations:
     description: InndoDB operation count
     unit: 1
@@ -120,7 +118,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, operations]
+    labels: [ operations]
   mysql.page_operations:
     description: InndoDB page operation count
     unit: 1
@@ -128,7 +126,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, page_operations]
+    labels: [ page_operations]
   mysql.row_locks:
     description: InndoDB row lock count
     unit: 1
@@ -136,7 +134,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, row_locks]
+    labels: [ row_locks]
   mysql.row_operations:
     description: InndoDB row operation count
     unit: 1
@@ -144,7 +142,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, row_operations]
+    labels: [ row_operations]
   mysql.locks:
     description: MySQL lock count
     unit: 1
@@ -152,7 +150,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, locks]
+    labels: [ locks]
   mysql.sorts:
     description: MySQL sort count
     unit: 1
@@ -160,10 +158,10 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [database, sorts]
+    labels: [ sorts]
   mysql.threads:
     description: Thread count
     unit: 1
     data:
       type: gauge
-    labels: [database, threads]
+    labels: [ threads]

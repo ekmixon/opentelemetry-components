@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package couchdbreceiver
@@ -135,6 +136,9 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 		case metadata.M.CouchdbHttpdBulkRequests.Name():
 			dps := m.Sum().DataPoints()
 			require.Equal(t, 1, dps.Len())
+		case metadata.M.CouchdbRequests.Name():
+			dps := m.Gauge().DataPoints()
+			require.Equal(t, 1, dps.Len())
 		case metadata.M.CouchdbHttpdRequestMethods.Name():
 			dps := m.Sum().DataPoints()
 			require.Equal(t, 7, dps.Len())
@@ -142,9 +146,9 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			requestMethodMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				method, _ := dp.LabelsMap().Get(metadata.L.HTTPMethod)
-				label := fmt.Sprintf("%s method:%s", m.Name(), method)
-				requestMethodMetrics[label] = true
+				method, _ := dp.Attributes().Get(metadata.L.HTTPMethod)
+				attribute := fmt.Sprintf("%s method:%s", m.Name(), method.AsString())
+				requestMethodMetrics[attribute] = true
 			}
 
 			require.Equal(t, 7, len(requestMethodMetrics))
@@ -165,9 +169,9 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			respondCodeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				code, _ := dp.LabelsMap().Get(metadata.L.ResponseCode)
-				label := fmt.Sprintf("%s code:%s", m.Name(), code)
-				respondCodeMetrics[label] = true
+				code, _ := dp.Attributes().Get(metadata.L.ResponseCode)
+				attribute := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
+				respondCodeMetrics[attribute] = true
 			}
 
 			require.Equal(t, 24, len(respondCodeMetrics))

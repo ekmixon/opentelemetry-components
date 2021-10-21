@@ -30,6 +30,7 @@ func createDefaultConfig() config.Receiver {
 			ReceiverSettings:   config.NewReceiverSettings(config.NewID(typeStr)),
 			CollectionInterval: 10 * time.Second,
 		},
+		Endpoint: "localhost:5432",
 	}
 }
 
@@ -40,10 +41,6 @@ func createMetricsReceiver(
 	consumer consumer.Metrics,
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
-	err := cfg.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	ns := newPostgreSQLScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start),

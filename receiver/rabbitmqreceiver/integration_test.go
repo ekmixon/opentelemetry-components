@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package rabbitmqreceiver
@@ -37,6 +38,7 @@ func TestRabbitMQScraperHappyPath(t *testing.T) {
 	consumer := new(consumertest.MetricsSink)
 	settings := componenttest.NewNopReceiverCreateSettings()
 	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+
 	require.NoError(t, err, "failed creating metrics receiver")
 	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
 	require.Eventuallyf(t, func() bool {
@@ -84,6 +86,58 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 
 func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	require.Equal(t, len(metadata.M.Names()), metrics.Len())
+	exists := make(map[string]bool)
 
-	// TODO thorough validation
+	unenumAttributeSet := []string{
+		metadata.L.Queue,
+	}
+
+	enumAttributeSet := []string{
+		metadata.L.State,
+	}
+
+	for i := 0; i < metrics.Len(); i++ {
+		m := metrics.At(i)
+		require.Contains(t, metadata.M.Names(), m.Name())
+
+		metricIntr := metadata.M.ByName(m.Name())
+		require.Equal(t, metricIntr.New().DataType(), m.DataType())
+		var dps pdata.NumberDataPointSlice
+		switch m.DataType() {
+		case pdata.MetricDataTypeGauge:
+			dps = m.Gauge().DataPoints()
+		case pdata.MetricDataTypeSum:
+			dps = m.Sum().DataPoints()
+		}
+
+		for j := 0; j < dps.Len(); j++ {
+			key := m.Name()
+			dp := dps.At(j)
+
+			for _, attribute := range unenumAttributeSet {
+				_, ok := dp.Attributes().Get(attribute)
+				if ok {
+					key = key + " " + attribute
+				}
+			}
+
+			for _, attribute := range enumAttributeSet {
+				attributeVal, ok := dp.Attributes().Get(attribute)
+				if ok {
+					key += " " + attributeVal.AsString()
+				}
+			}
+			exists[key] = true
+		}
+	}
+
+	// TODO: uncomment These when load gen is added
+	require.Equal(t, map[string]bool{
+		"rabbitmq.consumers queue": true,
+		// "rabbitmq.delivery_rate queue":               true,
+		// "rabbitmq.publish_rate queue":                true,
+		"rabbitmq.num_messages queue unacknowledged": true,
+		"rabbitmq.num_messages queue ready":          true,
+		"rabbitmq.num_messages queue total":          true,
+	}, exists)
 }

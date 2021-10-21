@@ -1,9 +1,7 @@
 package postgresqlreceiver
 
 import (
-	"fmt"
-	"net/url"
-	"regexp"
+	"errors"
 
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/multierr"
@@ -17,25 +15,19 @@ type Config struct {
 	Endpoint                                string `mapstructure:"endpoint"`
 }
 
+// Errors for missing required config parameters.
+const (
+	ErrNoUsername = "invalid config: missing username"
+	ErrNoPassword = "invalid config: missing password"
+)
+
 func (cfg *Config) Validate() error {
 	var errs []error
-	var validPort = regexp.MustCompile(`(:\d+)`)
-
 	if cfg.Username == "" {
-		errs = append(errs, fmt.Errorf("missing required field 'username'"))
+		errs = append(errs, errors.New(ErrNoUsername))
 	}
 	if cfg.Password == "" {
-		errs = append(errs, fmt.Errorf("missing required field 'password'"))
-	}
-	if cfg.Database == "" {
-		errs = append(errs, fmt.Errorf("missing required field 'database'"))
-	}
-	if cfg.Endpoint == "" {
-		errs = append(errs, fmt.Errorf("missing required field 'endpoint'"))
-	} else if !validPort.MatchString(cfg.Endpoint) {
-		errs = append(errs, fmt.Errorf("invalid port specified in field 'endpoint'"))
-	} else if _, err := url.Parse(cfg.Endpoint); err != nil {
-		errs = append(errs, fmt.Errorf("invalid url specified in field 'endpoint'"))
+		errs = append(errs, errors.New(ErrNoPassword))
 	}
 	return multierr.Combine(errs...)
 }
