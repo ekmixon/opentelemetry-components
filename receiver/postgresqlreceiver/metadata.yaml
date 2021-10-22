@@ -10,7 +10,7 @@ labels:
     enum: [ heap_read, heap_hit, idx_read, idx_hit, toast_read, toast_hit, tidx_read, tidx_hit ]  
   operation:
     description: The database operation.
-    enum: [ seq, seq_tup_read, idx, idx_tup_fetch ]
+    enum: [ ins, upd, del, hot_upd ]
   state:
     description: The tuple (row) state.
     enum: [ dead, live ]

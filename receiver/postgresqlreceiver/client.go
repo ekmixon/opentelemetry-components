@@ -14,11 +14,8 @@ type client interface {
 	getRollbacks() (*MetricStat, error)
 	getBackends() (*MetricStat, error)
 	getDatabaseSize() (*MetricStat, error)
-	getDatabaseRows() (*MetricStat, error)
 	getDatabaseRowsByTable() ([]*MetricStat, error)
-	getBlocksRead() (*MetricStat, error)
 	getBlocksReadByTable() ([]*MetricStat, error)
-	getOperations() (*MetricStat, error)
 	getOperationsByTable() ([]*MetricStat, error)
 }
 
@@ -63,8 +60,6 @@ type MetricStat struct {
 	stats    map[string]string
 }
 
-const GlobalTable = "_global"
-
 func (p *postgreSQLClient) getCommits() (*MetricStat, error) {
 	query := fmt.Sprintf("SELECT xact_commit FROM pg_stat_database WHERE datname = '%s';", p.database)
 	rows, err := p.client.Query(query)
@@ -81,7 +76,6 @@ func (p *postgreSQLClient) getCommits() (*MetricStat, error) {
 		}
 		metricStat = MetricStat{
 			database: p.database,
-			table:    GlobalTable,
 			stats:    map[string]string{"xact_commit": commit},
 		}
 	}
@@ -104,7 +98,6 @@ func (p *postgreSQLClient) getRollbacks() (*MetricStat, error) {
 		}
 		metricStat = MetricStat{
 			database: p.database,
-			table:    GlobalTable,
 			stats:    map[string]string{"xact_rollback": rollback},
 		}
 
@@ -128,7 +121,6 @@ func (p *postgreSQLClient) getBackends() (*MetricStat, error) {
 		}
 		metricStat = MetricStat{
 			database: p.database,
-			table:    GlobalTable,
 			stats:    map[string]string{"count": count},
 		}
 
@@ -153,35 +145,9 @@ func (p *postgreSQLClient) getDatabaseSize() (*MetricStat, error) {
 
 		metricStat = MetricStat{
 			database: p.database,
-			table:    GlobalTable,
 			stats:    map[string]string{"db_size": size},
 		}
 
-	}
-	return &metricStat, nil
-}
-
-func (p *postgreSQLClient) getDatabaseRows() (*MetricStat, error) {
-	query := `SELECT coalesce(sum(n_live_tup), 0) AS live, 
-	coalesce(sum(n_dead_tup), 0) AS dead 
-	FROM pg_stat_user_tables;`
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var metricStat MetricStat
-	for rows.Next() {
-		var live, dead string
-		if err := rows.Scan(&live, &dead); err != nil {
-			return nil, err
-		}
-		metricStat = MetricStat{
-			database: p.database,
-			table:    GlobalTable,
-			stats:    map[string]string{"live": live, "dead": dead},
-		}
 	}
 	return &metricStat, nil
 }
@@ -210,46 +176,6 @@ func (p *postgreSQLClient) getDatabaseRowsByTable() ([]*MetricStat, error) {
 		metricStats = append(metricStats, &metricStat)
 	}
 	return metricStats, nil
-}
-
-func (p *postgreSQLClient) getBlocksRead() (*MetricStat, error) {
-	query := `SELECT coalesce(sum(heap_blks_read), 0) AS heap_read, 
-	coalesce(sum(heap_blks_hit), 0) AS heap_hit, 
-	coalesce(sum(idx_blks_read), 0) AS idx_read, 
-	coalesce(sum(idx_blks_hit), 0) AS idx_hit, 
-	coalesce(sum(toast_blks_read), 0) AS toast_read, 
-	coalesce(sum(toast_blks_hit), 0) AS toast_hit, 
-	coalesce(sum(tidx_blks_read), 0) AS tidx_read, 
-	coalesce(sum(tidx_blks_hit), 0) AS tidx_hit 
-	FROM pg_statio_user_tables;`
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var metricStat MetricStat
-	for rows.Next() {
-		stats := map[string]string{}
-		var heapRead, heapHit, idxRead, idxHit, toastRead, toastHit, tidxRead, tidxHit string
-		if err := rows.Scan(&heapRead, &heapHit, &idxRead, &idxHit, &toastRead, &toastHit, &tidxRead, &tidxHit); err != nil {
-			return nil, err
-		}
-		stats["heap_read"] = heapRead
-		stats["heap_hit"] = heapHit
-		stats["idx_read"] = idxRead
-		stats["idx_hit"] = idxHit
-		stats["toast_read"] = toastRead
-		stats["toast_hit"] = toastHit
-		stats["tidx_read"] = tidxRead
-		stats["tidx_hit"] = tidxHit
-		metricStat = MetricStat{
-			database: p.database,
-			table:    GlobalTable,
-			stats:    stats,
-		}
-	}
-	return &metricStat, nil
 }
 
 func (p *postgreSQLClient) getBlocksReadByTable() ([]*MetricStat, error) {
@@ -295,46 +221,12 @@ func (p *postgreSQLClient) getBlocksReadByTable() ([]*MetricStat, error) {
 	return metricStats, nil
 }
 
-func (p *postgreSQLClient) getOperations() (*MetricStat, error) {
-	query := `SELECT coalesce(sum(seq_scan), 0) AS seq, 
-	coalesce(sum(seq_tup_read), 0) AS seq_tup_read, 
-	coalesce(sum(idx_scan), 0) AS idx, 
-	coalesce(sum(idx_tup_fetch), 0) AS idx_tup_fetch 
-	FROM pg_stat_user_tables;`
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var metricStat MetricStat
-	for rows.Next() {
-		stats := map[string]string{}
-		var seq, seq_tup_read, idx, idx_tup_fetch string
-		if err := rows.Scan(&seq, &seq_tup_read, &idx, &idx_tup_fetch); err != nil {
-			return nil, err
-		}
-		stats["seq"] = seq
-		stats["seq_tup_read"] = seq_tup_read
-		stats["idx"] = idx
-		stats["idx_tup_fetch"] = idx_tup_fetch
-
-		metricStat = MetricStat{
-			database: p.database,
-			table:    GlobalTable,
-			stats:    stats,
-		}
-
-	}
-	return &metricStat, nil
-}
-
 func (p *postgreSQLClient) getOperationsByTable() ([]*MetricStat, error) {
 	query := `SELECT schemaname, relname,
-	coalesce(seq_scan, 0) AS seq,
-	coalesce(seq_tup_read, 0) AS seq_tup_read,
-	coalesce(idx_scan, 0) AS idx,
-	coalesce(idx_tup_fetch, 0) AS idx_tup_fetch
+	n_tup_ins AS ins,
+	n_tup_upd AS upd,
+	n_tup_del AS del,
+	n_tup_hot_upd AS hot_upd
 	FROM pg_stat_user_tables;`
 	rows, err := p.client.Query(query)
 	if err != nil {
@@ -345,14 +237,14 @@ func (p *postgreSQLClient) getOperationsByTable() ([]*MetricStat, error) {
 	metricStats := []*MetricStat{}
 	for rows.Next() {
 		stats := map[string]string{}
-		var schemaname, relname, seq, seq_tup_read, idx, idx_tup_fetch string
-		if err := rows.Scan(&schemaname, &relname, &seq, &seq_tup_read, &idx, &idx_tup_fetch); err != nil {
+		var schemaname, relname, ins, upd, del, hot_upd string
+		if err := rows.Scan(&schemaname, &relname, &ins, &upd, &del, &hot_upd); err != nil {
 			return nil, err
 		}
-		stats["seq"] = seq
-		stats["seq_tup_read"] = seq_tup_read
-		stats["idx"] = idx
-		stats["idx_tup_fetch"] = idx_tup_fetch
+		stats["ins"] = ins
+		stats["upd"] = upd
+		stats["del"] = del
+		stats["hot_upd"] = hot_upd
 
 		metricStat := MetricStat{
 			database: p.database,

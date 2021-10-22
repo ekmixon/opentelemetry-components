@@ -88,7 +88,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		switch m.Name() {
 		case metadata.M.PostgresqlBlocksRead.Name():
 			dps := m.Sum().DataPoints()
-			require.Equal(t, 24, dps.Len())
+			require.Equal(t, 16, dps.Len())
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
@@ -98,16 +98,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), sourceAttribute.AsString())
 				metrics[attribute] = true
 			}
-			require.Equal(t, 24, len(metrics))
+			require.Equal(t, 16, len(metrics))
 			require.Equal(t, map[string]bool{
-				"postgresql.blocks_read otel _global heap_read":        true,
-				"postgresql.blocks_read otel _global heap_hit":         true,
-				"postgresql.blocks_read otel _global idx_read":         true,
-				"postgresql.blocks_read otel _global idx_hit":          true,
-				"postgresql.blocks_read otel _global toast_read":       true,
-				"postgresql.blocks_read otel _global toast_hit":        true,
-				"postgresql.blocks_read otel _global tidx_read":        true,
-				"postgresql.blocks_read otel _global tidx_hit":         true,
 				"postgresql.blocks_read otel public.table1 heap_read":  true,
 				"postgresql.blocks_read otel public.table1 heap_hit":   true,
 				"postgresql.blocks_read otel public.table1 idx_read":   true,
@@ -155,7 +147,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 
 		case metadata.M.PostgresqlRows.Name():
 			dps := m.Gauge().DataPoints()
-			require.Equal(t, 6, dps.Len())
+			require.Equal(t, 4, dps.Len())
 
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -166,10 +158,8 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), stateAttribute.AsString())
 				metrics[attribute] = true
 			}
-			require.Equal(t, 6, len(metrics))
+			require.Equal(t, 4, len(metrics))
 			require.Equal(t, map[string]bool{
-				"postgresql.rows otel _global live":       true,
-				"postgresql.rows otel _global dead":       true,
 				"postgresql.rows otel public.table1 live": true,
 				"postgresql.rows otel public.table1 dead": true,
 				"postgresql.rows otel public.table2 live": true,
@@ -178,7 +168,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 
 		case metadata.M.PostgresqlOperations.Name():
 			dps := m.Sum().DataPoints()
-			require.Equal(t, 12, dps.Len())
+			require.Equal(t, 8, dps.Len())
 
 			metrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
@@ -189,20 +179,16 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 				attribute := fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), operationAttribute.AsString())
 				metrics[attribute] = true
 			}
-			require.Equal(t, 12, len(metrics))
+			require.Equal(t, 8, len(metrics))
 			require.Equal(t, map[string]bool{
-				"postgresql.operations otel _global seq":                 true,
-				"postgresql.operations otel _global seq_tup_read":        true,
-				"postgresql.operations otel _global idx":                 true,
-				"postgresql.operations otel _global idx_tup_fetch":       true,
-				"postgresql.operations otel public.table1 seq":           true,
-				"postgresql.operations otel public.table1 seq_tup_read":  true,
-				"postgresql.operations otel public.table1 idx":           true,
-				"postgresql.operations otel public.table1 idx_tup_fetch": true,
-				"postgresql.operations otel public.table2 seq":           true,
-				"postgresql.operations otel public.table2 seq_tup_read":  true,
-				"postgresql.operations otel public.table2 idx":           true,
-				"postgresql.operations otel public.table2 idx_tup_fetch": true,
+				"postgresql.operations otel public.table1 del":     true,
+				"postgresql.operations otel public.table1 hot_upd": true,
+				"postgresql.operations otel public.table1 ins":     true,
+				"postgresql.operations otel public.table1 upd":     true,
+				"postgresql.operations otel public.table2 del":     true,
+				"postgresql.operations otel public.table2 hot_upd": true,
+				"postgresql.operations otel public.table2 ins":     true,
+				"postgresql.operations otel public.table2 upd":     true,
 			}, metrics)
 
 		case metadata.M.PostgresqlRollbacks.Name():

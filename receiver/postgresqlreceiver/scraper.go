@@ -95,22 +95,6 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 	operations := initMetric(ilm.Metrics(), metadata.M.PostgresqlOperations).Sum().DataPoints()
 	rollbacks := initMetric(ilm.Metrics(), metadata.M.PostgresqlRollbacks).Gauge().DataPoints()
 
-	// blocks read query
-	blocksReadMetric, err := p.client.getBlocksRead()
-	if err != nil {
-		p.logger.Error("Failed to fetch blocks read", zap.Error(err))
-	} else {
-		for k, v := range blocksReadMetric.stats {
-			attributes := pdata.NewAttributeMap()
-			if i, ok := p.parseInt(k, v); ok {
-				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(blocksReadMetric.database))
-				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(blocksReadMetric.table))
-				attributes.Insert(metadata.L.Source, pdata.NewAttributeValueString(k))
-				addToIntMetric(blocks_read, attributes, i, now)
-			}
-		}
-	}
-
 	// blocks read by table
 	blocksReadByTableMetrics, err := p.client.getBlocksReadByTable()
 	if err != nil {
@@ -171,22 +155,6 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 		}
 	}
 
-	// database rows query
-	databaseRowsMetric, err := p.client.getDatabaseRows()
-	if err != nil {
-		p.logger.Error("Failed to fetch database rows", zap.Error(err))
-	} else {
-		for k, v := range databaseRowsMetric.stats {
-			attributes := pdata.NewAttributeMap()
-			if f, ok := p.parseInt(k, v); ok {
-				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(databaseRowsMetric.database))
-				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(databaseRowsMetric.table))
-				attributes.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
-				addToIntMetric(databaseRows, attributes, f, now)
-			}
-		}
-	}
-
 	// database rows by table
 	databaseRowsByTableMetrics, err := p.client.getDatabaseRowsByTable()
 	if err != nil {
@@ -201,22 +169,6 @@ func (p *postgreSQLScraper) scrape(context.Context) (pdata.ResourceMetricsSlice,
 					attributes.Insert(metadata.L.State, pdata.NewAttributeValueString(k))
 					addToIntMetric(databaseRows, attributes, f, now)
 				}
-			}
-		}
-	}
-
-	// operations query
-	operationsMetric, err := p.client.getOperations()
-	if err != nil {
-		p.logger.Error("Failed to fetch operations", zap.Error(err))
-	} else {
-		for k, v := range operationsMetric.stats {
-			attributes := pdata.NewAttributeMap()
-			if i, ok := p.parseInt(k, v); ok {
-				attributes.Insert(metadata.L.Database, pdata.NewAttributeValueString(operationsMetric.database))
-				attributes.Insert(metadata.L.Table, pdata.NewAttributeValueString(operationsMetric.table))
-				attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(k))
-				addToIntMetric(operations, attributes, i, now)
 			}
 		}
 	}

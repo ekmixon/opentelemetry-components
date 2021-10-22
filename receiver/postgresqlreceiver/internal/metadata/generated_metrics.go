@@ -77,18 +77,6 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
 }
 
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.PostgresqlBackends.Name():   Metrics.PostgresqlBackends.Init,
-		Metrics.PostgresqlBlocksRead.Name(): Metrics.PostgresqlBlocksRead.Init,
-		Metrics.PostgresqlCommits.Name():    Metrics.PostgresqlCommits.Init,
-		Metrics.PostgresqlDbSize.Name():     Metrics.PostgresqlDbSize.Init,
-		Metrics.PostgresqlOperations.Name(): Metrics.PostgresqlOperations.Init,
-		Metrics.PostgresqlRollbacks.Name():  Metrics.PostgresqlRollbacks.Init,
-		Metrics.PostgresqlRows.Name():       Metrics.PostgresqlRows.Init,
-	}
-}
-
 // Metrics contains a set of methods for each metric that help with
 // manipulating those metrics.
 var Metrics = &metricStruct{
@@ -193,15 +181,15 @@ var L = Labels
 
 // LabelOperation are the possible values that the label "operation" can have.
 var LabelOperation = struct {
-	Seq         string
-	SeqTupRead  string
-	Idx         string
-	IdxTupFetch string
+	Ins    string
+	Upd    string
+	Del    string
+	HotUpd string
 }{
-	"seq",
-	"seq_tup_read",
-	"idx",
-	"idx_tup_fetch",
+	"ins",
+	"upd",
+	"del",
+	"hot_upd",
 }
 
 // LabelSource are the possible values that the label "source" can have.

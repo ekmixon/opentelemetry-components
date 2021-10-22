@@ -13,7 +13,6 @@ func (c *fakeClient) Close() error {
 func (c *fakeClient) getCommits() (*MetricStat, error) {
 	return &MetricStat{
 		database: c.database,
-		table:    GlobalTable,
 		stats:    map[string]string{"xact_commit": "1"},
 	}, nil
 }
@@ -21,7 +20,6 @@ func (c *fakeClient) getCommits() (*MetricStat, error) {
 func (c *fakeClient) getRollbacks() (*MetricStat, error) {
 	return &MetricStat{
 		database: c.database,
-		table:    GlobalTable,
 		stats:    map[string]string{"xact_rollback": "2"},
 	}, nil
 }
@@ -29,7 +27,6 @@ func (c *fakeClient) getRollbacks() (*MetricStat, error) {
 func (c *fakeClient) getBackends() (*MetricStat, error) {
 	return &MetricStat{
 		database: c.database,
-		table:    GlobalTable,
 		stats:    map[string]string{"count": "3"},
 	}, nil
 }
@@ -37,16 +34,7 @@ func (c *fakeClient) getBackends() (*MetricStat, error) {
 func (c *fakeClient) getDatabaseSize() (*MetricStat, error) {
 	return &MetricStat{
 		database: c.database,
-		table:    GlobalTable,
 		stats:    map[string]string{"db_size": "4"},
-	}, nil
-}
-
-func (c *fakeClient) getDatabaseRows() (*MetricStat, error) {
-	return &MetricStat{
-		database: c.database,
-		table:    GlobalTable,
-		stats:    map[string]string{"live": "5", "dead": "6"},
 	}, nil
 }
 
@@ -63,23 +51,6 @@ func (c *fakeClient) getDatabaseRowsByTable() ([]*MetricStat, error) {
 		stats:    map[string]string{"live": "9", "dead": "10"},
 	})
 	return metricStats, nil
-}
-
-func (c *fakeClient) getBlocksRead() (*MetricStat, error) {
-	return &MetricStat{
-		database: c.database,
-		table:    GlobalTable,
-		stats: map[string]string{
-			"heap_read":  "11",
-			"heap_hit":   "12",
-			"idx_read":   "13",
-			"idx_hit":    "14",
-			"toast_read": "15",
-			"toast_hit":  "16",
-			"tidx_read":  "17",
-			"tidx_hit":   "18",
-		},
-	}, nil
 }
 
 func (c *fakeClient) getBlocksReadByTable() ([]*MetricStat, error) {
@@ -115,39 +86,26 @@ func (c *fakeClient) getBlocksReadByTable() ([]*MetricStat, error) {
 	return metricStats, nil
 }
 
-func (c *fakeClient) getOperations() (*MetricStat, error) {
-	return &MetricStat{
-		database: c.database,
-		table:    GlobalTable,
-		stats: map[string]string{
-			"seq":           "35",
-			"seq_tup_read":  "36",
-			"idx":           "37",
-			"idx_tup_fetch": "38",
-		},
-	}, nil
-}
-
 func (c *fakeClient) getOperationsByTable() ([]*MetricStat, error) {
 	metricStats := []*MetricStat{}
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
 		table:    "public.table1",
 		stats: map[string]string{
-			"seq":           "39",
-			"seq_tup_read":  "40",
-			"idx":           "41",
-			"idx_tup_fetch": "42",
+			"ins":     "39",
+			"upd":     "40",
+			"del":     "41",
+			"hot_upd": "42",
 		},
 	})
 	metricStats = append(metricStats, &MetricStat{
 		database: c.database,
 		table:    "public.table2",
 		stats: map[string]string{
-			"seq":           "43",
-			"seq_tup_read":  "44",
-			"idx":           "45",
-			"idx_tup_fetch": "46",
+			"ins":     "43",
+			"upd":     "44",
+			"del":     "45",
+			"hot_upd": "46",
 		},
 	})
 	return metricStats, nil
