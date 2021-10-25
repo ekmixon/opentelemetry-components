@@ -18,7 +18,7 @@ metrics:
       type: gauge
     labels: [queue]
   rabbitmq.delivery_rate:
-    description: The rate (per second) at which messages are being delivered. 
+    description: The rate at which messages are being delivered. 
     unit: 1/s
     data:
       type: gauge
@@ -28,10 +28,10 @@ metrics:
     unit: 1
     data:
       type: gauge
-    labels: [queue,state]
+    labels: [queue, state]
   rabbitmq.publish_rate:
-    description: The rate (per second) at which messages are being published. 
-    unit: 1
+    description: The rate at which messages are being published. 
+    unit: 1/s
     data:
       type: gauge
     labels: [queue]
