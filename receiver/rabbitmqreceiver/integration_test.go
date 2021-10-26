@@ -22,46 +22,93 @@ import (
 )
 
 func TestRabbitMQScraperHappyPath(t *testing.T) {
-	container := getContainer(t, containerRequest3_8)
-	defer func() {
-		require.NoError(t, container.Terminate(context.Background()))
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
+	t.Run("running rabbitmq version 3.8 as root", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest3_8_root)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
 
-	f := NewFactory()
-	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "15672"))
-	cfg.Password = "dev"
-	cfg.Username = "dev"
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "15672"))
+		cfg.Username = "dev"
+		cfg.Password = "dev"
 
-	consumer := new(consumertest.MetricsSink)
-	settings := componenttest.NewNopReceiverCreateSettings()
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
 
-	require.NoError(t, err, "failed creating metrics receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.Eventuallyf(t, func() bool {
-		return len(consumer.AllMetrics()) > 0
-	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
 
-	md := consumer.AllMetrics()[0]
-	require.Equal(t, 1, md.ResourceMetrics().Len())
-	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-	metrics := ilms.At(0).Metrics()
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
 
-	validateResult(t, metrics)
+		validateResult(t, metrics)
+	})
+
+	t.Run("running rabbitmq version 3.8 as least privileged user", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest3_8_least_privileged_user)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
+
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = fmt.Sprintf("http://%s", net.JoinHostPort(hostname, "15673"))
+		cfg.Username = "otelu"
+		cfg.Password = "otelp"
+
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.NoError(t, rcvr.Shutdown(context.Background()))
+
+		validateResult(t, metrics)
+	})
 }
 
 var (
-	containerRequest3_8 = testcontainers.ContainerRequest{
+	containerRequest3_8_root = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.rabbitmq",
 		},
 		ExposedPorts: []string{"15672:15672"},
+		WaitingFor: wait.ForListeningPort("15672").
+			WithStartupTimeout(2 * time.Minute),
+	}
+	containerRequest3_8_least_privileged_user = testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.rabbitmq",
+		},
+		ExposedPorts: []string{"15673:15672"},
 		WaitingFor: wait.ForListeningPort("15672").
 			WithStartupTimeout(2 * time.Minute),
 	}
@@ -80,7 +127,7 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
 	require.NoError(t, err)
 	require.Equal(t, 0, code)
-	time.Sleep(time.Second * 6) // TODO customize wait.Strategy
+	time.Sleep(time.Second * 10) // TODO customize wait.Strategy
 	return container
 }
 
