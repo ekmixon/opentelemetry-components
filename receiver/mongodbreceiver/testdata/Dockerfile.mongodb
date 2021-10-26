@@ -1,4 +1,9 @@
 FROM mongo:4.0.25-xenial
 
+COPY scripts/setup.sh /setup.sh
+RUN chmod +x /setup.sh
+
+
 ENV MONGO_INITDB_ROOT_USERNAME=otel
 ENV MONGO_INITDB_ROOT_PASSWORD=otel
+ENV MONGO_INITDB_DATABASE=admin

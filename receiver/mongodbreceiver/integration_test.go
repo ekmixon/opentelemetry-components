@@ -21,46 +21,93 @@ import (
 )
 
 func TestMongoDBIntegration(t *testing.T) {
-	container := getContainer(t, containerRequest4_0)
-	defer func() {
-		require.NoError(t, container.Terminate(context.Background()))
-	}()
-	hostname, err := container.Host(context.Background())
-	require.NoError(t, err)
+	t.Run("running mongodb version 4.0 as root", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest4_0_root)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
 
-	f := NewFactory()
-	cfg := f.CreateDefaultConfig().(*Config)
-	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
-	cfg.Username = "otel"
-	cfg.Password = "otel"
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "37017")
+		cfg.Username = "otel"
+		cfg.Password = "otel"
 
-	consumer := new(consumertest.MetricsSink)
-	settings := componenttest.NewNopReceiverCreateSettings()
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
-	require.NoError(t, err, "failed creating metrics receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.Eventuallyf(t, func() bool {
-		return len(consumer.AllMetrics()) > 0
-	}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
 
-	md := consumer.AllMetrics()[0]
-	require.Equal(t, 1, md.ResourceMetrics().Len())
-	ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
-	require.Equal(t, 1, ilms.Len())
-	metrics := ilms.At(0).Metrics()
-	require.Equal(t, 13, metrics.Len())
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.Equal(t, 13, metrics.Len())
+		require.NoError(t, rcvr.Shutdown(context.Background()))
 
-	validateResult(t, metrics)
+		validateResult(t, metrics)
+	})
+
+	t.Run("running mongodb version 4.0 as least privileged user", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest4_0_least_privileged_user)
+		defer func() {
+			require.NoError(t, container.Terminate(context.Background()))
+		}()
+		hostname, err := container.Host(context.Background())
+		require.NoError(t, err)
+
+		f := NewFactory()
+		cfg := f.CreateDefaultConfig().(*Config)
+		cfg.Endpoint = net.JoinHostPort(hostname, "37018")
+		cfg.Username = "otelu"
+		cfg.Password = "otelp"
+
+		consumer := new(consumertest.MetricsSink)
+		settings := componenttest.NewNopReceiverCreateSettings()
+		rcvr, err := f.CreateMetricsReceiver(context.Background(), settings, cfg, consumer)
+		require.NoError(t, err, "failed creating metrics receiver")
+		require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+		require.Eventuallyf(t, func() bool {
+			return len(consumer.AllMetrics()) > 0
+		}, 2*time.Minute, 1*time.Second, "failed to receive more than 0 metrics")
+
+		md := consumer.AllMetrics()[0]
+		require.Equal(t, 1, md.ResourceMetrics().Len())
+		ilms := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics()
+		require.Equal(t, 1, ilms.Len())
+		metrics := ilms.At(0).Metrics()
+		require.Equal(t, 13, metrics.Len())
+		require.NoError(t, rcvr.Shutdown(context.Background()))
+
+		validateResult(t, metrics)
+	})
 }
 
 var (
-	containerRequest4_0 = testcontainers.ContainerRequest{
+	containerRequest4_0_root = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
 			Dockerfile: "Dockerfile.mongodb",
 		},
 		ExposedPorts: []string{"37017:27017"},
+		WaitingFor: wait.ForListeningPort("27017").
+			WithStartupTimeout(2 * time.Minute),
+	}
+	containerRequest4_0_least_privileged_user = testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:    path.Join(".", "testdata"),
+			Dockerfile: "Dockerfile.mongodb",
+		},
+		ExposedPorts: []string{"37018:27017"},
 		WaitingFor: wait.ForListeningPort("27017").
 			WithStartupTimeout(2 * time.Minute),
 	}
@@ -75,6 +122,10 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 			Started:          true,
 		})
 	require.NoError(t, err)
+
+	code, err := container.Exec(context.Background(), []string{"/setup.sh"})
+	require.NoError(t, err)
+	require.Equal(t, 0, code)
 	return container
 }
 
