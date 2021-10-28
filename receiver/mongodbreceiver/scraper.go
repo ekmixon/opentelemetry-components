@@ -131,6 +131,13 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
+	// Init client in scrape method to create a new connection for each scrape.
+	client, err := r.initClient(r.config.Timeout)
+	if err != nil {
+		r.logger.Error("Failed to connect to client", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
+	}
+	r.client = client
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
@@ -147,12 +154,12 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	}()
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-	err := r.client.Ping(ctx, readpref.PrimaryPreferred())
+	defer cancel()
+	err = r.client.Ping(ctx, readpref.PrimaryPreferred())
 	if err != nil {
 		r.logger.Error("Failed to ping server", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
-	defer cancel()
 
 	return r.collectMetrics(ctx)
 }
