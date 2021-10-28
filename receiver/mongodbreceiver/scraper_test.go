@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestScraper(t *testing.T) {
+func TestCollectMetrics(t *testing.T) {
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
 	cfg.Endpoint = net.JoinHostPort("localhost", "37017")
@@ -23,5 +23,5 @@ func TestScraper(t *testing.T) {
 	expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
 	require.NoError(t, err)
 
-	helper.ScraperTest(t, sc.scrape, expectedFileBytes)
+	helper.ScraperTest(t, sc.collectMetrics, expectedFileBytes)
 }

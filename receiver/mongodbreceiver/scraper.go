@@ -123,7 +123,7 @@ func newMongodbScraper(
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 	client, err := r.initClient(r.config.Timeout)
 	if err != nil {
-		r.logger.Error("Failed to connect to mongodb", zap.Error(err))
+		r.logger.Error("Failed to connect to client", zap.Error(err))
 		return err
 	}
 	r.client = client
@@ -131,31 +131,39 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
-	// Init client in scrape method in case there are transient errors in the
-	// constructor.
+
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
+
 	if err := r.client.Connect(timeoutCtx); err != nil {
-		r.logger.Error("Failed to disconnect from client", zap.Error(err))
+		r.logger.Error("Failed to connect to client", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
 	}
+
 	defer func() {
 		if err := r.client.Disconnect(ctx); err != nil {
 			r.logger.Error("Failed to disconnect from client", zap.Error(err))
 		}
 	}()
 
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	err := r.client.Ping(ctx, readpref.PrimaryPreferred())
 	if err != nil {
-		r.logger.Error("failed to ping server", zap.Error(err))
+		r.logger.Error("Failed to ping server", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
+	defer cancel()
 
+	return r.collectMetrics(ctx)
+}
+
+func (r *mongodbScraper) collectMetrics(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
 	mm := newMetricManager(r.logger, ilm)
 
-	timeoutCtx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
 	dbNames, err := r.client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
