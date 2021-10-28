@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var _ client = (*fakeClient)(nil)
@@ -63,5 +64,9 @@ func (c *fakeClient) ListDatabaseNames(_ context.Context, _ interface{}, _ ...*o
 }
 
 func (c *fakeClient) Connect(_ context.Context) error {
+	return nil
+}
+
+func (c *fakeClient) Ping(ctx context.Context, rp *readpref.ReadPref) error {
 	return nil
 }

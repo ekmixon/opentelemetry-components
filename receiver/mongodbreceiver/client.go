@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.uber.org/zap"
 )
@@ -17,6 +18,7 @@ type client interface {
 	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
 	Disconnect(context.Context) error
 	Connect(context.Context) error
+	Ping(ctx context.Context, rp *readpref.ReadPref) error
 }
 
 var _ client = (*mongodbClient)(nil)

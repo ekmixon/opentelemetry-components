@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -142,6 +143,12 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 			r.logger.Error("Failed to disconnect from client", zap.Error(err))
 		}
 	}()
+
+	err := r.client.Ping(ctx, readpref.PrimaryPreferred())
+	if err != nil {
+		r.logger.Error("failed to ping server", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
+	}
 
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
