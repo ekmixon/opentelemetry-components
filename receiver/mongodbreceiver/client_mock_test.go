@@ -7,11 +7,16 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.uber.org/zap"
 )
 
 var _ client = (*fakeClient)(nil)
 
-type fakeClient struct {
+type fakeClient struct{}
+
+func createFakeClient(config *Config, logger *zap.Logger) (client, error) {
+	return &fakeClient{}, nil
 }
 
 func (c *fakeClient) Disconnect(context.Context) error {
@@ -63,5 +68,9 @@ func (c *fakeClient) ListDatabaseNames(_ context.Context, _ interface{}, _ ...*o
 }
 
 func (c *fakeClient) Connect(_ context.Context) error {
+	return nil
+}
+
+func (c *fakeClient) Ping(ctx context.Context, rp *readpref.ReadPref) error {
 	return nil
 }

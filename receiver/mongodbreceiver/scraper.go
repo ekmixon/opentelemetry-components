@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -18,9 +19,9 @@ import (
 )
 
 type mongodbScraper struct {
-	logger *zap.Logger
-	config *Config
-	client client
+	logger      *zap.Logger
+	config      *Config
+	buildClient buildClient
 }
 
 type numberType int
@@ -107,73 +108,86 @@ var serverStatusMetrics = []mongoMetric{
 	},
 }
 
-func newMongodbScraper(
-	logger *zap.Logger,
-	config *Config,
-) *mongodbScraper {
+func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
 	ms := &mongodbScraper{
-		logger: logger,
-		config: config,
+		logger:      logger,
+		config:      config,
+		buildClient: createClient,
 	}
 
 	return ms
 }
 
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
-	client, err := r.initClient(r.config.Timeout)
-	if err != nil {
-		r.logger.Error("Failed to connect to mongodb", zap.Error(err))
-		return err
-	}
-	r.client = client
+	// TODO: Do a test connection?
 	return nil
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
-	// Init client in scrape method in case there are transient errors in the
-	// constructor.
+	// Init client in scrape method to create a new connection for each scrape.
+	client, err := r.buildClient(r.config, r.logger)
+	if err != nil {
+		r.logger.Error("Failed to create client", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
+	}
+
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
-	if err := r.client.Connect(timeoutCtx); err != nil {
-		r.logger.Error("Failed to disconnect from client", zap.Error(err))
+
+	if err := client.Connect(timeoutCtx); err != nil {
+		r.logger.Error("Failed to connect to client", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
 	}
+
 	defer func() {
-		if err := r.client.Disconnect(ctx); err != nil {
+		if err := client.Disconnect(ctx); err != nil {
 			r.logger.Error("Failed to disconnect from client", zap.Error(err))
 		}
 	}()
 
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	err = client.Ping(ctx, readpref.PrimaryPreferred())
+	if err != nil {
+		r.logger.Error("Failed to ping server", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
+	}
+
+	return r.collectMetrics(ctx, client)
+}
+
+func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pdata.ResourceMetricsSlice, error) {
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
 	mm := newMetricManager(r.logger, ilm)
 
-	timeoutCtx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
-	dbNames, err := r.client.ListDatabaseNames(timeoutCtx, bson.D{})
+	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
-		r.logger.Error("fetch database names", zap.Error(err))
+		r.logger.Error("Failed to fetch database names", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	serverStatus, err := r.client.query(ctx, "admin", bson.M{"serverStatus": 1})
+	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
-		r.logger.Error("query serverStatus in admin", zap.Error(err))
+		r.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
 	} else {
 		r.parseSpecialMetrics(ctx, mm, serverStatus)
 	}
 
 	for _, dbName := range dbNames {
-		dbStats, err := r.client.query(ctx, dbName, bson.M{"dbStats": 1})
+		dbStats, err := client.query(ctx, dbName, bson.M{"dbStats": 1})
 		if err != nil {
-			r.logger.Error("collect dbStats metric", zap.Error(err), zap.String("database", dbName))
+			r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", dbName))
 		} else {
 			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
 		}
 
-		serverStatus, err := r.client.query(ctx, dbName, bson.M{"serverStatus": 1})
+		serverStatus, err := client.query(ctx, dbName, bson.M{"serverStatus": 1})
 		if err != nil {
-			r.logger.Error("collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
+			r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
 		} else {
 			r.parseDatabaseMetrics(ctx, mm, dbName, serverStatusMetrics, serverStatus)
 		}
@@ -211,7 +225,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	cacheMisses, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages read into cache"})
 	if err != nil {
-		r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
+		r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
 		canCalculateCacheHits = false
 	} else {
 		mm.addIntDataPoint(metadata.M.MongodbCacheMisses, cacheMisses, pdata.NewAttributeMap())
@@ -219,7 +233,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	totalCacheRequests, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages requested from the cache"})
 	if err != nil {
-		r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheHits.Name()))
+		r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheHits.Name()))
 		canCalculateCacheHits = false
 	}
 
@@ -239,7 +253,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 	} {
 		count, err := getIntMetricValue(document, []string{"opcounters", operation})
 		if err != nil {
-			r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
+			r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
 		} else {
 			attributes := pdata.NewAttributeMap()
 			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
@@ -266,14 +280,14 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 		case integer:
 			value, err := getIntMetricValue(document, metricRequest.path)
 			if err != nil {
-				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
 			mm.addIntDataPoint(metricRequest.metricDef, value, attributes)
 		case double:
 			value, err := getDoubleMetricValue(document, metricRequest.path)
 			if err != nil {
-				r.logger.Error("parsing: ", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
 			mm.addDoubleDataPoint(metricRequest.metricDef, value, attributes)
@@ -373,6 +387,6 @@ func (m *metricManager) getOrInit(metricDef metadata.MetricIntf) pdata.NumberDat
 		return metric.Gauge().DataPoints()
 	}
 
-	m.logger.Error("unknown type", zap.String("metric", metricDef.Name()))
+	m.logger.Error("Failed to get or init metric of unknown type", zap.String("metric", metricDef.Name()))
 	return pdata.NewNumberDataPointSlice()
 }
