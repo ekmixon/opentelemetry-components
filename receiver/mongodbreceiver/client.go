@@ -29,19 +29,21 @@ type mongodbClient struct {
 	timeout time.Duration
 }
 
-func (r *mongodbScraper) initClient(timeout time.Duration) (*mongodbClient, error) {
+type buildClient func(config *Config, logger *zap.Logger) (client, error)
+
+func createClient(config *Config, logger *zap.Logger) (client, error) {
 	authentication := ""
-	if r.config.Username != "" && r.config.Password != "" {
-		authentication = fmt.Sprintf("%s:%s@", r.config.Username, r.config.Password)
+	if config.Username != "" && config.Password != "" {
+		authentication = fmt.Sprintf("%s:%s@", config.Username, config.Password)
 	}
 
-	uri := fmt.Sprintf("mongodb://%s%s", authentication, r.config.Endpoint)
+	uri := fmt.Sprintf("mongodb://%s%s", authentication, config.Endpoint)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	return &mongodbClient{
 		Client:  client,
-		logger:  r.logger,
-		timeout: timeout,
+		logger:  logger,
+		timeout: config.Timeout,
 	}, err
 }
 
