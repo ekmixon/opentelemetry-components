@@ -44,7 +44,7 @@ metrics:
       type: gauge
     labels: [database_name]
   mongodb.connections:
-    description: The number of active server connections.
+    description: The number of incoming connections from clients to the database server. 
     unit: 1
     data:
       type: gauge

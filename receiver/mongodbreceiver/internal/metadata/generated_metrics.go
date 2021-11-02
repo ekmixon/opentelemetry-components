@@ -133,7 +133,7 @@ var Metrics = &metricStruct{
 		"mongodb.connections",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.connections")
-			metric.SetDescription("The number of active server connections.")
+			metric.SetDescription("The number of incoming connections from clients to the database server.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
