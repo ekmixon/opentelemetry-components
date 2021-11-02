@@ -78,9 +78,22 @@ var dbStatsMetrics = []mongoMetric{
 
 var serverStatusMetrics = []mongoMetric{
 	{
-		metricDef:     metadata.M.MongodbConnections,
-		path:          []string{"connections", "current"},
-		dataPointType: integer,
+		metricDef:        metadata.M.MongodbConnections,
+		path:             []string{"connections", "active"},
+		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Active},
+		dataPointType:    integer,
+	},
+	{
+		metricDef:        metadata.M.MongodbConnections,
+		path:             []string{"connections", "available"},
+		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Available},
+		dataPointType:    integer,
+	},
+	{
+		metricDef:        metadata.M.MongodbConnections,
+		path:             []string{"connections", "current"},
+		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Current},
+		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbMemoryUsage,

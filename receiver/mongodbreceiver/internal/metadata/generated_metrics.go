@@ -133,7 +133,7 @@ var Metrics = &metricStruct{
 		"mongodb.connections",
 		func(metric pdata.Metric) {
 			metric.SetName("mongodb.connections")
-			metric.SetDescription("The number of incoming connections from clients to the database server.")
+			metric.SetDescription("The number of connections.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
@@ -231,6 +231,8 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
+	// ConnectionType (The status of the connection type.)
+	ConnectionType string
 	// DatabaseName (The name of a database.)
 	DatabaseName string
 	// MemoryType (The type of memory used.)
@@ -238,6 +240,7 @@ var Labels = struct {
 	// Operation (The mongoDB operation being counted.)
 	Operation string
 }{
+	"connection_type",
 	"database_name",
 	"memory_type",
 	"operation",
@@ -246,6 +249,17 @@ var Labels = struct {
 // L contains the possible metric labels that can be used. L is an alias for
 // Labels.
 var L = Labels
+
+// LabelConnectionType are the possible values that the label "connection_type" can have.
+var LabelConnectionType = struct {
+	Active    string
+	Available string
+	Current   string
+}{
+	"active",
+	"available",
+	"current",
+}
 
 // LabelMemoryType are the possible values that the label "memory_type" can have.
 var LabelMemoryType = struct {
