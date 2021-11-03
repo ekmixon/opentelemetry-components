@@ -89,6 +89,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	enumAttributeSet := []string{
 		metadata.L.MemoryType,
 		metadata.L.Operation,
+		metadata.L.ConnectionType,
 	}
 
 	for i := 0; i < metrics.Len(); i++ {
@@ -130,7 +131,9 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		"mongodb.cache_hits":                                   true,
 		"mongodb.cache_misses":                                 true,
 		"mongodb.collections database_name":                    true,
-		"mongodb.connections database_name":                    true,
+		"mongodb.connections database_name active":             true,
+		"mongodb.connections database_name available":          true,
+		"mongodb.connections database_name current":            true,
 		"mongodb.data_size database_name":                      true,
 		"mongodb.extents database_name":                        true,
 		"mongodb.global_lock_hold_time":                        true,

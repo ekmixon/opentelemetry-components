@@ -19,6 +19,12 @@ labels:
       - delete
       - getmore
       - command
+  connection_type:
+    description: The status of the connection.
+    enum:
+      - active
+      - available
+      - current
 
 metrics:
   mongodb.cache_hits:
@@ -44,11 +50,11 @@ metrics:
       type: gauge
     labels: [database_name]
   mongodb.connections:
-    description: The number of active server connections.
+    description: The number of connections. 
     unit: 1
     data:
       type: gauge
-    labels: [database_name]
+    labels: [database_name, connection_type]
   mongodb.data_size:
     description: The data size.
     unit: By
