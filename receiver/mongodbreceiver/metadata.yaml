@@ -20,7 +20,7 @@ labels:
       - getmore
       - command
   connection_type:
-    description: The status of the connection type.
+    description: The status of the connection.
     enum:
       - active
       - available

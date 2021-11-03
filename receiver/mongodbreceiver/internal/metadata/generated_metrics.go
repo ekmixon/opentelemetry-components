@@ -231,7 +231,7 @@ var M = Metrics
 
 // Labels contains the possible metric labels that can be used.
 var Labels = struct {
-	// ConnectionType (The status of the connection type.)
+	// ConnectionType (The status of the connection.)
 	ConnectionType string
 	// DatabaseName (The name of a database.)
 	DatabaseName string
