@@ -13,15 +13,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type client interface {
-	query(context.Context, string, bson.M) (bson.M, error)
+type Client interface {
+	Query(context.Context, string, bson.M) (bson.M, error)
 	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
 	Disconnect(context.Context) error
 	Connect(context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
 }
 
-var _ client = (*mongodbClient)(nil)
+var _ Client = (*mongodbClient)(nil)
 
 type mongodbClient struct {
 	*mongo.Client
@@ -29,9 +29,9 @@ type mongodbClient struct {
 	timeout time.Duration
 }
 
-type buildClient func(config *Config, logger *zap.Logger) (client, error)
+type buildClient func(config *Config, logger *zap.Logger) (Client, error)
 
-func createClient(config *Config, logger *zap.Logger) (client, error) {
+func createClient(config *Config, logger *zap.Logger) (Client, error) {
 	authentication := ""
 	if config.Username != "" && config.Password != "" {
 		authentication = fmt.Sprintf("%s:%s@", config.Username, config.Password)
@@ -47,7 +47,7 @@ func createClient(config *Config, logger *zap.Logger) (client, error) {
 	}, err
 }
 
-func (c *mongodbClient) query(ctx context.Context, database string, command bson.M) (bson.M, error) {
+func (c *mongodbClient) Query(ctx context.Context, database string, command bson.M) (bson.M, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	result := c.Database(database).RunCommand(timeoutCtx, command)

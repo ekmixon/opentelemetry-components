@@ -169,7 +169,7 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	return r.collectMetrics(ctx, client)
 }
 
-func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pdata.ResourceMetricsSlice, error) {
+func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pdata.ResourceMetricsSlice, error) {
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
@@ -183,7 +183,7 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pda
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
+	serverStatus, err := client.Query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
 		r.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
 	} else {
@@ -191,14 +191,14 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pda
 	}
 
 	for _, dbName := range dbNames {
-		dbStats, err := client.query(ctx, dbName, bson.M{"dbStats": 1})
+		dbStats, err := client.Query(ctx, dbName, bson.M{"dbStats": 1})
 		if err != nil {
 			r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", dbName))
 		} else {
 			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
 		}
 
-		serverStatus, err := client.query(ctx, dbName, bson.M{"serverStatus": 1})
+		serverStatus, err := client.Query(ctx, dbName, bson.M{"serverStatus": 1})
 		if err != nil {
 			r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
 		} else {
