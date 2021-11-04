@@ -180,7 +180,7 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pda
 	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
 		r.logger.Error("Failed to fetch database names", zap.Error(err))
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.NewResourceMetricsSlice(), err
 	}
 
 	serverStatus, err := client.Query(ctx, "admin", bson.M{"serverStatus": 1})
