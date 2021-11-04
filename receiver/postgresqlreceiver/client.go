@@ -10,13 +10,12 @@ import (
 
 type client interface {
 	Close() error
-	getCommits() (*MetricStat, error)
-	getRollbacks() (*MetricStat, error)
-	getBackends() (*MetricStat, error)
-	getDatabaseSize() (*MetricStat, error)
-	getDatabaseRowsByTable() ([]*MetricStat, error)
-	getBlocksReadByTable() ([]*MetricStat, error)
-	getOperationsByTable() ([]*MetricStat, error)
+	getCommitsAndRollbacks(databases []string) ([]MetricStat, error)
+	getBackends(databases []string) ([]MetricStat, error)
+	getDatabaseSize(databases []string) ([]MetricStat, error)
+	getDatabaseTableMetrics() ([]MetricStat, error)
+	getBlocksReadByTable() ([]MetricStat, error)
+	listDatabases() ([]string, error)
 }
 
 type postgreSQLClient struct {
@@ -27,15 +26,20 @@ type postgreSQLClient struct {
 var _ client = (*postgreSQLClient)(nil)
 
 type postgreSQLConfig struct {
-	username string
-	password string
-	database string
-	endpoint string
+	username  string
+	password  string
+	database  string
+	host      string
+	port      int
+	sslConfig SSLConfig
 }
 
 func newPostgreSQLClient(conf postgreSQLConfig) (*postgreSQLClient, error) {
-	endpoint := strings.Split(conf.endpoint, ":")
-	connStr := fmt.Sprintf("port=%s host=%s user=%s password=%s dbname=%s sslmode=disable", endpoint[1], endpoint[0], conf.username, conf.password, conf.database)
+	dbField := ""
+	if conf.database != "" {
+		dbField = fmt.Sprintf("dbname=%s", conf.database)
+	}
+	connStr := fmt.Sprintf("port=%d host=%s user=%s password=%s %s %s", conf.port, conf.host, conf.username, conf.password, dbField, conf.sslConfig.ConnString())
 
 	conn, err := pq.NewConnector(connStr)
 	if err != nil {
@@ -60,126 +64,39 @@ type MetricStat struct {
 	stats    map[string]string
 }
 
-func (p *postgreSQLClient) getCommits() (*MetricStat, error) {
-	query := fmt.Sprintf("SELECT xact_commit FROM pg_stat_database WHERE datname = '%s';", p.database)
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func (p *postgreSQLClient) getCommitsAndRollbacks(databases []string) ([]MetricStat, error) {
+	query := filterQueryByDatabases("SELECT datname, xact_commit, xact_rollback FROM pg_stat_database", databases, false)
 
-	var metricStat MetricStat
-	for rows.Next() {
-		var commit string
-		if err := rows.Scan(&commit); err != nil {
-			return nil, err
-		}
-		metricStat = MetricStat{
-			database: p.database,
-			stats:    map[string]string{"xact_commit": commit},
-		}
-	}
-	return &metricStat, nil
+	return p.collectStatsFromQuery(query, []string{"xact_commit", "xact_rollback"}, true, false)
 }
 
-func (p *postgreSQLClient) getRollbacks() (*MetricStat, error) {
-	query := fmt.Sprintf("SELECT xact_rollback FROM pg_stat_database WHERE datname = '%s';", p.database)
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func (p *postgreSQLClient) getBackends(databases []string) ([]MetricStat, error) {
+	query := filterQueryByDatabases("SELECT datname, count(*) as count from pg_stat_activity", databases, true)
 
-	var metricStat MetricStat
-	for rows.Next() {
-		var rollback string
-		if err := rows.Scan(&rollback); err != nil {
-			return nil, err
-		}
-		metricStat = MetricStat{
-			database: p.database,
-			stats:    map[string]string{"xact_rollback": rollback},
-		}
-
-	}
-	return &metricStat, nil
+	return p.collectStatsFromQuery(query, []string{"count"}, true, false)
 }
 
-func (p *postgreSQLClient) getBackends() (*MetricStat, error) {
-	query := fmt.Sprintf("SELECT count(*) as count from pg_stat_activity WHERE datname = '%s'", p.database)
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func (p *postgreSQLClient) getDatabaseSize(databases []string) ([]MetricStat, error) {
+	query := filterQueryByDatabases("SELECT datname, pg_database_size(datname) FROM pg_catalog.pg_database WHERE datistemplate = false", databases, false)
 
-	var metricStat MetricStat
-	for rows.Next() {
-		var count string
-		if err := rows.Scan(&count); err != nil {
-			return nil, err
-		}
-		metricStat = MetricStat{
-			database: p.database,
-			stats:    map[string]string{"count": count},
-		}
-
-	}
-	return &metricStat, nil
+	return p.collectStatsFromQuery(query, []string{"db_size"}, true, false)
 }
 
-func (p *postgreSQLClient) getDatabaseSize() (*MetricStat, error) {
-	query := fmt.Sprintf("SELECT pg_database_size('%s') as size;", p.database)
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var metricStat MetricStat
-	for rows.Next() {
-		var size string
-		if err := rows.Scan(&size); err != nil {
-			return nil, err
-		}
-
-		metricStat = MetricStat{
-			database: p.database,
-			stats:    map[string]string{"db_size": size},
-		}
-
-	}
-	return &metricStat, nil
-}
-
-func (p *postgreSQLClient) getDatabaseRowsByTable() ([]*MetricStat, error) {
-	query := `SELECT schemaname, relname,
-	n_live_tup AS live, n_dead_tup AS dead 
+func (p *postgreSQLClient) getDatabaseTableMetrics() ([]MetricStat, error) {
+	query := `SELECT schemaname || '.' || relname AS table,
+	n_live_tup AS live,
+	n_dead_tup AS dead,
+	n_tup_ins AS ins,
+	n_tup_upd AS upd,
+	n_tup_del AS del,
+	n_tup_hot_upd AS hot_upd
 	FROM pg_stat_user_tables;`
-	rows, err := p.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
-	metricStats := []*MetricStat{}
-	for rows.Next() {
-		var schemaname, relname, live, dead string
-		if err := rows.Scan(&schemaname, &relname, &live, &dead); err != nil {
-			return nil, err
-		}
-		metricStat := MetricStat{
-			database: p.database,
-			table:    fmt.Sprintf("%s.%s", schemaname, relname),
-			stats:    map[string]string{"live": live, "dead": dead},
-		}
-		metricStats = append(metricStats, &metricStat)
-	}
-	return metricStats, nil
+	return p.collectStatsFromQuery(query, []string{"live", "dead", "ins", "upd", "del", "hot_upd"}, false, true)
 }
 
-func (p *postgreSQLClient) getBlocksReadByTable() ([]*MetricStat, error) {
-	query := `SELECT schemaname, relname, 
+func (p *postgreSQLClient) getBlocksReadByTable() ([]MetricStat, error) {
+	query := `SELECT schemaname || '.' || relname AS table, 
 	coalesce(heap_blks_read, 0) AS heap_read, 
 	coalesce(heap_blks_hit, 0) AS heap_hit, 
 	coalesce(idx_blks_read, 0) AS idx_read, 
@@ -189,69 +106,104 @@ func (p *postgreSQLClient) getBlocksReadByTable() ([]*MetricStat, error) {
 	coalesce(tidx_blks_read, 0) AS tidx_read, 
 	coalesce(tidx_blks_hit, 0) AS tidx_hit 
 	FROM pg_statio_user_tables;`
+
+	return p.collectStatsFromQuery(query, []string{"heap_read", "heap_hit", "idx_read", "idx_hit", "toast_read", "toast_hit", "tidx_read", "tidx_hit"}, false, true)
+}
+
+func (p *postgreSQLClient) collectStatsFromQuery(query string, orderedFields []string, includeDatabase bool, includeTable bool) ([]MetricStat, error) {
 	rows, err := p.client.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	metricStats := []*MetricStat{}
+	metricStats := []MetricStat{}
 	for rows.Next() {
+		rowFields := make([]interface{}, 0)
+
+		// Build a list of addresses that rows.Scan will load column data into
+		appendField := func(val string) {
+			rowFields = append(rowFields, &val)
+		}
+
+		if includeDatabase {
+			appendField("")
+		}
+		if includeTable {
+			appendField("")
+		}
+		for range orderedFields {
+			appendField("")
+		}
+
 		stats := map[string]string{}
-		var schemaname, relname, heapRead, heapHit, idxRead, idxHit, toastRead, toastHit, tidxRead, tidxHit string
-		if err := rows.Scan(&schemaname, &relname, &heapRead, &heapHit, &idxRead, &idxHit, &toastRead, &toastHit, &tidxRead, &tidxHit); err != nil {
+		if err := rows.Scan(rowFields...); err != nil {
 			return nil, err
 		}
-		stats["heap_read"] = heapRead
-		stats["heap_hit"] = heapHit
-		stats["idx_read"] = idxRead
-		stats["idx_hit"] = idxHit
-		stats["toast_read"] = toastRead
-		stats["toast_hit"] = toastHit
-		stats["tidx_read"] = tidxRead
-		stats["tidx_hit"] = tidxHit
 
-		metricStat := MetricStat{
-			database: p.database,
-			table:    fmt.Sprintf("%s.%s", schemaname, relname),
-			stats:    stats,
+		convertInterfaceToString := func(input interface{}) string {
+			if val, ok := input.(*string); ok {
+				return *val
+			}
+			return ""
 		}
-		metricStats = append(metricStats, &metricStat)
+
+		database := p.database
+		if includeDatabase {
+			database, rowFields = convertInterfaceToString(rowFields[0]), rowFields[1:]
+		}
+		table := ""
+		if includeTable {
+			table, rowFields = convertInterfaceToString(rowFields[0]), rowFields[1:]
+		}
+		for idx, val := range rowFields {
+			stats[orderedFields[idx]] = convertInterfaceToString(val)
+		}
+		metricStats = append(metricStats, MetricStat{
+			database: database,
+			table:    table,
+			stats:    stats,
+		})
 	}
 	return metricStats, nil
 }
 
-func (p *postgreSQLClient) getOperationsByTable() ([]*MetricStat, error) {
-	query := `SELECT schemaname, relname,
-	n_tup_ins AS ins,
-	n_tup_upd AS upd,
-	n_tup_del AS del,
-	n_tup_hot_upd AS hot_upd
-	FROM pg_stat_user_tables;`
+func (p *postgreSQLClient) listDatabases() ([]string, error) {
+	query := `SELECT datname FROM pg_database
+	WHERE datistemplate = false;`
 	rows, err := p.client.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	metricStats := []*MetricStat{}
+	databases := []string{}
 	for rows.Next() {
-		stats := map[string]string{}
-		var schemaname, relname, ins, upd, del, hot_upd string
-		if err := rows.Scan(&schemaname, &relname, &ins, &upd, &del, &hot_upd); err != nil {
+		var database string
+		if err := rows.Scan(&database); err != nil {
 			return nil, err
 		}
-		stats["ins"] = ins
-		stats["upd"] = upd
-		stats["del"] = del
-		stats["hot_upd"] = hot_upd
 
-		metricStat := MetricStat{
-			database: p.database,
-			table:    fmt.Sprintf("%s.%s", schemaname, relname),
-			stats:    stats,
-		}
-		metricStats = append(metricStats, &metricStat)
+		databases = append(databases, database)
 	}
-	return metricStats, nil
+	return databases, nil
+}
+
+func filterQueryByDatabases(baseQuery string, databases []string, groupBy bool) string {
+	if len(databases) > 0 {
+		queryDatabases := []string{}
+		for _, db := range databases {
+			queryDatabases = append(queryDatabases, fmt.Sprintf("'%s'", db))
+		}
+		if strings.Contains(baseQuery, "WHERE") {
+			baseQuery += fmt.Sprintf(" AND datname IN (%s)", strings.Join(queryDatabases, ","))
+		} else {
+			baseQuery += fmt.Sprintf(" WHERE datname IN (%s)", strings.Join(queryDatabases, ","))
+		}
+	}
+	if groupBy {
+		baseQuery += " GROUP BY datname"
+	}
+
+	return baseQuery + ";"
 }

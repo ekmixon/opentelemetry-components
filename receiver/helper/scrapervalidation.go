@@ -75,7 +75,7 @@ func CompareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
 		}
 
 		if actualDataPoints.Len() != expectedDataPoints.Len() {
-			return fmt.Errorf("length of datapoints don't match")
+			return fmt.Errorf("length of datapoints don't match for metric %s, expected: %d, actual %d", actual.Name(), expectedDataPoints.Len(), actualDataPoints.Len())
 		}
 
 		dataPointMatches := 0

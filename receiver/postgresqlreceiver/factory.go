@@ -30,7 +30,8 @@ func createDefaultConfig() config.Receiver {
 			ReceiverSettings:   config.NewReceiverSettings(config.NewID(typeStr)),
 			CollectionInterval: 10 * time.Second,
 		},
-		Endpoint: "localhost:5432",
+		Host: "localhost",
+		Port: 5432,
 	}
 }
 

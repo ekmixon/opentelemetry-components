@@ -23,7 +23,8 @@ func TestValidConfig(t *testing.T) {
 	cfg := factory.CreateDefaultConfig().(*Config)
 	cfg.Username = "otel"
 	cfg.Password = "otel"
-	cfg.Endpoint = "localhost:5432"
+	cfg.Host = "localhost"
+	cfg.Port = 5432
 	require.NoError(t, cfg.Validate())
 }
 
@@ -37,10 +38,11 @@ func TestCreateMetricsReceiver(t *testing.T) {
 				ReceiverSettings:   config.NewReceiverSettings(config.NewID("postgresql")),
 				CollectionInterval: 10 * time.Second,
 			},
-			Username: "otel",
-			Password: "otel",
-			Database: "otel",
-			Endpoint: "localhost:5432",
+			Username:  "otel",
+			Password:  "otel",
+			Databases: []string{"otel"},
+			Host:      "localhost",
+			Port:      5432,
 		},
 		consumertest.NewNop(),
 	)

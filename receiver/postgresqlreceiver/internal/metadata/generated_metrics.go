@@ -137,7 +137,9 @@ var Metrics = &metricStruct{
 			metric.SetName("postgresql.rollbacks")
 			metric.SetDescription("The number of rollbacks.")
 			metric.SetUnit("")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{

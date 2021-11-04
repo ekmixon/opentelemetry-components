@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-collector v0.0.3-0.20211006225201-9fda76b49539
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/lib/pq v1.9.0
+	github.com/lib/pq v1.10.3
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.36.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.36.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/observiqexporter v0.36.0

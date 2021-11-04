@@ -63,7 +63,7 @@ metrics:
     description: The number of rollbacks.
     units: 1
     data:
-      type: gauge
+      type: sum
       monotonic: true
       aggregation: cumulative
     labels: [ database ]
