@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 )
 
@@ -92,7 +93,7 @@ func TestScrapeErrorBuildClient(t *testing.T) {
 	f := NewFactory()
 	cfg := f.CreateDefaultConfig().(*Config)
 
-	obs, _ := observer.New(zap.ErrorLevel)
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	createClient := func(config *Config, logger *zap.Logger) (Client, error) {
 		return nil, errors.New("buildClient error")
@@ -107,6 +108,16 @@ func TestScrapeErrorBuildClient(t *testing.T) {
 	rms, err := scraper.scrape(context.Background())
 	require.EqualError(t, errors.New("buildClient error"), err.Error())
 	require.Equal(t, pdata.NewResourceMetricsSlice(), rms)
+
+	require.Equal(t, 1, logs.Len())
+	require.Equal(t, []observer.LoggedEntry{
+		observer.LoggedEntry{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to create client"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("buildClient error")),
+			},
+		},
+	}, logs.AllUntimed())
 }
 
 func TestScrapeErrorConnect(t *testing.T) {
@@ -116,7 +127,7 @@ func TestScrapeErrorConnect(t *testing.T) {
 	mockClient := &mocks.Client{}
 	mockClient.On("Connect", mock.Anything).Return(errors.New("connection error"))
 
-	obs, _ := observer.New(zap.ErrorLevel)
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	createClient := func(config *Config, logger *zap.Logger) (Client, error) {
 		return mockClient, nil
@@ -131,6 +142,16 @@ func TestScrapeErrorConnect(t *testing.T) {
 	rms, err := scraper.scrape(context.Background())
 	require.EqualError(t, errors.New("connection error"), err.Error())
 	require.Equal(t, pdata.NewResourceMetricsSlice(), rms)
+
+	require.Equal(t, 1, logs.Len())
+	require.Equal(t, []observer.LoggedEntry{
+		observer.LoggedEntry{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to connect to client"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("connection error")),
+			},
+		},
+	}, logs.AllUntimed())
 }
 
 func TestScrapeErrorPing(t *testing.T) {
@@ -142,7 +163,7 @@ func TestScrapeErrorPing(t *testing.T) {
 	mockClient.On("Ping", mock.Anything, readpref.PrimaryPreferred()).Return(errors.New("ping error"))
 	mockClient.On("Disconnect", mock.Anything).Return(nil)
 
-	obs, _ := observer.New(zap.ErrorLevel)
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	createClient := func(config *Config, logger *zap.Logger) (Client, error) {
 		return mockClient, nil
@@ -157,6 +178,16 @@ func TestScrapeErrorPing(t *testing.T) {
 	rms, err := scraper.scrape(context.Background())
 	require.EqualError(t, errors.New("ping error"), err.Error())
 	require.Equal(t, pdata.NewResourceMetricsSlice(), rms)
+
+	require.Equal(t, 1, logs.Len())
+	require.Equal(t, []observer.LoggedEntry{
+		observer.LoggedEntry{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to ping server"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("ping error")),
+			},
+		},
+	}, logs.AllUntimed())
 }
 
 func TestScrapeErrorListDatabaseNames(t *testing.T) {
@@ -169,7 +200,7 @@ func TestScrapeErrorListDatabaseNames(t *testing.T) {
 	mockClient.On("Disconnect", mock.Anything).Return(nil)
 	mockClient.On("ListDatabaseNames", mock.Anything, bson.D{}).Return(nil, errors.New("list database names error"))
 
-	obs, _ := observer.New(zap.ErrorLevel)
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	createClient := func(config *Config, logger *zap.Logger) (Client, error) {
 		return mockClient, nil
@@ -184,6 +215,16 @@ func TestScrapeErrorListDatabaseNames(t *testing.T) {
 	rms, err := scraper.scrape(context.Background())
 	require.EqualError(t, errors.New("list database names error"), err.Error())
 	require.Equal(t, pdata.NewResourceMetricsSlice(), rms)
+
+	require.Equal(t, 1, logs.Len())
+	require.Equal(t, []observer.LoggedEntry{
+		observer.LoggedEntry{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to fetch database names"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("list database names error")),
+			},
+		},
+	}, logs.AllUntimed())
 }
 
 func TestScrapeErrorDisconnect(t *testing.T) {
@@ -211,8 +252,7 @@ func TestScrapeErrorDisconnect(t *testing.T) {
 
 	mockClient.On("Disconnect", mock.Anything).Return(errors.New("disconnect error"))
 
-	obs, _ := observer.New(zap.ErrorLevel)
-	// TODO: test logger when defer Disconnect
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	createClient := func(config *Config, logger *zap.Logger) (Client, error) {
 		return mockClient, nil
@@ -228,6 +268,14 @@ func TestScrapeErrorDisconnect(t *testing.T) {
 	require.NoError(t, err)
 
 	helper.ScraperTest(t, scraper.scrape, expectedFileBytes)
+
+	require.Equal(t,
+		observer.LoggedEntry{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to disconnect from client"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("disconnect error")),
+			},
+		}, logs.AllUntimed()[len(logs.AllUntimed())-1])
 }
 
 func TestScrapeNoErrEmptyMetricsErrorLogs(t *testing.T) {
@@ -240,11 +288,11 @@ func TestScrapeNoErrEmptyMetricsErrorLogs(t *testing.T) {
 	mockClient.On("Disconnect", mock.Anything).Return(nil)
 	mockClient.On("ListDatabaseNames", mock.Anything, bson.D{}).Return(databaseNames, nil)
 
-	mockClient.On("Query", mock.Anything, databaseNames[0], serverStatusQuery).Return(nil, errors.New("admin specialMetrics error"))
+	mockClient.On("Query", mock.Anything, databaseNames[0], serverStatusQuery).Return(nil, errors.New("admin serverStatus error"))
 
 	// admin
 	mockClient.On("Query", mock.Anything, databaseNames[0], dbStatusQuery).Return(bson.M{}, errors.New("admin dbstats error"))
-	mockClient.On("Query", mock.Anything, databaseNames[0], serverStatusQuery).Return(bson.M{}, errors.New("admin serverStatus error"))
+	mockClient.On("Query", mock.Anything, databaseNames[0], serverStatusQuery).Return(bson.M{}, errors.New("admin serverStatus error")).Twice()
 
 	// config
 	mockClient.On("Query", mock.Anything, databaseNames[1], dbStatusQuery).Return(bson.M{}, errors.New("config dbstats error"))
@@ -258,7 +306,7 @@ func TestScrapeNoErrEmptyMetricsErrorLogs(t *testing.T) {
 		return mockClient, nil
 	}
 
-	obs, _ := observer.New(zap.ErrorLevel)
+	obs, logs := observer.New(zap.ErrorLevel)
 
 	scraper := mongodbScraper{
 		logger:      zap.New(obs),
@@ -270,6 +318,62 @@ func TestScrapeNoErrEmptyMetricsErrorLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	helper.ScraperTest(t, scraper.scrape, expectedFileBytes)
+
+	expectedLogs := []observer.LoggedEntry{
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to query serverStatus in admin"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("admin serverStatus error")),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect dbStats metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("admin dbstats error")),
+				zap.String("database", "admin"),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect serverStatus metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("admin serverStatus error")),
+				zap.String("database", "admin"),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect dbStats metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("config dbstats error")),
+				zap.String("database", "config"),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect serverStatus metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("config serverStatus error")),
+				zap.String("database", "config"),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect dbStats metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("local dbstats error")),
+				zap.String("database", "local"),
+			},
+		},
+		{
+			Entry: zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to collect serverStatus metric"},
+			Context: []zapcore.Field{
+				zap.Error(errors.New("local serverStatus error")),
+				zap.String("database", "local"),
+			},
+		},
+	}
+
+	require.Equal(t, len(expectedLogs), logs.Len())
+	for i, actualLog := range logs.AllUntimed() {
+		require.Equal(t, expectedLogs[i], actualLog)
+	}
 }
 
 func TestStart(t *testing.T) {
