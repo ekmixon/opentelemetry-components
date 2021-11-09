@@ -6,19 +6,25 @@ labels:
   http_method:
     description: An HTTP request method.
     enum: [ COPY, DELETE, GET, HEAD, OPTIONS, POST, PUT ]
-  response_code:
+  status_code:
     description: An HTTP status code.
     enum: [ http_200, http_201, http_202, http_204, http_206, http_301, http_302, http_304, http_400, http_401, http_403, http_404, http_405, http_406, http_409, http_412, http_413, http_414, http_415, http_416, http_417, http_500, http_501, http_503]
+  view:
+    description: The number of views read by type.
+    enum: [ views_read, temporary_views_read]
+  operation:
+    description: The number of operations performed.
+    enum: [ reads, writes]
 
 metrics:
   couchdb.request_time:
-    description: The average request time.
-    unit: 1
+    description: The length of a request inside CouchDB without MochiWeb.
+    unit: s
     data:
       type: gauge
     labels: [ node_name ]
-  couchdb.httpd.bulk_requests:
-    description: The bulk request count.
+  couchdb.bulk_requests:
+    description: The number of bulk requests.
     unit: 1
     data:
       type: sum
@@ -26,13 +32,15 @@ metrics:
       aggregation: cumulative
     labels: [ node_name ]
   couchdb.requests:
-    description: The requests count.
+    description: The number of HTTP requests.
     unit: 1
     data:
-      type: gauge
+      type: sum
+      monotonic: true
+      aggregation: cumulative
     labels: [ node_name ]
   couchdb.httpd.request_methods:
-    description: The HTTP request method count.
+    description: The number of HTTP requests by method.
     unit: 1
     data:
       type: sum
@@ -40,29 +48,21 @@ metrics:
       aggregation: cumulative
     labels: [ node_name, http_method ]
   couchdb.httpd.response_codes:
-    description: The HTTP request method count.
+    description: TThe number of HTTP response codes by status.
     unit: 1
     data:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name, response_code ]
-  couchdb.httpd.temporary_view_reads:
-    description: The temporary view reads count.
+    labels: [ node_name, status_code ]
+  couchdb.views:
+    description: The number of view read.
     unit: 1
     data:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
-  couchdb.view_reads:
-    description: The view reads count.
-    unit: 1
-    data:
-      type: sum
-      monotonic: true
-      aggregation: cumulative
-    labels: [ node_name ]
+    labels: [ node_name, view ]
   couchdb.open_databases:
     description: The number of open databases.
     unit: 1
@@ -70,24 +70,16 @@ metrics:
       type: gauge
     labels: [ node_name ]
   couchdb.open_files:
-    description: The number of open files.
+    description: The number of file descriptors CouchDB has open
     unit: 1
     data:
       type: gauge
     labels: [ node_name ]
-  couchdb.reads:
-    description: The database read count.
+  couchdb.database_operations:
+    description: The number of database operations.
     unit: 1
     data:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
-  couchdb.writes:
-    description: The database write count.
-    unit: 1
-    data:
-      type: sum
-      monotonic: true
-      aggregation: cumulative
-    labels: [ node_name ]
+    labels: [ node_name, operation ]

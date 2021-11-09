@@ -41,48 +41,42 @@ func (m *metricImpl) Init(metric pdata.Metric) {
 }
 
 type metricStruct struct {
-	CouchdbHttpdBulkRequests       MetricIntf
-	CouchdbHttpdRequestMethods     MetricIntf
-	CouchdbHttpdResponseCodes      MetricIntf
-	CouchdbHttpdTemporaryViewReads MetricIntf
-	CouchdbOpenDatabases           MetricIntf
-	CouchdbOpenFiles               MetricIntf
-	CouchdbReads                   MetricIntf
-	CouchdbRequestTime             MetricIntf
-	CouchdbRequests                MetricIntf
-	CouchdbViewReads               MetricIntf
-	CouchdbWrites                  MetricIntf
+	CouchdbBulkRequests        MetricIntf
+	CouchdbDatabaseOperations  MetricIntf
+	CouchdbHttpdRequestMethods MetricIntf
+	CouchdbHttpdResponseCodes  MetricIntf
+	CouchdbOpenDatabases       MetricIntf
+	CouchdbOpenFiles           MetricIntf
+	CouchdbRequestTime         MetricIntf
+	CouchdbRequests            MetricIntf
+	CouchdbViews               MetricIntf
 }
 
 // Names returns a list of all the metric name strings.
 func (m *metricStruct) Names() []string {
 	return []string{
-		"couchdb.httpd.bulk_requests",
+		"couchdb.bulk_requests",
+		"couchdb.database_operations",
 		"couchdb.httpd.request_methods",
 		"couchdb.httpd.response_codes",
-		"couchdb.httpd.temporary_view_reads",
 		"couchdb.open_databases",
 		"couchdb.open_files",
-		"couchdb.reads",
 		"couchdb.request_time",
 		"couchdb.requests",
-		"couchdb.view_reads",
-		"couchdb.writes",
+		"couchdb.views",
 	}
 }
 
 var metricsByName = map[string]MetricIntf{
-	"couchdb.httpd.bulk_requests":        Metrics.CouchdbHttpdBulkRequests,
-	"couchdb.httpd.request_methods":      Metrics.CouchdbHttpdRequestMethods,
-	"couchdb.httpd.response_codes":       Metrics.CouchdbHttpdResponseCodes,
-	"couchdb.httpd.temporary_view_reads": Metrics.CouchdbHttpdTemporaryViewReads,
-	"couchdb.open_databases":             Metrics.CouchdbOpenDatabases,
-	"couchdb.open_files":                 Metrics.CouchdbOpenFiles,
-	"couchdb.reads":                      Metrics.CouchdbReads,
-	"couchdb.request_time":               Metrics.CouchdbRequestTime,
-	"couchdb.requests":                   Metrics.CouchdbRequests,
-	"couchdb.view_reads":                 Metrics.CouchdbViewReads,
-	"couchdb.writes":                     Metrics.CouchdbWrites,
+	"couchdb.bulk_requests":         Metrics.CouchdbBulkRequests,
+	"couchdb.database_operations":   Metrics.CouchdbDatabaseOperations,
+	"couchdb.httpd.request_methods": Metrics.CouchdbHttpdRequestMethods,
+	"couchdb.httpd.response_codes":  Metrics.CouchdbHttpdResponseCodes,
+	"couchdb.open_databases":        Metrics.CouchdbOpenDatabases,
+	"couchdb.open_files":            Metrics.CouchdbOpenFiles,
+	"couchdb.request_time":          Metrics.CouchdbRequestTime,
+	"couchdb.requests":              Metrics.CouchdbRequests,
+	"couchdb.views":                 Metrics.CouchdbViews,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -93,10 +87,21 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 // manipulating those metrics.
 var Metrics = &metricStruct{
 	&metricImpl{
-		"couchdb.httpd.bulk_requests",
+		"couchdb.bulk_requests",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd.bulk_requests")
-			metric.SetDescription("The bulk request count.")
+			metric.SetName("couchdb.bulk_requests")
+			metric.SetDescription("The number of bulk requests.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.Sum().SetIsMonotonic(true)
+			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+		},
+	},
+	&metricImpl{
+		"couchdb.database_operations",
+		func(metric pdata.Metric) {
+			metric.SetName("couchdb.database_operations")
+			metric.SetDescription("The number of database operations.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -107,7 +112,7 @@ var Metrics = &metricStruct{
 		"couchdb.httpd.request_methods",
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.httpd.request_methods")
-			metric.SetDescription("The HTTP request method count.")
+			metric.SetDescription("The number of HTTP requests by method.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -118,18 +123,7 @@ var Metrics = &metricStruct{
 		"couchdb.httpd.response_codes",
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.httpd.response_codes")
-			metric.SetDescription("The HTTP request method count.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
-		},
-	},
-	&metricImpl{
-		"couchdb.httpd.temporary_view_reads",
-		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd.temporary_view_reads")
-			metric.SetDescription("The temporary view reads count.")
+			metric.SetDescription("TThe number of HTTP response codes by status.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -149,28 +143,17 @@ var Metrics = &metricStruct{
 		"couchdb.open_files",
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.open_files")
-			metric.SetDescription("The number of open files.")
+			metric.SetDescription("The number of file descriptors CouchDB has open")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
-	&metricImpl{
-		"couchdb.reads",
-		func(metric pdata.Metric) {
-			metric.SetName("couchdb.reads")
-			metric.SetDescription("The database read count.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeSum)
-			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
 		"couchdb.request_time",
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.request_time")
-			metric.SetDescription("The average request time.")
-			metric.SetUnit("1")
+			metric.SetDescription("The length of a request inside CouchDB without MochiWeb.")
+			metric.SetUnit("s")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
@@ -178,16 +161,7 @@ var Metrics = &metricStruct{
 		"couchdb.requests",
 		func(metric pdata.Metric) {
 			metric.SetName("couchdb.requests")
-			metric.SetDescription("The requests count.")
-			metric.SetUnit("1")
-			metric.SetDataType(pdata.MetricDataTypeGauge)
-		},
-	},
-	&metricImpl{
-		"couchdb.view_reads",
-		func(metric pdata.Metric) {
-			metric.SetName("couchdb.view_reads")
-			metric.SetDescription("The view reads count.")
+			metric.SetDescription("The number of HTTP requests.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -195,10 +169,10 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"couchdb.writes",
+		"couchdb.views",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.writes")
-			metric.SetDescription("The database write count.")
+			metric.SetName("couchdb.views")
+			metric.SetDescription("The number of view read.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
@@ -217,12 +191,18 @@ var Labels = struct {
 	HTTPMethod string
 	// NodeName (The name of the node.)
 	NodeName string
-	// ResponseCode (An HTTP status code.)
-	ResponseCode string
+	// Operation (The number of operations performed.)
+	Operation string
+	// StatusCode (An HTTP status code.)
+	StatusCode string
+	// View (The number of views read by type.)
+	View string
 }{
 	"http_method",
 	"node_name",
-	"response_code",
+	"operation",
+	"status_code",
+	"view",
 }
 
 // L contains the possible metric labels that can be used. L is an alias for
@@ -248,8 +228,17 @@ var LabelHTTPMethod = struct {
 	"PUT",
 }
 
-// LabelResponseCode are the possible values that the label "response_code" can have.
-var LabelResponseCode = struct {
+// LabelOperation are the possible values that the label "operation" can have.
+var LabelOperation = struct {
+	Reads  string
+	Writes string
+}{
+	"reads",
+	"writes",
+}
+
+// LabelStatusCode are the possible values that the label "status_code" can have.
+var LabelStatusCode = struct {
 	HTTP200 string
 	HTTP201 string
 	HTTP202 string
@@ -299,4 +288,13 @@ var LabelResponseCode = struct {
 	"http_500",
 	"http_501",
 	"http_503",
+}
+
+// LabelView are the possible values that the label "view" can have.
+var LabelView = struct {
+	ViewsRead          string
+	TemporaryViewsRead string
+}{
+	"views_read",
+	"temporary_views_read",
 }

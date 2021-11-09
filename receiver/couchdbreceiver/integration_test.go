@@ -133,11 +133,11 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 		case metadata.M.CouchdbRequestTime.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())
-		case metadata.M.CouchdbHttpdBulkRequests.Name():
+		case metadata.M.CouchdbBulkRequests.Name():
 			dps := m.Sum().DataPoints()
 			require.Equal(t, 1, dps.Len())
 		case metadata.M.CouchdbRequests.Name():
-			dps := m.Gauge().DataPoints()
+			dps := m.Sum().DataPoints()
 			require.Equal(t, 1, dps.Len())
 		case metadata.M.CouchdbHttpdRequestMethods.Name():
 			dps := m.Sum().DataPoints()
@@ -169,7 +169,7 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			respondCodeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				code, _ := dp.Attributes().Get(metadata.L.ResponseCode)
+				code, _ := dp.Attributes().Get(metadata.L.StatusCode)
 				attribute := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
 				respondCodeMetrics[attribute] = true
 			}
@@ -202,24 +202,46 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 				"couchdb.httpd.response_codes code:response_503": true,
 			},
 				respondCodeMetrics)
-		case metadata.M.CouchdbHttpdTemporaryViewReads.Name():
+		case metadata.M.CouchdbViews.Name():
 			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
-		case metadata.M.CouchdbViewReads.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
+			require.Equal(t, 2, dps.Len())
+
+			viewsMetrics := map[string]bool{}
+			for j := 0; j < dps.Len(); j++ {
+				dp := dps.At(j)
+				code, _ := dp.Attributes().Get(metadata.L.View)
+				attribute := fmt.Sprintf("%s view:%s", m.Name(), code.AsString())
+				viewsMetrics[attribute] = true
+			}
+
+			require.Equal(t, 2, len(viewsMetrics))
+			require.Equal(t, map[string]bool{
+				"couchdb.views view:views_read":           true,
+				"couchdb.views view:temporary_views_read": true,
+			}, viewsMetrics)
 		case metadata.M.CouchdbOpenDatabases.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())
 		case metadata.M.CouchdbOpenFiles.Name():
 			dps := m.Gauge().DataPoints()
 			require.Equal(t, 1, dps.Len())
-		case metadata.M.CouchdbReads.Name():
+		case metadata.M.CouchdbDatabaseOperations.Name():
 			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
-		case metadata.M.CouchdbWrites.Name():
-			dps := m.Sum().DataPoints()
-			require.Equal(t, 1, dps.Len())
+			require.Equal(t, 2, dps.Len())
+
+			databaseOperationsMetrics := map[string]bool{}
+			for j := 0; j < dps.Len(); j++ {
+				dp := dps.At(j)
+				code, _ := dp.Attributes().Get(metadata.L.Operation)
+				attribute := fmt.Sprintf("%s operation:%s", m.Name(), code.AsString())
+				databaseOperationsMetrics[attribute] = true
+			}
+
+			require.Equal(t, 2, len(databaseOperationsMetrics))
+			require.Equal(t, map[string]bool{
+				"couchdb.database_operations operation:reads":  true,
+				"couchdb.database_operations operation:writes": true,
+			}, databaseOperationsMetrics)
 		default:
 			require.Nil(t, m.Name(), fmt.Sprintf("metrics %s not expected", m.Name()))
 		}
