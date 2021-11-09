@@ -57,10 +57,10 @@ type metricStruct struct {
 // Names returns a list of all the metric name strings.
 func (m *metricStruct) Names() []string {
 	return []string{
-		"couchdb.httpd_bulk_requests",
-		"couchdb.httpd_request_methods",
-		"couchdb.httpd_response_codes",
-		"couchdb.httpd_temporary_view_reads",
+		"couchdb.httpd.bulk_requests",
+		"couchdb.httpd.request_methods",
+		"couchdb.httpd.response_codes",
+		"couchdb.httpd.temporary_view_reads",
 		"couchdb.open_databases",
 		"couchdb.open_files",
 		"couchdb.reads",
@@ -72,10 +72,10 @@ func (m *metricStruct) Names() []string {
 }
 
 var metricsByName = map[string]MetricIntf{
-	"couchdb.httpd_bulk_requests":        Metrics.CouchdbHttpdBulkRequests,
-	"couchdb.httpd_request_methods":      Metrics.CouchdbHttpdRequestMethods,
-	"couchdb.httpd_response_codes":       Metrics.CouchdbHttpdResponseCodes,
-	"couchdb.httpd_temporary_view_reads": Metrics.CouchdbHttpdTemporaryViewReads,
+	"couchdb.httpd.bulk_requests":        Metrics.CouchdbHttpdBulkRequests,
+	"couchdb.httpd.request_methods":      Metrics.CouchdbHttpdRequestMethods,
+	"couchdb.httpd.response_codes":       Metrics.CouchdbHttpdResponseCodes,
+	"couchdb.httpd.temporary_view_reads": Metrics.CouchdbHttpdTemporaryViewReads,
 	"couchdb.open_databases":             Metrics.CouchdbOpenDatabases,
 	"couchdb.open_files":                 Metrics.CouchdbOpenFiles,
 	"couchdb.reads":                      Metrics.CouchdbReads,
@@ -93,9 +93,9 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 // manipulating those metrics.
 var Metrics = &metricStruct{
 	&metricImpl{
-		"couchdb.httpd_bulk_requests",
+		"couchdb.httpd.bulk_requests",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd_bulk_requests")
+			metric.SetName("couchdb.httpd.bulk_requests")
 			metric.SetDescription("The bulk request count.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -104,9 +104,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"couchdb.httpd_request_methods",
+		"couchdb.httpd.request_methods",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd_request_methods")
+			metric.SetName("couchdb.httpd.request_methods")
 			metric.SetDescription("The HTTP request method count.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -115,9 +115,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"couchdb.httpd_response_codes",
+		"couchdb.httpd.response_codes",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd_response_codes")
+			metric.SetName("couchdb.httpd.response_codes")
 			metric.SetDescription("The HTTP request method count.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -126,9 +126,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"couchdb.httpd_temporary_view_reads",
+		"couchdb.httpd.temporary_view_reads",
 		func(metric pdata.Metric) {
-			metric.SetName("couchdb.httpd_temporary_view_reads")
+			metric.SetName("couchdb.httpd.temporary_view_reads")
 			metric.SetDescription("The temporary view reads count.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)

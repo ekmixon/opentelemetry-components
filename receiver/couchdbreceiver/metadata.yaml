@@ -17,7 +17,7 @@ metrics:
     data:
       type: gauge
     labels: [ node_name ]
-  couchdb.httpd_bulk_requests:
+  couchdb.httpd.bulk_requests:
     description: The bulk request count.
     unit: 1
     data:
@@ -31,7 +31,7 @@ metrics:
     data:
       type: gauge
     labels: [ node_name ]
-  couchdb.httpd_request_methods:
+  couchdb.httpd.request_methods:
     description: The HTTP request method count.
     unit: 1
     data:
@@ -39,7 +39,7 @@ metrics:
       monotonic: true
       aggregation: cumulative
     labels: [ node_name, http_method ]
-  couchdb.httpd_response_codes:
+  couchdb.httpd.response_codes:
     description: The HTTP request method count.
     unit: 1
     data:
@@ -47,7 +47,7 @@ metrics:
       monotonic: true
       aggregation: cumulative
     labels: [ node_name, response_code ]
-  couchdb.httpd_temporary_view_reads:
+  couchdb.httpd.temporary_view_reads:
     description: The temporary view reads count.
     unit: 1
     data:
