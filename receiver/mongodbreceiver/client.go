@@ -93,7 +93,7 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 }
 
 func uri(username, password, endpoint string) string {
-	return fmt.Sprintf("mongodb://%s:%s", authenticationString(username, password), endpoint)
+	return fmt.Sprintf("mongodb://%s%s", authenticationString(username, password), endpoint)
 }
 
 func authenticationString(username, password string) string {
