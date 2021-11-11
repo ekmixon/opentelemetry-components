@@ -27,6 +27,7 @@ type Client interface {
 type mongoClient interface {
 	Database(string, ...*options.DatabaseOptions) *mongo.Database
 	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
+	Connect(context.Context) error
 	Disconnect(context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
 }
@@ -57,15 +58,17 @@ func (c *mongodbClient) Connect(ctx context.Context) error {
 		return fmt.Errorf("unable to create mongo client: %w", err)
 	}
 
-	c.logger.Info(fmt.Sprintf("Attempting to connect to mongo at %s", c.endpoint))
-	if err := c.Ping(ctx, readpref.PrimaryPreferred()); err != nil {
-		return fmt.Errorf("error connecting to the mongo instance: %w", err)
+	c.logger.Debug(fmt.Sprintf("attempting to connect to mongo server at %s", c.endpoint))
+	if err := c.client.Connect(ctx); err != nil {
+		return fmt.Errorf("unable to open connection")
 	}
+	c.logger.Debug("Connection established")
 	return nil
 }
 
 // Disconnect closes attempts to close any open connections
 func (c *mongodbClient) Disconnect(ctx context.Context) error {
+	c.logger.Debug("Disconnecting from mongo")
 	if c.client != nil {
 		return c.client.Disconnect(ctx)
 	}
@@ -92,11 +95,13 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 }
 
 func (c *mongodbClient) initClient() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri(c.username, c.password, c.endpoint)))
-	if err != nil {
-		return fmt.Errorf("error creating mongo client: %w", err)
+	if c.client == nil {
+		client, err := mongo.NewClient(options.Client().ApplyURI(uri(c.username, c.password, c.endpoint)))
+		if err != nil {
+			return fmt.Errorf("error creating mongo client: %w", err)
+		}
+		c.client = client
 	}
-	c.client = client
 	return nil
 }
 

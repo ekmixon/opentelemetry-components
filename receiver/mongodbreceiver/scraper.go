@@ -152,6 +152,7 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
+
 	if err := r.client.Connect(timeoutCtx); err != nil {
 		r.logger.Error("Failed to connect to client", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err

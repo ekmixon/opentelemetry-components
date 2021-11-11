@@ -53,49 +53,83 @@ func (c *fakeClient) Database(name string, opts ...*options.DatabaseOptions) *mo
 	return args.Get(0).(*mongo.Database)
 }
 
-func (c *fakeClient) TestBadClientBadEndpoint(t *testing.T) {
-	_ = NewClient(&Config{
+func (c *fakeClient) TestValidClient(t *testing.T) {
+	client := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
 		TCPAddr: confignet.TCPAddr{
-			Endpoint: "ht13a://notvalid:9090",
+			Endpoint: "localhost:27017",
 		},
-		Username: "not valid",
-		Password: "not valid",
+		Username: "username",
+		Password: "password",
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
 
-	// require.Error(t, err)
+	require.NotNil(t, client)
 }
 
-func TestBadClientUnreachable(t *testing.T) {
+func TestBadClientNonTCPAddr(t *testing.T) {
 	cl := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
 		TCPAddr: confignet.TCPAddr{
-			Endpoint: "http://notvalid:9090",
+			Endpoint: "/dev/null",
 		},
-		Username: "not valid",
-		Password: "not valid",
-		Timeout:  1 * time.Second,
+		Timeout: 1 * time.Second,
 	}, zap.NewNop())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	err := cl.Connect(ctx)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "unable to create mongo client")
+}
+
+func TestBadClientConnectionError(t *testing.T) {
+	mongoClient := &fakeClient{}
+	mongoClient.On("Connect", mock.Anything).Return(fmt.Errorf("connection closed"))
+
+	client := mongodbClient{
+		endpoint: "localhost:40091",
+		client:   mongoClient,
+		logger:   zap.NewNop(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := client.Connect(ctx)
+	require.Contains(t, err.Error(), "unable to open connection")
+	mongoClient.AssertExpectations(t)
+}
+
+func TestSuccessfulConnection(t *testing.T) {
+	mongoClient := &fakeClient{}
+	mongoClient.On("Connect", mock.Anything).Return(nil)
+
+	client := mongodbClient{
+		endpoint: "localhost:40091",
+		client:   mongoClient,
+		logger:   zap.NewNop(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := client.Connect(ctx)
+	require.NoError(t, err)
+
+	mongoClient.AssertExpectations(t)
 }
 
 func TestInitClientBadHost(t *testing.T) {
-	fakeMongoClient := &fakeClient{}
 
 	client := mongodbClient{
 		username: "admin",
 		password: "password",
 		endpoint: "x:localhost:27017:another_uri",
-		client:   fakeMongoClient,
 		logger:   zap.NewNop(),
 	}
 
@@ -113,6 +147,17 @@ func TestDisconnectSuccess(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+
+	err := client.Disconnect(ctx)
+	require.NoError(t, err)
+}
+
+func TestDisconnectNoClient(t *testing.T) {
+	client := mongodbClient{
+		logger: zap.NewNop(),
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	err := client.Disconnect(ctx)
 	require.NoError(t, err)
