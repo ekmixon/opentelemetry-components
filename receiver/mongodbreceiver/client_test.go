@@ -29,7 +29,8 @@ func (c *fakeClient) Disconnect(ctx context.Context) error {
 }
 
 func (c *fakeClient) Query(ctx context.Context, database string, command bson.M) (bson.M, error) {
-	return nil, nil
+	args := c.Called(ctx, database, command)
+	return args.Get(0).(bson.M), args.Error(1)
 }
 
 func (c *fakeClient) ListDatabaseNames(ctx context.Context, filter interface{}, options ...*options.ListDatabasesOptions) ([]string, error) {
@@ -52,8 +53,8 @@ func (c *fakeClient) Database(name string, opts ...*options.DatabaseOptions) *mo
 	return args.Get(0).(*mongo.Database)
 }
 
-func TestBadConnect(t *testing.T) {
-	client := NewClient(&Config{
+func TestBadClientConfiguration(t *testing.T) {
+	_, err := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -64,17 +65,13 @@ func TestBadConnect(t *testing.T) {
 		Password: "not valid",
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	err := client.Connect(ctx)
 	require.NotNil(t, err)
 }
 
-func TestConnect(t *testing.T) {
+func TestConnectFailure(t *testing.T) {
 	fakeMongoClient := &fakeClient{}
+	fakeMongoClient.On("Ping", mock.Anything, mock.Anything).Return(fmt.Errorf("error connecting"))
 
-	fakeMongoClient.On("Ping").Return(fmt.Errorf("error connecting"))
 	client := mongodbClient{
 		client: fakeMongoClient,
 		logger: zap.NewNop(),
@@ -87,4 +84,52 @@ func TestConnect(t *testing.T) {
 	require.NotNil(t, err)
 
 	fakeMongoClient.AssertExpectations(t)
+}
+
+func TestConnectSuccess(t *testing.T) {
+	fakeMongoClient := &fakeClient{}
+	fakeMongoClient.On("Ping", mock.Anything, mock.Anything).Return(nil)
+
+	client := mongodbClient{
+		client: fakeMongoClient,
+		logger: zap.NewNop(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := client.Connect(ctx)
+	require.Nil(t, err)
+
+	fakeMongoClient.AssertExpectations(t)
+}
+
+func TestDisconnectSuccess(t *testing.T) {
+	fakeMongoClient := &fakeClient{}
+	fakeMongoClient.On("Disconnect", mock.Anything).Return(nil)
+
+	client := mongodbClient{
+		client: fakeMongoClient,
+		logger: zap.NewNop(),
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := client.Disconnect(ctx)
+	require.NoError(t, err)
+}
+
+func TestDisconnectFailure(t *testing.T) {
+	fakeMongoClient := &fakeClient{}
+	fakeMongoClient.On("Disconnect", mock.Anything).Return(fmt.Errorf("connection terminated by peer"))
+
+	client := mongodbClient{
+		client: fakeMongoClient,
+		logger: zap.NewNop(),
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := client.Disconnect(ctx)
+	require.Error(t, err)
 }

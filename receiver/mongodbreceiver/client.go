@@ -28,7 +28,6 @@ type mongoClient interface {
 	Database(string, ...*options.DatabaseOptions) *mongo.Database
 	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
 	Disconnect(context.Context) error
-	Connect(context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
 }
 
@@ -42,23 +41,24 @@ type mongodbClient struct {
 }
 
 // NewClient creates a new client to connect and query to mongo
-func NewClient(config *Config, logger *zap.Logger) Client {
+func NewClient(config *Config, logger *zap.Logger) (Client, error) {
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri(config.Username, config.Password, config.Endpoint)))
+	if err != nil {
+		return nil, fmt.Errorf("error creating mongo client: %w", err)
+	}
 	return &mongodbClient{
 		endpoint: config.Endpoint,
 		username: config.Username,
 		password: config.Password,
 		timeout:  config.Timeout,
 		logger:   logger,
-	}
+		client:   client,
+	}, nil
 }
 
 // Connect establishes a connection to mongodb instance
 func (c *mongodbClient) Connect(ctx context.Context) error {
 	c.logger.Debug(fmt.Sprintf("Attempting to connect to mongo at %s", c.endpoint))
-	if err := c.initClient(); err != nil {
-		return err
-	}
-
 	if err := c.Ping(ctx, readpref.PrimaryPreferred()); err != nil {
 		return fmt.Errorf("unable to ping mongo instance: %w", err)
 	}
@@ -73,9 +73,9 @@ func (c *mongodbClient) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-// ListDatabaseNames
-func (c *mongodbClient) ListDatabaseNames(ctx context.Context, bson interface{}, options ...*options.ListDatabasesOptions) ([]string, error) {
-	return c.client.ListDatabaseNames(ctx, bson, options...)
+// ListDatabaseNames gets a list of the database name given a filter
+func (c *mongodbClient) ListDatabaseNames(ctx context.Context, filters interface{}, options ...*options.ListDatabasesOptions) ([]string, error) {
+	return c.client.ListDatabaseNames(ctx, filters, options...)
 }
 
 func (c *mongodbClient) Ping(ctx context.Context, rp *readpref.ReadPref) error {
@@ -92,19 +92,13 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 	return document, err
 }
 
-func (c *mongodbClient) initClient() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(c.uri()))
-	if err != nil {
-		return fmt.Errorf("error creating mongo client: %w", err)
+func uri(username, password, endpoint string) string {
+	return fmt.Sprintf("mongodb://%s:%s", authenticationString(username, password), endpoint)
+}
+
+func authenticationString(username, password string) string {
+	if username != "" && password != "" {
+		return fmt.Sprintf("%s:%s@", username, password)
 	}
-	c.client = client
-	return nil
-}
-
-func (c *mongodbClient) uri() string {
-	return fmt.Sprintf("mongodb://%s:%s@", c.authenticationString(), c.endpoint)
-}
-
-func (c *mongodbClient) authenticationString() string {
-	return fmt.Sprintf("%s:%s@", c.username, c.password)
+	return ""
 }
