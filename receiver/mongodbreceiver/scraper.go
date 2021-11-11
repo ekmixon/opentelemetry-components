@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -19,9 +18,9 @@ import (
 )
 
 type mongodbScraper struct {
-	logger      *zap.Logger
-	config      *Config
-	buildClient buildClient
+	logger *zap.Logger
+	config *Config
+	client Client
 }
 
 type numberType int
@@ -122,54 +121,59 @@ var serverStatusMetrics = []mongoMetric{
 }
 
 func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
+	client := NewClient(config, logger)
 	ms := &mongodbScraper{
-		logger:      logger,
-		config:      config,
-		buildClient: createClient,
+		logger: logger,
+		config: config,
+		client: client,
 	}
 
 	return ms
 }
 
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
-	// TODO: Do a test connection?
+	if err := r.client.Connect(ctx); err != nil {
+		return fmt.Errorf("unable to connect: %w", err)
+	}
 	return nil
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
 	// Init client in scrape method to create a new connection for each scrape.
-	client, err := r.buildClient(r.config, r.logger)
-	if err != nil {
-		r.logger.Error("Failed to create client", zap.Error(err))
-		return pdata.NewResourceMetricsSlice(), err
+	// err := r.client.Connect(ctx)
+	// if err != nil {
+	// 	r.logger.Error("Failed to create client", zap.Error(err))
+	// 	return pdata.NewResourceMetricsSlice(), err
+	// }
+	if r.client == nil {
+		return pdata.NewResourceMetricsSlice(), errors.New("no client was initialized before calling scrape")
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
-
-	if err := client.Connect(timeoutCtx); err != nil {
+	if err := r.client.Connect(timeoutCtx); err != nil {
 		r.logger.Error("Failed to connect to client", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
 
 	defer func() {
-		if err := client.Disconnect(ctx); err != nil {
+		if err := r.client.Disconnect(ctx); err != nil {
 			r.logger.Error("Failed to disconnect from client", zap.Error(err))
 		}
 	}()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.PrimaryPreferred())
-	if err != nil {
-		r.logger.Error("Failed to ping server", zap.Error(err))
-		return pdata.NewResourceMetricsSlice(), err
-	}
+	// ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	// defer cancel()
+	// err := r.client.Ping(ctx, readpref.PrimaryPreferred())
+	// if err != nil {
+	// 	r.logger.Error("Failed to ping server", zap.Error(err))
+	// 	return pdata.NewResourceMetricsSlice(), err
+	// }
 
-	return r.collectMetrics(ctx, client)
+	return r.collectMetrics(ctx, r.client)
 }
 
-func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pdata.ResourceMetricsSlice, error) {
+func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pdata.ResourceMetricsSlice, error) {
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
@@ -183,7 +187,7 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pda
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
-	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
+	serverStatus, err := client.Query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
 		r.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
 	} else {
@@ -191,14 +195,14 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pda
 	}
 
 	for _, dbName := range dbNames {
-		dbStats, err := client.query(ctx, dbName, bson.M{"dbStats": 1})
+		dbStats, err := client.Query(ctx, dbName, bson.M{"dbStats": 1})
 		if err != nil {
 			r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", dbName))
 		} else {
 			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
 		}
 
-		serverStatus, err := client.query(ctx, dbName, bson.M{"serverStatus": 1})
+		serverStatus, err := client.Query(ctx, dbName, bson.M{"serverStatus": 1})
 		if err != nil {
 			r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
 		} else {
