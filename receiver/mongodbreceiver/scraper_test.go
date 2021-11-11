@@ -24,6 +24,7 @@ func TestScrape(t *testing.T) {
 	client := &fakeClient{}
 	client.On("Connect", mock.Anything).Return(nil)
 	client.On("Disconnect", mock.Anything).Return(nil)
+	client.On("Ping", mock.Anything, mock.Anything).Return(nil)
 	client.On("ListDatabaseNames", mock.Anything, mock.Anything, mock.Anything).Return(databaseList, nil)
 	client.On("Query", mock.Anything, "admin", mock.Anything).Return(loadAdminData())
 	client.On("Query", mock.Anything, mock.Anything, bson.M{"serverStatus": 1}).Return(loadServerStatus())
