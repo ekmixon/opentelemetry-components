@@ -41,24 +41,23 @@ type mongodbClient struct {
 }
 
 // NewClient creates a new client to connect and query to mongo
-func NewClient(config *Config, logger *zap.Logger) (Client, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri(config.Username, config.Password, config.Endpoint)))
-	if err != nil {
-		return nil, fmt.Errorf("error creating mongo client: %w", err)
-	}
+func NewClient(config *Config, logger *zap.Logger) Client {
 	return &mongodbClient{
 		endpoint: config.Endpoint,
 		username: config.Username,
 		password: config.Password,
 		timeout:  config.Timeout,
 		logger:   logger,
-		client:   client,
-	}, nil
+	}
 }
 
 // Connect establishes a connection to mongodb instance
 func (c *mongodbClient) Connect(ctx context.Context) error {
-	c.logger.Debug(fmt.Sprintf("Attempting to connect to mongo at %s", c.endpoint))
+	if err := c.initClient(); err != nil {
+		return fmt.Errorf("unable to create mongo client: %w", err)
+	}
+
+	c.logger.Info(fmt.Sprintf("Attempting to connect to mongo at %s", c.endpoint))
 	if err := c.Ping(ctx, readpref.PrimaryPreferred()); err != nil {
 		return fmt.Errorf("error connecting to the mongo instance: %w", err)
 	}
@@ -90,6 +89,15 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 	var document bson.M
 	err := result.Decode(&document)
 	return document, err
+}
+
+func (c *mongodbClient) initClient() error {
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri(c.username, c.password, c.endpoint)))
+	if err != nil {
+		return fmt.Errorf("error creating mongo client: %w", err)
+	}
+	c.client = client
+	return nil
 }
 
 func uri(username, password, endpoint string) string {

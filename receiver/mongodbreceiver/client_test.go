@@ -54,7 +54,7 @@ func (c *fakeClient) Database(name string, opts ...*options.DatabaseOptions) *mo
 }
 
 func (c *fakeClient) TestBadClientBadEndpoint(t *testing.T) {
-	_, err := NewClient(&Config{
+	_ = NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -66,11 +66,11 @@ func (c *fakeClient) TestBadClientBadEndpoint(t *testing.T) {
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
 
-	require.Error(t, err)
+	// require.Error(t, err)
 }
 
 func TestBadClientUnreachable(t *testing.T) {
-	cl, err := NewClient(&Config{
+	cl := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -82,48 +82,25 @@ func TestBadClientUnreachable(t *testing.T) {
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
 
-	require.Nil(t, err)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	err = cl.Connect(ctx)
+	err := cl.Connect(ctx)
 	require.NotNil(t, err)
 }
 
-func TestConnectFailure(t *testing.T) {
+func TestInitClientBadHost(t *testing.T) {
 	fakeMongoClient := &fakeClient{}
-	fakeMongoClient.On("Ping", mock.Anything, mock.Anything).Return(fmt.Errorf("error connecting"))
 
 	client := mongodbClient{
-		client: fakeMongoClient,
-		logger: zap.NewNop(),
+		username: "admin",
+		password: "password",
+		endpoint: "x:localhost:27017:another_uri",
+		client:   fakeMongoClient,
+		logger:   zap.NewNop(),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	err := client.Connect(ctx)
-	require.NotNil(t, err)
-
-	fakeMongoClient.AssertExpectations(t)
-}
-
-func TestConnectSuccess(t *testing.T) {
-	fakeMongoClient := &fakeClient{}
-	fakeMongoClient.On("Ping", mock.Anything, mock.Anything).Return(nil)
-
-	client := mongodbClient{
-		client: fakeMongoClient,
-		logger: zap.NewNop(),
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	err := client.Connect(ctx)
-	require.Nil(t, err)
-
-	fakeMongoClient.AssertExpectations(t)
+	err := client.initClient()
+	require.Error(t, err)
 }
 
 func TestDisconnectSuccess(t *testing.T) {
