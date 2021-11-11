@@ -120,15 +120,18 @@ var serverStatusMetrics = []mongoMetric{
 	},
 }
 
-func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
-	client := NewClient(config, logger)
+func newMongodbScraper(logger *zap.Logger, config *Config) (*mongodbScraper, error) {
+	client, err := NewClient(config, logger)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create mongo client for scraping: %w", err)
+	}
 	ms := &mongodbScraper{
 		logger: logger,
 		config: config,
 		client: client,
 	}
 
-	return ms
+	return ms, nil
 }
 
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
