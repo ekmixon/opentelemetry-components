@@ -60,7 +60,7 @@ func NewClient(config *Config, logger *zap.Logger) (Client, error) {
 func (c *mongodbClient) Connect(ctx context.Context) error {
 	c.logger.Debug(fmt.Sprintf("Attempting to connect to mongo at %s", c.endpoint))
 	if err := c.Ping(ctx, readpref.PrimaryPreferred()); err != nil {
-		return fmt.Errorf("unable to ping mongo instance: %w", err)
+		return fmt.Errorf("error connecting to the mongo instance: %w", err)
 	}
 	return nil
 }

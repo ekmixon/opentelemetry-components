@@ -53,8 +53,24 @@ func (c *fakeClient) Database(name string, opts ...*options.DatabaseOptions) *mo
 	return args.Get(0).(*mongo.Database)
 }
 
-func TestBadClientConfiguration(t *testing.T) {
+func (c *fakeClient) TestBadClientBadEndpoint(t *testing.T) {
 	_, err := NewClient(&Config{
+		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
+			CollectionInterval: 10 * time.Second,
+		},
+		TCPAddr: confignet.TCPAddr{
+			Endpoint: "ht13a://notvalid:9090",
+		},
+		Username: "not valid",
+		Password: "not valid",
+		Timeout:  1 * time.Second,
+	}, zap.NewNop())
+
+	require.Error(t, err)
+}
+
+func TestBadClientUnreachable(t *testing.T) {
+	cl, err := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -65,6 +81,12 @@ func TestBadClientConfiguration(t *testing.T) {
 		Password: "not valid",
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
+
+	require.Nil(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err = cl.Connect(ctx)
 	require.NotNil(t, err)
 }
 
