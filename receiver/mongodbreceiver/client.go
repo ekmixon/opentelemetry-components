@@ -80,10 +80,12 @@ func (c *mongodbClient) ListDatabaseNames(ctx context.Context, filters interface
 	return c.client.ListDatabaseNames(ctx, filters, options...)
 }
 
+// Ping validates that the connection is truly reachable. Relies on connection to be established via `Connect()`
 func (c *mongodbClient) Ping(ctx context.Context, rp *readpref.ReadPref) error {
 	return c.client.Ping(ctx, rp)
 }
 
+// Query executes a query against a database. Relies on connection to be established via `Connect()`
 func (c *mongodbClient) Query(ctx context.Context, database string, command bson.M) (bson.M, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()

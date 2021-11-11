@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -130,7 +131,7 @@ func newMongodbScraper(logger *zap.Logger, config *Config) (*mongodbScraper, err
 }
 
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
-	clientLogger := r.logger.Named("client")
+	clientLogger := r.logger.Named("mongo-client")
 	client := NewClient(r.config, clientLogger)
 	r.client = client
 	if err := r.client.Connect(ctx); err != nil {
@@ -140,12 +141,6 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 }
 
 func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
-	// Init client in scrape method to create a new connection for each scrape.
-	// err := r.client.Connect(ctx)
-	// if err != nil {
-	// 	r.logger.Error("Failed to create client", zap.Error(err))
-	// 	return pdata.NewResourceMetricsSlice(), err
-	// }
 	if r.client == nil {
 		return pdata.NewResourceMetricsSlice(), errors.New("no client was initialized before calling scrape")
 	}
@@ -164,13 +159,13 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		}
 	}()
 
-	// ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-	// defer cancel()
-	// err := r.client.Ping(ctx, readpref.PrimaryPreferred())
-	// if err != nil {
-	// 	r.logger.Error("Failed to ping server", zap.Error(err))
-	// 	return pdata.NewResourceMetricsSlice(), err
-	// }
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	err := r.client.Ping(ctx, readpref.PrimaryPreferred())
+	if err != nil {
+		r.logger.Error("Failed to ping server", zap.Error(err))
+		return pdata.NewResourceMetricsSlice(), err
+	}
 
 	return r.collectMetrics(ctx, r.client)
 }
