@@ -81,51 +81,13 @@ func TestBadClientNonTCPAddr(t *testing.T) {
 	}, zap.NewNop())
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 	err := cl.Connect(ctx)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "unable to create mongo client")
+	require.Contains(t, err.Error(), "unable to instantiate mongo client")
 }
 
-func TestBadClientConnectionError(t *testing.T) {
-	mongoClient := &fakeClient{}
-	mongoClient.On("Connect", mock.Anything).Return(fmt.Errorf("connection closed"))
-
-	client := mongodbClient{
-		endpoint: "localhost:40091",
-		client:   mongoClient,
-		logger:   zap.NewNop(),
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	err := client.Connect(ctx)
-	require.Contains(t, err.Error(), "unable to open connection")
-	mongoClient.AssertExpectations(t)
-}
-
-func TestSuccessfulConnection(t *testing.T) {
-	mongoClient := &fakeClient{}
-	mongoClient.On("Connect", mock.Anything).Return(nil)
-
-	client := mongodbClient{
-		endpoint: "localhost:40091",
-		client:   mongoClient,
-		logger:   zap.NewNop(),
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	err := client.Connect(ctx)
-	require.NoError(t, err)
-
-	mongoClient.AssertExpectations(t)
-}
-
-func TestInitClientBadHost(t *testing.T) {
-
+func TestInitClientBadEndpoint(t *testing.T) {
 	client := mongodbClient{
 		username: "admin",
 		password: "password",
@@ -133,8 +95,12 @@ func TestInitClientBadHost(t *testing.T) {
 		logger:   zap.NewNop(),
 	}
 
-	err := client.initClient()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := client.ensureClient(ctx)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "error creating")
 }
 
 func TestDisconnectSuccess(t *testing.T) {
@@ -172,7 +138,7 @@ func TestDisconnectFailure(t *testing.T) {
 		logger: zap.NewNop(),
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 
 	err := client.Disconnect(ctx)
 	require.Error(t, err)

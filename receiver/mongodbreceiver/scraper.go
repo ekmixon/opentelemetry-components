@@ -125,7 +125,6 @@ func newMongodbScraper(logger *zap.Logger, config *Config) (*mongodbScraper, err
 	ms := &mongodbScraper{
 		logger: logger,
 		config: config,
-		// client: client,
 	}
 	return ms, nil
 }
@@ -134,8 +133,12 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 	clientLogger := r.logger.Named("mongo-client")
 	client := NewClient(r.config, clientLogger)
 	r.client = client
-	if err := r.client.Connect(ctx); err != nil {
-		return fmt.Errorf("unable to connect: %w", err)
+	return nil
+}
+
+func (r *mongodbScraper) shutdown(ctx context.Context) error {
+	if r.client != nil {
+		r.client.Disconnect(ctx)
 	}
 	return nil
 }
@@ -152,12 +155,6 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 		r.logger.Error("Failed to connect to client", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
-
-	defer func() {
-		if err := r.client.Disconnect(ctx); err != nil {
-			r.logger.Error("Failed to disconnect from client", zap.Error(err))
-		}
-	}()
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
