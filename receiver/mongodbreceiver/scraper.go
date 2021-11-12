@@ -138,7 +138,7 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 
 func (r *mongodbScraper) shutdown(ctx context.Context) error {
 	if r.client != nil {
-		r.client.Disconnect(ctx)
+		return r.client.Disconnect(ctx)
 	}
 	return nil
 }
