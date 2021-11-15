@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -181,30 +182,46 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pda
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go r.collectAdminDatabase(ctx, wg, mm, client)
+
+	for _, dbName := range dbNames {
+		wg.Add(1)
+		go r.collectDatabase(ctx, wg, mm, client, dbName)
+	}
+
+	wg.Wait()
+
+	return rms, nil
+}
+
+func (r *mongodbScraper) collectDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client, databaseName string) {
+	defer wg.Done()
+	dbStats, err := client.Query(ctx, databaseName, bson.M{"dbStats": 1})
+	if err != nil {
+		r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", databaseName))
+	} else {
+		r.parseDatabaseMetrics(ctx, mm, databaseName, dbStatsMetrics, dbStats)
+	}
+
+	serverStatus, err := client.Query(ctx, databaseName, bson.M{"serverStatus": 1})
+	if err != nil {
+		r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", databaseName))
+	} else {
+		r.parseDatabaseMetrics(ctx, mm, databaseName, serverStatusMetrics, serverStatus)
+	}
+}
+
+func (r *mongodbScraper) collectAdminDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client) {
+	defer wg.Done()
 	serverStatus, err := client.Query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
 		r.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
 	} else {
 		r.parseSpecialMetrics(ctx, mm, serverStatus)
 	}
-
-	for _, dbName := range dbNames {
-		dbStats, err := client.Query(ctx, dbName, bson.M{"dbStats": 1})
-		if err != nil {
-			r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", dbName))
-		} else {
-			r.parseDatabaseMetrics(ctx, mm, dbName, dbStatsMetrics, dbStats)
-		}
-
-		serverStatus, err := client.Query(ctx, dbName, bson.M{"serverStatus": 1})
-		if err != nil {
-			r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", dbName))
-		} else {
-			r.parseDatabaseMetrics(ctx, mm, dbName, serverStatusMetrics, serverStatus)
-		}
-	}
-
-	return rms, nil
 }
 
 func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricManager, document bson.M) {
@@ -354,14 +371,17 @@ type metricManager struct {
 	logger             *zap.Logger
 	ilm                pdata.InstrumentationLibraryMetrics
 	initializedMetrics map[string]pdata.Metric
+	mutex              *sync.RWMutex
 	now                pdata.Timestamp
 }
 
 func newMetricManager(logger *zap.Logger, ilm pdata.InstrumentationLibraryMetrics) *metricManager {
+	mutex := &sync.RWMutex{}
 	return &metricManager{
 		logger:             logger,
 		ilm:                ilm,
 		initializedMetrics: map[string]pdata.Metric{},
+		mutex:              mutex,
 		now:                pdata.NewTimestampFromTime(time.Now()),
 	}
 }
@@ -383,11 +403,15 @@ func (m *metricManager) addDoubleDataPoint(metricDef metadata.MetricIntf, value 
 }
 
 func (m *metricManager) getOrInit(metricDef metadata.MetricIntf) pdata.NumberDataPointSlice {
+	m.mutex.RLock()
 	metric, ok := m.initializedMetrics[metricDef.Name()]
+	m.mutex.RUnlock()
 	if !ok {
 		metric = m.ilm.Metrics().AppendEmpty()
 		metricDef.Init(metric)
+		m.mutex.Lock()
 		m.initializedMetrics[metricDef.Name()] = metric
+		m.mutex.Unlock()
 	}
 
 	if metric.DataType() == pdata.MetricDataTypeSum {

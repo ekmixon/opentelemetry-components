@@ -63,8 +63,8 @@ func (c *mongodbClient) Connect(ctx context.Context) error {
 
 // Disconnect closes attempts to close any open connections
 func (c *mongodbClient) Disconnect(ctx context.Context) error {
-	c.logger.Debug("Disconnecting from mongo")
 	if c.client != nil {
+		c.logger.Info("disconnecting from mongo server at: " + c.endpoint)
 		return c.client.Disconnect(ctx)
 	}
 	return nil
