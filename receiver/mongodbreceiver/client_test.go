@@ -143,3 +143,18 @@ func TestDisconnectFailure(t *testing.T) {
 	err := client.Disconnect(ctx)
 	require.Error(t, err)
 }
+
+func TestSuccessfulPing(t *testing.T) {
+	fakeMongoClient := &fakeClient{}
+	fakeMongoClient.On("Ping", mock.Anything, mock.Anything).Return(nil)
+	client := mongodbClient{
+		client: fakeMongoClient,
+		logger: zap.NewNop(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := client.Ping(ctx, readpref.PrimaryPreferred())
+	require.NoError(t, err)
+}

@@ -33,6 +33,7 @@ type mongoClient interface {
 }
 
 type mongodbClient struct {
+	// underlying mongo driver client
 	client   mongoClient
 	username string
 	password string
