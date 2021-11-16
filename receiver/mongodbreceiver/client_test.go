@@ -13,11 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 )
 
-// var _ mongoClient = (*fakeClient)(nil)
+var _ mongoClient = (*fakeClient)(nil)
 
 type fakeClient struct {
 	mock.Mock
@@ -53,8 +54,8 @@ func (c *fakeClient) Database(name string, opts ...*options.DatabaseOptions) *mo
 	return args.Get(0).(*mongo.Database)
 }
 
-func (c *fakeClient) TestValidClient(t *testing.T) {
-	client := NewClient(&Config{
+func TestValidClient(t *testing.T) {
+	client, err := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -66,11 +67,36 @@ func (c *fakeClient) TestValidClient(t *testing.T) {
 		Timeout:  1 * time.Second,
 	}, zap.NewNop())
 
+	require.NoError(t, err)
 	require.NotNil(t, client)
 }
 
+func TestBadTLSClient(t *testing.T) {
+	client, err := NewClient(&Config{
+		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
+			CollectionInterval: 10 * time.Second,
+		},
+		TCPAddr: confignet.TCPAddr{
+			Endpoint: "localhost:27017",
+		},
+		TLSClientSetting: configtls.TLSClientSetting{
+			TLSSetting: configtls.TLSSetting{
+				CAFile:   "/dev/temporal.txt",
+				CertFile: "/dev/test.txt",
+			},
+		},
+		Username: "username",
+		Password: "password",
+		Timeout:  1 * time.Second,
+	}, zap.NewNop())
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid tls configuration")
+	require.Nil(t, client)
+}
+
 func TestBadClientNonTCPAddr(t *testing.T) {
-	cl := NewClient(&Config{
+	cl, err := NewClient(&Config{
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
@@ -80,9 +106,11 @@ func TestBadClientNonTCPAddr(t *testing.T) {
 		Timeout: 1 * time.Second,
 	}, zap.NewNop())
 
+	require.NoError(t, err)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err := cl.Connect(ctx)
+	err = cl.Connect(ctx)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "unable to instantiate mongo client")
 }

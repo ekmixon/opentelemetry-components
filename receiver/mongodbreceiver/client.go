@@ -2,6 +2,7 @@ package mongodbreceiver
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -34,24 +35,30 @@ type mongoClient interface {
 
 type mongodbClient struct {
 	// underlying mongo driver client
-	client   mongoClient
-	username string
-	password string
-	endpoint string
-	logger   *zap.Logger
-	timeout  time.Duration
+	client    mongoClient
+	username  string
+	password  string
+	endpoint  string
+	logger    *zap.Logger
+	timeout   time.Duration
+	tlsConfig *tls.Config
 }
 
 // NewClient creates a new client to connect and query mongo for the
-// monodbreceiver
-func NewClient(config *Config, logger *zap.Logger) Client {
-	return &mongodbClient{
-		endpoint: config.Endpoint,
-		username: config.Username,
-		password: config.Password,
-		timeout:  config.Timeout,
-		logger:   logger,
+// mongodbreceiver
+func NewClient(config *Config, logger *zap.Logger) (Client, error) {
+	tlsConfig, err := config.LoadTLSConfig()
+	if err != nil {
+		return nil, fmt.Errorf("invalid tls configuration: %w", err)
 	}
+	return &mongodbClient{
+		endpoint:  config.Endpoint,
+		username:  config.Username,
+		password:  config.Password,
+		timeout:   config.Timeout,
+		logger:    logger,
+		tlsConfig: tlsConfig,
+	}, nil
 }
 
 // Connect establishes a connection to mongodb instance
@@ -65,7 +72,7 @@ func (c *mongodbClient) Connect(ctx context.Context) error {
 // Disconnect closes attempts to close any open connections
 func (c *mongodbClient) Disconnect(ctx context.Context) error {
 	if c.client != nil {
-		c.logger.Info("disconnecting from mongo server at: " + c.endpoint)
+		c.logger.Info(fmt.Sprintf("disconnecting from mongo server at: %s", c.endpoint))
 		return c.client.Disconnect(ctx)
 	}
 	return nil
@@ -94,10 +101,7 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 
 func (c *mongodbClient) ensureClient(ctx context.Context) error {
 	if c.client == nil {
-		client, err := mongo.Connect(ctx,
-			options.
-				Client().
-				ApplyURI(uri(c.username, c.password, c.endpoint)))
+		client, err := mongo.Connect(ctx, c.authOptions())
 		if err != nil {
 			return fmt.Errorf("error creating mongo client: %w", err)
 		}
@@ -110,6 +114,19 @@ func (c *mongodbClient) ensureClient(ctx context.Context) error {
 		c.client = client
 	}
 	return nil
+}
+
+func (c *mongodbClient) authOptions() *options.ClientOptions {
+	authOptions := options.Client()
+	if c.username != "" && c.password != "" {
+		authOptions.ApplyURI(uri(c.username, c.password, c.endpoint))
+	}
+
+	if c.tlsConfig != nil {
+		authOptions.SetTLSConfig(c.tlsConfig)
+	}
+
+	return authOptions
 }
 
 func uri(username, password, endpoint string) string {
