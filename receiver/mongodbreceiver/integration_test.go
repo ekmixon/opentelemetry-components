@@ -128,21 +128,21 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	}
 
 	require.Equal(t, map[string]bool{
-		"mongodb.cache_hits":                                   true,
-		"mongodb.cache_misses":                                 true,
+		"mongodb.cache.hits":                                   true,
+		"mongodb.cache.misses":                                 true,
 		"mongodb.collections database_name":                    true,
 		"mongodb.connections database_name active":             true,
 		"mongodb.connections database_name available":          true,
 		"mongodb.connections database_name current":            true,
-		"mongodb.data_size database_name":                      true,
+		"mongodb.data.size database_name":                      true,
 		"mongodb.extents database_name":                        true,
-		"mongodb.global_lock_hold_time":                        true,
-		"mongodb.index_size database_name":                     true,
+		"mongodb.global_lock.hold_time":                        true,
+		"mongodb.index.size database_name":                     true,
 		"mongodb.indexes database_name":                        true,
-		"mongodb.memory_usage database_name mapped":            true,
-		"mongodb.memory_usage database_name mappedWithJournal": true,
-		"mongodb.memory_usage database_name resident":          true,
-		"mongodb.memory_usage database_name virtual":           true,
+		"mongodb.memory.usage database_name mapped":            true,
+		"mongodb.memory.usage database_name mappedWithJournal": true,
+		"mongodb.memory.usage database_name resident":          true,
+		"mongodb.memory.usage database_name virtual":           true,
 		"mongodb.objects database_name":                        true,
 		"mongodb.operations command":                           true,
 		"mongodb.operations delete":                            true,
@@ -150,6 +150,6 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		"mongodb.operations insert":                            true,
 		"mongodb.operations query":                             true,
 		"mongodb.operations update":                            true,
-		"mongodb.storage_size database_name":                   true,
+		"mongodb.storage.size database_name":                   true,
 	}, exists)
 }
