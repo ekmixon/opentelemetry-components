@@ -47,10 +47,7 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 	cfg := rConf.(*Config)
 
-	ns, err := newMongodbScraper(params.Logger, cfg)
-	if err != nil {
-		return nil, err
-	}
+	ns := newMongodbScraper(params.Logger, cfg)
 	scraper := scraperhelper.NewResourceMetricsScraper(cfg.ID(), ns.scrape, scraperhelper.WithStart(ns.start), scraperhelper.WithShutdown(ns.shutdown))
 
 	return scraperhelper.NewScraperControllerReceiver(

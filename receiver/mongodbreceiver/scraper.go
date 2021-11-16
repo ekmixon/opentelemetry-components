@@ -122,12 +122,11 @@ var serverStatusMetrics = []mongoMetric{
 	},
 }
 
-func newMongodbScraper(logger *zap.Logger, config *Config) (*mongodbScraper, error) {
-	ms := &mongodbScraper{
+func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
+	return &mongodbScraper{
 		logger: logger,
 		config: config,
 	}
-	return ms, nil
 }
 
 func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
