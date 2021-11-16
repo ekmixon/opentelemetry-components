@@ -59,36 +59,36 @@ type metricStruct struct {
 // Names returns a list of all the metric name strings.
 func (m *metricStruct) Names() []string {
 	return []string{
-		"mongodb.cache_hits",
-		"mongodb.cache_misses",
+		"mongodb.cache.hits",
+		"mongodb.cache.misses",
 		"mongodb.collections",
 		"mongodb.connections",
-		"mongodb.data_size",
+		"mongodb.data.size",
 		"mongodb.extents",
-		"mongodb.global_lock_hold_time",
-		"mongodb.index_size",
+		"mongodb.global_lock.hold_time",
+		"mongodb.index.size",
 		"mongodb.indexes",
-		"mongodb.memory_usage",
+		"mongodb.memory.usage",
 		"mongodb.objects",
 		"mongodb.operations",
-		"mongodb.storage_size",
+		"mongodb.storage.size",
 	}
 }
 
 var metricsByName = map[string]MetricIntf{
-	"mongodb.cache_hits":            Metrics.MongodbCacheHits,
-	"mongodb.cache_misses":          Metrics.MongodbCacheMisses,
+	"mongodb.cache.hits":            Metrics.MongodbCacheHits,
+	"mongodb.cache.misses":          Metrics.MongodbCacheMisses,
 	"mongodb.collections":           Metrics.MongodbCollections,
 	"mongodb.connections":           Metrics.MongodbConnections,
-	"mongodb.data_size":             Metrics.MongodbDataSize,
+	"mongodb.data.size":             Metrics.MongodbDataSize,
 	"mongodb.extents":               Metrics.MongodbExtents,
-	"mongodb.global_lock_hold_time": Metrics.MongodbGlobalLockHoldTime,
-	"mongodb.index_size":            Metrics.MongodbIndexSize,
+	"mongodb.global_lock.hold_time": Metrics.MongodbGlobalLockHoldTime,
+	"mongodb.index.size":            Metrics.MongodbIndexSize,
 	"mongodb.indexes":               Metrics.MongodbIndexes,
-	"mongodb.memory_usage":          Metrics.MongodbMemoryUsage,
+	"mongodb.memory.usage":          Metrics.MongodbMemoryUsage,
 	"mongodb.objects":               Metrics.MongodbObjects,
 	"mongodb.operations":            Metrics.MongodbOperations,
-	"mongodb.storage_size":          Metrics.MongodbStorageSize,
+	"mongodb.storage.size":          Metrics.MongodbStorageSize,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -99,9 +99,9 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 // manipulating those metrics.
 var Metrics = &metricStruct{
 	&metricImpl{
-		"mongodb.cache_hits",
+		"mongodb.cache.hits",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.cache_hits")
+			metric.SetName("mongodb.cache.hits")
 			metric.SetDescription("The number of cache hits.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -110,9 +110,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.cache_misses",
+		"mongodb.cache.misses",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.cache_misses")
+			metric.SetName("mongodb.cache.misses")
 			metric.SetDescription("The number of cache misses.")
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -139,9 +139,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.data_size",
+		"mongodb.data.size",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.data_size")
+			metric.SetName("mongodb.data.size")
 			metric.SetDescription("The data size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
@@ -157,9 +157,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.global_lock_hold_time",
+		"mongodb.global_lock.hold_time",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.global_lock_hold_time")
+			metric.SetName("mongodb.global_lock.hold_time")
 			metric.SetDescription("The time the global lock has been held.")
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
@@ -168,9 +168,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.index_size",
+		"mongodb.index.size",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.index_size")
+			metric.SetName("mongodb.index.size")
 			metric.SetDescription("The index size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
@@ -186,9 +186,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.memory_usage",
+		"mongodb.memory.usage",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.memory_usage")
+			metric.SetName("mongodb.memory.usage")
 			metric.SetDescription("The amount of memory used.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)
@@ -215,9 +215,9 @@ var Metrics = &metricStruct{
 		},
 	},
 	&metricImpl{
-		"mongodb.storage_size",
+		"mongodb.storage.size",
 		func(metric pdata.Metric) {
-			metric.SetName("mongodb.storage_size")
+			metric.SetName("mongodb.storage.size")
 			metric.SetDescription("The storage size.")
 			metric.SetUnit("By")
 			metric.SetDataType(pdata.MetricDataTypeGauge)

@@ -174,7 +174,8 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pda
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
-	mm := newMetricManager(r.logger, ilm)
+	mmLogger := r.logger.Named("metric-manager")
+	mm := newMetricManager(mmLogger, ilm)
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
 	defer cancel()
