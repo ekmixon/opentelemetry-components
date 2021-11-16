@@ -230,7 +230,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 	// Mongo version older than 3.0
 	waitTime, err := getIntMetricValue(document, []string{"globalLock", "totalTime"})
 	if err == nil {
-		mm.addIntDataPoint(metadata.M.MongodbGlobalLockHoldTime, waitTime, pdata.NewAttributeMap())
+		mm.addDataPoint(metadata.M.MongodbGlobalLockHoldTime, waitTime, pdata.NewAttributeMap())
 	} else {
 		// Assume mongoDB 3.0+ if the older style was not available
 		totalWaitTime := int64(0)
@@ -244,7 +244,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 		}
 
 		if hasValue {
-			mm.addIntDataPoint(metadata.M.MongodbGlobalLockHoldTime, totalWaitTime, pdata.NewAttributeMap())
+			mm.addDataPoint(metadata.M.MongodbGlobalLockHoldTime, totalWaitTime, pdata.NewAttributeMap())
 		}
 	}
 
@@ -256,7 +256,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 		r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
 		canCalculateCacheHits = false
 	} else {
-		mm.addIntDataPoint(metadata.M.MongodbCacheMisses, cacheMisses, pdata.NewAttributeMap())
+		mm.addDataPoint(metadata.M.MongodbCacheMisses, cacheMisses, pdata.NewAttributeMap())
 	}
 
 	totalCacheRequests, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages requested from the cache"})
@@ -267,7 +267,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	if canCalculateCacheHits && totalCacheRequests > cacheMisses {
 		cacheHits := totalCacheRequests - cacheMisses
-		mm.addIntDataPoint(metadata.M.MongodbCacheHits, cacheHits, pdata.NewAttributeMap())
+		mm.addDataPoint(metadata.M.MongodbCacheHits, cacheHits, pdata.NewAttributeMap())
 	}
 
 	// Collect Operations
@@ -285,7 +285,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 		} else {
 			attributes := pdata.NewAttributeMap()
 			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
-			mm.addIntDataPoint(metadata.M.MongodbOperations, count, attributes)
+			mm.addDataPoint(metadata.M.MongodbOperations, count, attributes)
 		}
 	}
 }
@@ -311,14 +311,14 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
-			mm.addIntDataPoint(metricRequest.metricDef, value, attributes)
+			mm.addDataPoint(metricRequest.metricDef, value, attributes)
 		case double:
 			value, err := getDoubleMetricValue(document, metricRequest.path)
 			if err != nil {
 				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
-			mm.addDoubleDataPoint(metricRequest.metricDef, value, attributes)
+			mm.addDataPoint(metricRequest.metricDef, value, attributes)
 		}
 	}
 }
@@ -386,32 +386,30 @@ func newMetricManager(logger *zap.Logger, ilm pdata.InstrumentationLibraryMetric
 	}
 }
 
-func (m *metricManager) addIntDataPoint(metricDef metadata.MetricIntf, value int64, attributes pdata.AttributeMap) {
-	dataPoints := m.getOrInit(metricDef)
-	dataPoint := dataPoints.AppendEmpty()
+func (m *metricManager) addDataPoint(metricDef metadata.MetricIntf, value interface{}, attributes pdata.AttributeMap) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	currDatapoints := m.getOrInit(metricDef)
+	dataPoint := currDatapoints.AppendEmpty()
 	dataPoint.SetTimestamp(m.now)
-	dataPoint.SetIntVal(value)
-	attributes.CopyTo(dataPoint.Attributes())
-}
-
-func (m *metricManager) addDoubleDataPoint(metricDef metadata.MetricIntf, value float64, attributes pdata.AttributeMap) {
-	dataPoints := m.getOrInit(metricDef)
-	dataPoint := dataPoints.AppendEmpty()
-	dataPoint.SetTimestamp(m.now)
-	dataPoint.SetDoubleVal(value)
+	switch v := value.(type) {
+	case int64:
+		dataPoint.SetIntVal(v)
+	case float64:
+		dataPoint.SetDoubleVal(v)
+	default:
+		m.logger.Warn(fmt.Sprintf("unknown metric data type for metric: %s", metricDef.Name()))
+		return
+	}
 	attributes.CopyTo(dataPoint.Attributes())
 }
 
 func (m *metricManager) getOrInit(metricDef metadata.MetricIntf) pdata.NumberDataPointSlice {
-	m.mutex.RLock()
 	metric, ok := m.initializedMetrics[metricDef.Name()]
-	m.mutex.RUnlock()
 	if !ok {
 		metric = m.ilm.Metrics().AppendEmpty()
 		metricDef.Init(metric)
-		m.mutex.Lock()
 		m.initializedMetrics[metricDef.Name()] = metric
-		m.mutex.Unlock()
 	}
 
 	if metric.DataType() == pdata.MetricDataTypeSum {

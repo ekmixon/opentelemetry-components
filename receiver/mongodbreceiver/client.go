@@ -95,7 +95,8 @@ func (c *mongodbClient) Query(ctx context.Context, database string, command bson
 func (c *mongodbClient) ensureClient(ctx context.Context) error {
 	if c.client == nil {
 		client, err := mongo.Connect(ctx,
-			options.Client().
+			options.
+				Client().
 				ApplyURI(uri(c.username, c.password, c.endpoint)))
 		if err != nil {
 			return fmt.Errorf("error creating mongo client: %w", err)
