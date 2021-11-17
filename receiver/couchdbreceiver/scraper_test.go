@@ -17,18 +17,18 @@ import (
 )
 
 func TestScraper(t *testing.T) {
-	t.Run("mocking curl response of couchbase 3.0.0", func(t *testing.T) {
+	t.Run("mocking curl response of couchbase 2.3.1", func(t *testing.T) {
 		sc := newCouchdbScraper(zap.NewNop(), &Config{})
-		sc.client = &fakeClient{filename: "response300.json"}
+		sc.client = &fakeClient{filename: "response231.json"}
 
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
 		require.NoError(t, err)
 
 		helper.ScraperTest(t, sc.scrape, expectedFileBytes)
 	})
-	t.Run("mocking curl response of couchbase 3.1.1", func(t *testing.T) {
+	t.Run("mocking curl response of couchbase 3.1.2", func(t *testing.T) {
 		sc := newCouchdbScraper(zap.NewNop(), &Config{})
-		sc.client = &fakeClient{filename: "response311.json"}
+		sc.client = &fakeClient{filename: "response312.json"}
 
 		expectedFileBytes, err := ioutil.ReadFile("./testdata/examplejsonmetrics/testscraper/expected_metrics.json")
 		require.NoError(t, err)
