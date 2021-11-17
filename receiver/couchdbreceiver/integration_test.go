@@ -22,8 +22,9 @@ import (
 )
 
 func TestCouchdbIntegration(t *testing.T) {
-	t.Run("Running docker version 3.0.0 on port 5985", func(t *testing.T) {
-		container := getContainer(t, containerRequest300)
+	t.Run("Running docker version 2.3.1 on port 5985", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest231)
 		defer func() {
 			require.NoError(t, container.Terminate(context.Background()))
 		}()
@@ -32,7 +33,7 @@ func TestCouchdbIntegration(t *testing.T) {
 
 		f := NewFactory()
 		cfg := f.CreateDefaultConfig().(*Config)
-		cfg.Endpoint = net.JoinHostPort(hostname, "5984")
+		cfg.Endpoint = net.JoinHostPort(hostname, "5985")
 		cfg.Username = "otel"
 		cfg.Password = "otel"
 		cfg.Nodename = "_local"
@@ -56,8 +57,9 @@ func TestCouchdbIntegration(t *testing.T) {
 		validateIntegrationResult(t, metrics)
 	})
 
-	t.Run("Running docker version 3.1.1 on port 5984", func(t *testing.T) {
-		container := getContainer(t, containerRequest311)
+	t.Run("Running docker version 3.1.2 on port 5984", func(t *testing.T) {
+		t.Parallel()
+		container := getContainer(t, containerRequest312)
 		defer func() {
 			require.NoError(t, container.Terminate(context.Background()))
 		}()
@@ -92,19 +94,19 @@ func TestCouchdbIntegration(t *testing.T) {
 }
 
 var (
-	containerRequest300 = testcontainers.ContainerRequest{
+	containerRequest231 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.couchdb.300",
+			Dockerfile: "Dockerfile.couchdb.231",
 		},
-		ExposedPorts: []string{"5984:5984"}, // TODO: standardize how to do ports between local-targets
+		ExposedPorts: []string{"5985:5984"},
 		WaitingFor: wait.ForListeningPort("5984").
 			WithStartupTimeout(2 * time.Minute),
 	}
-	containerRequest311 = testcontainers.ContainerRequest{
+	containerRequest312 = testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    path.Join(".", "testdata"),
-			Dockerfile: "Dockerfile.couchdb.311",
+			Dockerfile: "Dockerfile.couchdb.312",
 		},
 		ExposedPorts: []string{"5984:5984"},
 		WaitingFor: wait.ForListeningPort("5984").
@@ -121,6 +123,10 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 			Started:          true,
 		})
 	require.NoError(t, err)
+
+	code, err := container.Exec(context.Background(), []string{"./setup.sh"})
+	require.NoError(t, err)
+	require.Equal(t, 0, code)
 	return container
 }
 
