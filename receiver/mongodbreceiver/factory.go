@@ -38,7 +38,7 @@ func createDefaultConfig() config.Receiver {
 			Endpoint: "localhost:27017",
 		},
 		TLSClientSetting: configtls.TLSClientSetting{
-			Insecure:           true,
+			Insecure:           false,
 			InsecureSkipVerify: true,
 		},
 	}
