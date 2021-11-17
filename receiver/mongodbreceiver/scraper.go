@@ -130,7 +130,7 @@ func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
 }
 
 func (s *mongodbScraper) start(ctx context.Context, host component.Host) error {
-	clientLogger := s.logger.Named("mongo-client")
+	clientLogger := s.logger.Named("mongo-scraper")
 	client, err := NewClient(s.config, clientLogger)
 	if err != nil {
 		return fmt.Errorf("unable to start mongodb receiver: %w", err)
