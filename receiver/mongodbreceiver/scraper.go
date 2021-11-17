@@ -392,13 +392,17 @@ func newMetricManager(logger *zap.Logger, ilm pdata.InstrumentationLibraryMetric
 func (m *metricManager) addDataPoint(metricDef metadata.MetricIntf, value interface{}, attributes pdata.AttributeMap) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	currDatapoints := m.getOrInit(metricDef)
-	dataPoint := currDatapoints.AppendEmpty()
-	dataPoint.SetTimestamp(m.now)
+	var dataPoint pdata.NumberDataPoint
 	switch v := value.(type) {
 	case int64:
+		currDatapoints := m.getOrInit(metricDef)
+		dataPoint := currDatapoints.AppendEmpty()
+		dataPoint.SetTimestamp(m.now)
 		dataPoint.SetIntVal(v)
 	case float64:
+		currDatapoints := m.getOrInit(metricDef)
+		dataPoint := currDatapoints.AppendEmpty()
+		dataPoint.SetTimestamp(m.now)
 		dataPoint.SetDoubleVal(v)
 	default:
 		m.logger.Warn(fmt.Sprintf("unknown metric data type for metric: %s", metricDef.Name()))
