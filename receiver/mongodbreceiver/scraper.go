@@ -129,70 +129,70 @@ func newMongodbScraper(logger *zap.Logger, config *Config) *mongodbScraper {
 	}
 }
 
-func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
-	clientLogger := r.logger.Named("mongo-client")
-	client, err := NewClient(r.config, clientLogger)
+func (s *mongodbScraper) start(ctx context.Context, host component.Host) error {
+	clientLogger := s.logger.Named("mongo-client")
+	client, err := NewClient(s.config, clientLogger)
 	if err != nil {
 		return fmt.Errorf("unable to start mongodb receiver: %w", err)
 	}
-	r.client = client
+	s.client = client
 	return nil
 }
 
-func (r *mongodbScraper) shutdown(ctx context.Context) error {
-	if r.client != nil {
-		return r.client.Disconnect(ctx)
+func (s *mongodbScraper) shutdown(ctx context.Context) error {
+	if s.client != nil {
+		return s.client.Disconnect(ctx)
 	}
 	return nil
 }
 
-func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
-	if r.client == nil {
+func (s *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
+	if s.client == nil {
 		return pdata.NewResourceMetricsSlice(), errors.New("no client was initialized before calling scrape")
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
+	timeoutCtx, cancel := context.WithTimeout(ctx, s.config.Timeout)
 	defer cancel()
 
-	if err := r.client.Connect(timeoutCtx); err != nil {
-		r.logger.Error("Failed to connect to client", zap.Error(err))
+	if err := s.client.Connect(timeoutCtx); err != nil {
+		s.logger.Error("Failed to connect to client", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	err := r.client.Ping(ctx, readpref.PrimaryPreferred())
+	err := s.client.Ping(ctx, readpref.PrimaryPreferred())
 	if err != nil {
-		r.logger.Error("Failed to ping server", zap.Error(err))
+		s.logger.Error("Failed to ping server", zap.Error(err))
 		return pdata.NewResourceMetricsSlice(), err
 	}
 
-	return r.collectMetrics(ctx, r.client)
+	return s.collectMetrics(ctx, s.client)
 }
 
-func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pdata.ResourceMetricsSlice, error) {
+func (s *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pdata.ResourceMetricsSlice, error) {
 	rms := pdata.NewResourceMetricsSlice()
 	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
-	mmLogger := r.logger.Named("metric-manager")
+	mmLogger := s.logger.Named("metric-manager")
 	mm := newMetricManager(mmLogger, ilm)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
+	timeoutCtx, cancel := context.WithTimeout(ctx, s.config.Timeout)
 	defer cancel()
 	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
-		r.logger.Error("Failed to fetch database names", zap.Error(err))
+		s.logger.Error("Failed to fetch database names", zap.Error(err))
 		return pdata.ResourceMetricsSlice{}, err
 	}
 
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go r.collectAdminDatabase(ctx, wg, mm, client)
+	go s.collectAdminDatabase(ctx, wg, mm, client)
 
 	for _, dbName := range dbNames {
 		wg.Add(1)
-		go r.collectDatabase(ctx, wg, mm, client, dbName)
+		go s.collectDatabase(ctx, wg, mm, client, dbName)
 	}
 
 	wg.Wait()
@@ -200,34 +200,34 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client Client) (pda
 	return rms, nil
 }
 
-func (r *mongodbScraper) collectDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client, databaseName string) {
+func (s *mongodbScraper) collectDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client, databaseName string) {
 	defer wg.Done()
 	dbStats, err := client.Query(ctx, databaseName, bson.M{"dbStats": 1})
 	if err != nil {
-		r.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", databaseName))
+		s.logger.Error("Failed to collect dbStats metric", zap.Error(err), zap.String("database", databaseName))
 	} else {
-		r.parseDatabaseMetrics(ctx, mm, databaseName, dbStatsMetrics, dbStats)
+		s.parseDatabaseMetrics(ctx, mm, databaseName, dbStatsMetrics, dbStats)
 	}
 
 	serverStatus, err := client.Query(ctx, databaseName, bson.M{"serverStatus": 1})
 	if err != nil {
-		r.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", databaseName))
+		s.logger.Error("Failed to collect serverStatus metric", zap.Error(err), zap.String("database", databaseName))
 	} else {
-		r.parseDatabaseMetrics(ctx, mm, databaseName, serverStatusMetrics, serverStatus)
+		s.parseDatabaseMetrics(ctx, mm, databaseName, serverStatusMetrics, serverStatus)
 	}
 }
 
-func (r *mongodbScraper) collectAdminDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client) {
+func (s *mongodbScraper) collectAdminDatabase(ctx context.Context, wg *sync.WaitGroup, mm *metricManager, client Client) {
 	defer wg.Done()
 	serverStatus, err := client.Query(ctx, "admin", bson.M{"serverStatus": 1})
 	if err != nil {
-		r.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
+		s.logger.Error("Failed to query serverStatus in admin", zap.Error(err))
 	} else {
-		r.parseSpecialMetrics(ctx, mm, serverStatus)
+		s.parseSpecialMetrics(ctx, mm, serverStatus)
 	}
 }
 
-func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricManager, document bson.M) {
+func (s *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricManager, document bson.M) {
 	// Collect Global Lock Wait Time
 
 	// Mongo version older than 3.0
@@ -256,7 +256,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	cacheMisses, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages read into cache"})
 	if err != nil {
-		r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
+		s.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheMisses.Name()))
 		canCalculateCacheHits = false
 	} else {
 		mm.addDataPoint(metadata.M.MongodbCacheMisses, cacheMisses, pdata.NewAttributeMap())
@@ -264,7 +264,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	totalCacheRequests, err := getIntMetricValue(document, []string{"wiredTiger", "cache", "pages requested from the cache"})
 	if err != nil {
-		r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheHits.Name()))
+		s.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbCacheHits.Name()))
 		canCalculateCacheHits = false
 	}
 
@@ -284,7 +284,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 	} {
 		count, err := getIntMetricValue(document, []string{"opcounters", operation})
 		if err != nil {
-			r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
+			s.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
 		} else {
 			attributes := pdata.NewAttributeMap()
 			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
@@ -293,7 +293,7 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 	}
 }
 
-func (r *mongodbScraper) parseDatabaseMetrics(
+func (s *mongodbScraper) parseDatabaseMetrics(
 	ctx context.Context,
 	mm *metricManager,
 	databaseName string,
@@ -311,14 +311,14 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 		case integer:
 			value, err := getIntMetricValue(document, metricRequest.path)
 			if err != nil {
-				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				s.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
 			mm.addDataPoint(metricRequest.metricDef, value, attributes)
 		case double:
 			value, err := getDoubleMetricValue(document, metricRequest.path)
 			if err != nil {
-				r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
+				s.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metricRequest.metricDef.Name()))
 				continue
 			}
 			mm.addDataPoint(metricRequest.metricDef, value, attributes)

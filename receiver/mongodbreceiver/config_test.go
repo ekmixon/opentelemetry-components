@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/config/configtls"
 )
 
 func TestValidate(t *testing.T) {
@@ -49,5 +50,42 @@ func TestValidate(t *testing.T) {
 				require.EqualError(t, tC.expected, err.Error())
 			}
 		})
+	}
+}
+
+func TestBadTLSConfigs(t *testing.T) {
+	testCases := []struct {
+		tlsConfig   configtls.TLSClientSetting
+		expectError bool
+	}{
+		{
+			tlsConfig: configtls.TLSClientSetting{
+				TLSSetting: configtls.TLSSetting{
+					CAFile: "not/a/real/file.pem",
+				},
+				Insecure:           false,
+				InsecureSkipVerify: false,
+				ServerName:         "",
+			},
+			expectError: true,
+		},
+		{
+			tlsConfig: configtls.TLSClientSetting{
+				TLSSetting:         configtls.TLSSetting{},
+				Insecure:           false,
+				InsecureSkipVerify: false,
+				ServerName:         "",
+			},
+			expectError: false,
+		},
+	}
+	for _, tc := range testCases {
+		cfg := Config{Username: "otel", Password: "pword", TLSClientSetting: tc.tlsConfig}
+		err := cfg.Validate()
+		if tc.expectError {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
 	}
 }
