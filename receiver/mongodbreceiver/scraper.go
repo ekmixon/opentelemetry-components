@@ -396,12 +396,12 @@ func (m *metricManager) addDataPoint(metricDef metadata.MetricIntf, value interf
 	switch v := value.(type) {
 	case int64:
 		currDatapoints := m.getOrInit(metricDef)
-		dataPoint := currDatapoints.AppendEmpty()
+		dataPoint = currDatapoints.AppendEmpty()
 		dataPoint.SetTimestamp(m.now)
 		dataPoint.SetIntVal(v)
 	case float64:
 		currDatapoints := m.getOrInit(metricDef)
-		dataPoint := currDatapoints.AppendEmpty()
+		dataPoint = currDatapoints.AppendEmpty()
 		dataPoint.SetTimestamp(m.now)
 		dataPoint.SetDoubleVal(v)
 	default:
