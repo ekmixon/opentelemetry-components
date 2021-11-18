@@ -16,18 +16,18 @@ import (
 
 // Client is an interface that exposes functionality towards a mongo instance
 type Client interface {
-	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
+	ListDatabaseNames(ctx context.Context, filters interface{}, opts ...*options.ListDatabasesOptions) ([]string, error)
 	Disconnect(context.Context) error
 	Connect(context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
-	Query(context.Context, string, bson.M) (bson.M, error)
+	Query(ctx context.Context, dbName string, command bson.M) (bson.M, error)
 }
 
 // mongoClient is the underlying mongo.Client that Client invokes to actually do actions
 // against the mongo instance
 type mongoClient interface {
-	Database(string, ...*options.DatabaseOptions) *mongo.Database
-	ListDatabaseNames(context.Context, interface{}, ...*options.ListDatabasesOptions) ([]string, error)
+	Database(dbName string, opts ...*options.DatabaseOptions) *mongo.Database
+	ListDatabaseNames(ctx context.Context, filters interface{}, opts ...*options.ListDatabasesOptions) ([]string, error)
 	Connect(context.Context) error
 	Disconnect(context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
