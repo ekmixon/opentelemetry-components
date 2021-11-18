@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package mongodbreceiver
 
 import (
@@ -33,6 +30,7 @@ func TestMongoDBIntegration(t *testing.T) {
 	cfg.Endpoint = net.JoinHostPort(hostname, "37017")
 	cfg.Username = "otel"
 	cfg.Password = "otel"
+	cfg.Insecure = true
 
 	consumer := new(consumertest.MetricsSink)
 	settings := componenttest.NewNopReceiverCreateSettings()
