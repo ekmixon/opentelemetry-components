@@ -87,27 +87,27 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 		switch m.Name() {
 		case metadata.M.HttpdUptime.Name():
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
-			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.L.ServerName)
+			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.A.ServerName)
 			require.EqualValues(t, "localhost", serverName.AsString())
 		case metadata.M.HttpdCurrentConnections.Name():
 			require.Equal(t, 1, m.Gauge().DataPoints().Len())
-			serverName, _ := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.ServerName)
+			serverName, _ := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.A.ServerName)
 			require.EqualValues(t, "localhost", serverName.AsString())
 		case metadata.M.HttpdWorkers.Name():
 			require.Equal(t, 2, m.Gauge().DataPoints().Len())
-			serverName, _ := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.L.ServerName)
+			serverName, _ := m.Gauge().DataPoints().At(0).Attributes().Get(metadata.A.ServerName)
 			require.EqualValues(t, "localhost", serverName.AsString())
 			dps := m.Gauge().DataPoints()
 			present := map[pdata.AttributeValue]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
+				serverName, _ := dp.Attributes().Get(metadata.A.ServerName)
 				require.EqualValues(t, "localhost", serverName.AsString())
 				state, _ := dp.Attributes().Get("state")
 				switch state.AsString() {
-				case metadata.LabelWorkersState.Busy:
+				case metadata.AttributeWorkersState.Busy:
 					present[state] = true
-				case metadata.LabelWorkersState.Idle:
+				case metadata.AttributeWorkersState.Idle:
 					present[state] = true
 				default:
 					require.Nil(t, state, fmt.Sprintf("connections with state %s not expected", state.AsString()))
@@ -115,12 +115,12 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			}
 			require.Equal(t, 2, len(present))
 		case metadata.M.HttpdRequests.Name():
-			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.L.ServerName)
+			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.A.ServerName)
 			require.EqualValues(t, "localhost", serverName.AsString())
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
 		case metadata.M.HttpdTraffic.Name():
-			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.L.ServerName)
+			serverName, _ := m.Sum().DataPoints().At(0).Attributes().Get(metadata.A.ServerName)
 			require.EqualValues(t, "localhost", serverName.AsString())
 			require.Equal(t, 1, m.Sum().DataPoints().Len())
 			require.True(t, m.Sum().IsMonotonic())
@@ -130,31 +130,31 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			present := map[pdata.AttributeValue]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				serverName, _ := dp.Attributes().Get(metadata.L.ServerName)
+				serverName, _ := dp.Attributes().Get(metadata.A.ServerName)
 				require.EqualValues(t, "localhost", serverName.AsString())
 				state, _ := dp.Attributes().Get("state")
 				switch state.AsString() {
-				case metadata.LabelScoreboardState.Waiting:
+				case metadata.AttributeScoreboardState.Waiting:
 					present[state] = true
-				case metadata.LabelScoreboardState.Starting:
+				case metadata.AttributeScoreboardState.Starting:
 					present[state] = true
-				case metadata.LabelScoreboardState.Reading:
+				case metadata.AttributeScoreboardState.Reading:
 					present[state] = true
-				case metadata.LabelScoreboardState.Sending:
+				case metadata.AttributeScoreboardState.Sending:
 					present[state] = true
-				case metadata.LabelScoreboardState.Keepalive:
+				case metadata.AttributeScoreboardState.Keepalive:
 					present[state] = true
-				case metadata.LabelScoreboardState.Dnslookup:
+				case metadata.AttributeScoreboardState.Dnslookup:
 					present[state] = true
-				case metadata.LabelScoreboardState.Closing:
+				case metadata.AttributeScoreboardState.Closing:
 					present[state] = true
-				case metadata.LabelScoreboardState.Logging:
+				case metadata.AttributeScoreboardState.Logging:
 					present[state] = true
-				case metadata.LabelScoreboardState.Finishing:
+				case metadata.AttributeScoreboardState.Finishing:
 					present[state] = true
-				case metadata.LabelScoreboardState.IdleCleanup:
+				case metadata.AttributeScoreboardState.IdleCleanup:
 					present[state] = true
-				case metadata.LabelScoreboardState.Open:
+				case metadata.AttributeScoreboardState.Open:
 					present[state] = true
 				default:
 					require.Nil(t, state, fmt.Sprintf("connections with state %s not expected", state.AsString()))

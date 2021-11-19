@@ -83,13 +83,13 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	exists := make(map[string]bool)
 
 	unenumAttributeSet := []string{
-		metadata.L.DatabaseName,
+		metadata.A.DatabaseName,
 	}
 
 	enumAttributeSet := []string{
-		metadata.L.MemoryType,
-		metadata.L.Operation,
-		metadata.L.ConnectionType,
+		metadata.A.MemoryType,
+		metadata.A.Operation,
+		metadata.A.ConnectionType,
 	}
 
 	for i := 0; i < metrics.Len(); i++ {

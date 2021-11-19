@@ -125,34 +125,6 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
 }
 
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.ElasticsearchCacheMemoryUsage.Name():    Metrics.ElasticsearchCacheMemoryUsage.Init,
-		Metrics.ElasticsearchCurrentDocuments.Name():    Metrics.ElasticsearchCurrentDocuments.Init,
-		Metrics.ElasticsearchDataNodes.Name():           Metrics.ElasticsearchDataNodes.Init,
-		Metrics.ElasticsearchEvictions.Name():           Metrics.ElasticsearchEvictions.Init,
-		Metrics.ElasticsearchGcCollection.Name():        Metrics.ElasticsearchGcCollection.Init,
-		Metrics.ElasticsearchGcCollectionTime.Name():    Metrics.ElasticsearchGcCollectionTime.Init,
-		Metrics.ElasticsearchHTTPConnections.Name():     Metrics.ElasticsearchHTTPConnections.Init,
-		Metrics.ElasticsearchMemoryUsage.Name():         Metrics.ElasticsearchMemoryUsage.Init,
-		Metrics.ElasticsearchNetwork.Name():             Metrics.ElasticsearchNetwork.Init,
-		Metrics.ElasticsearchNodes.Name():               Metrics.ElasticsearchNodes.Init,
-		Metrics.ElasticsearchOpenFiles.Name():           Metrics.ElasticsearchOpenFiles.Init,
-		Metrics.ElasticsearchOperationTime.Name():       Metrics.ElasticsearchOperationTime.Init,
-		Metrics.ElasticsearchOperations.Name():          Metrics.ElasticsearchOperations.Init,
-		Metrics.ElasticsearchPeakThreads.Name():         Metrics.ElasticsearchPeakThreads.Init,
-		Metrics.ElasticsearchServerConnections.Name():   Metrics.ElasticsearchServerConnections.Init,
-		Metrics.ElasticsearchShards.Name():              Metrics.ElasticsearchShards.Init,
-		Metrics.ElasticsearchStorageSize.Name():         Metrics.ElasticsearchStorageSize.Init,
-		Metrics.ElasticsearchThreadPoolActive.Name():    Metrics.ElasticsearchThreadPoolActive.Init,
-		Metrics.ElasticsearchThreadPoolCompleted.Name(): Metrics.ElasticsearchThreadPoolCompleted.Init,
-		Metrics.ElasticsearchThreadPoolQueue.Name():     Metrics.ElasticsearchThreadPoolQueue.Init,
-		Metrics.ElasticsearchThreadPoolRejected.Name():  Metrics.ElasticsearchThreadPoolRejected.Init,
-		Metrics.ElasticsearchThreadPoolThreads.Name():   Metrics.ElasticsearchThreadPoolThreads.Init,
-		Metrics.ElasticsearchThreads.Name():             Metrics.ElasticsearchThreads.Init,
-	}
-}
-
 // Metrics contains a set of methods for each metric that help with
 // manipulating those metrics.
 var Metrics = &metricStruct{
@@ -191,7 +163,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -202,7 +174,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -213,7 +185,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -242,7 +214,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -271,7 +243,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -282,7 +254,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -338,7 +310,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(false)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -358,7 +330,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(false)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -385,8 +357,8 @@ var Metrics = &metricStruct{
 // manipulating those metrics. M is an alias for Metrics
 var M = Metrics
 
-// Labels contains the possible metric labels that can be used.
-var Labels = struct {
+// Attributes contains the possible metric attributes that can be used.
+var Attributes = struct {
 	// CacheName (Type of cache)
 	CacheName string
 	// Direction (Data direction)
@@ -417,12 +389,11 @@ var Labels = struct {
 	"thread_pool_name",
 }
 
-// L contains the possible metric labels that can be used. L is an alias for
-// Labels.
-var L = Labels
+// A is an alias for Attributes.
+var A = Attributes
 
-// LabelCacheName are the possible values that the label "cache_name" can have.
-var LabelCacheName = struct {
+// AttributeCacheName are the possible values that the attribute "cache_name" can have.
+var AttributeCacheName = struct {
 	Field   string
 	Query   string
 	Request string
@@ -432,8 +403,8 @@ var LabelCacheName = struct {
 	"request",
 }
 
-// LabelDirection are the possible values that the label "direction" can have.
-var LabelDirection = struct {
+// AttributeDirection are the possible values that the attribute "direction" can have.
+var AttributeDirection = struct {
 	Receive  string
 	Transmit string
 }{
@@ -441,8 +412,8 @@ var LabelDirection = struct {
 	"transmit",
 }
 
-// LabelDocumentType are the possible values that the label "document_type" can have.
-var LabelDocumentType = struct {
+// AttributeDocumentType are the possible values that the attribute "document_type" can have.
+var AttributeDocumentType = struct {
 	Live    string
 	Deleted string
 }{
@@ -450,8 +421,8 @@ var LabelDocumentType = struct {
 	"deleted",
 }
 
-// LabelGcType are the possible values that the label "gc_type" can have.
-var LabelGcType = struct {
+// AttributeGcType are the possible values that the attribute "gc_type" can have.
+var AttributeGcType = struct {
 	Young string
 	Old   string
 }{
@@ -459,8 +430,8 @@ var LabelGcType = struct {
 	"old",
 }
 
-// LabelMemoryType are the possible values that the label "memory_type" can have.
-var LabelMemoryType = struct {
+// AttributeMemoryType are the possible values that the attribute "memory_type" can have.
+var AttributeMemoryType = struct {
 	Heap    string
 	NonHeap string
 }{
@@ -468,8 +439,8 @@ var LabelMemoryType = struct {
 	"non-heap",
 }
 
-// LabelOperation are the possible values that the label "operation" can have.
-var LabelOperation = struct {
+// AttributeOperation are the possible values that the attribute "operation" can have.
+var AttributeOperation = struct {
 	Get    string
 	Delete string
 	Index  string
@@ -483,8 +454,8 @@ var LabelOperation = struct {
 	"fetch",
 }
 
-// LabelShardType are the possible values that the label "shard_type" can have.
-var LabelShardType = struct {
+// AttributeShardType are the possible values that the attribute "shard_type" can have.
+var AttributeShardType = struct {
 	Active       string
 	Relocating   string
 	Initializing string

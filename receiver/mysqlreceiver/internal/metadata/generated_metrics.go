@@ -98,25 +98,6 @@ func (m *metricStruct) ByName(n string) MetricIntf {
 	return metricsByName[n]
 }
 
-func (m *metricStruct) FactoriesByName() map[string]func(pdata.Metric) {
-	return map[string]func(pdata.Metric){
-		Metrics.MysqlBufferPoolOperations.Name(): Metrics.MysqlBufferPoolOperations.Init,
-		Metrics.MysqlBufferPoolPages.Name():      Metrics.MysqlBufferPoolPages.Init,
-		Metrics.MysqlBufferPoolSize.Name():       Metrics.MysqlBufferPoolSize.Init,
-		Metrics.MysqlCommands.Name():             Metrics.MysqlCommands.Init,
-		Metrics.MysqlDoubleWrites.Name():         Metrics.MysqlDoubleWrites.Init,
-		Metrics.MysqlHandlers.Name():             Metrics.MysqlHandlers.Init,
-		Metrics.MysqlLocks.Name():                Metrics.MysqlLocks.Init,
-		Metrics.MysqlLogOperations.Name():        Metrics.MysqlLogOperations.Init,
-		Metrics.MysqlOperations.Name():           Metrics.MysqlOperations.Init,
-		Metrics.MysqlPageOperations.Name():       Metrics.MysqlPageOperations.Init,
-		Metrics.MysqlRowLocks.Name():             Metrics.MysqlRowLocks.Init,
-		Metrics.MysqlRowOperations.Name():        Metrics.MysqlRowOperations.Init,
-		Metrics.MysqlSorts.Name():                Metrics.MysqlSorts.Init,
-		Metrics.MysqlThreads.Name():              Metrics.MysqlThreads.Init,
-	}
-}
-
 // Metrics contains a set of methods for each metric that help with
 // manipulating those metrics.
 var Metrics = &metricStruct{
@@ -128,7 +109,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -157,7 +138,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -168,7 +149,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -179,7 +160,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -190,7 +171,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -201,7 +182,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -212,7 +193,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -223,7 +204,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -234,7 +215,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -245,7 +226,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -256,7 +237,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -274,8 +255,8 @@ var Metrics = &metricStruct{
 // manipulating those metrics. M is an alias for Metrics
 var M = Metrics
 
-// Labels contains the possible metric labels that can be used.
-var Labels = struct {
+// Attributes contains the possible metric attributes that can be used.
+var Attributes = struct {
 	// BufferPoolOperations (The buffer pool operations types)
 	BufferPoolOperations string
 	// BufferPoolPages (The buffer pool pages types)
@@ -321,12 +302,11 @@ var Labels = struct {
 	"kind",
 }
 
-// L contains the possible metric labels that can be used. L is an alias for
-// Labels.
-var L = Labels
+// A is an alias for Attributes.
+var A = Attributes
 
-// LabelBufferPoolOperations are the possible values that the label "buffer_pool_operations" can have.
-var LabelBufferPoolOperations = struct {
+// AttributeBufferPoolOperations are the possible values that the attribute "buffer_pool_operations" can have.
+var AttributeBufferPoolOperations = struct {
 	ReadAheadRnd     string
 	ReadAhead        string
 	ReadAheadEvicted string
@@ -344,8 +324,8 @@ var LabelBufferPoolOperations = struct {
 	"write_requests",
 }
 
-// LabelBufferPoolPages are the possible values that the label "buffer_pool_pages" can have.
-var LabelBufferPoolPages = struct {
+// AttributeBufferPoolPages are the possible values that the attribute "buffer_pool_pages" can have.
+var AttributeBufferPoolPages = struct {
 	Data    string
 	Dirty   string
 	Flushed string
@@ -361,8 +341,8 @@ var LabelBufferPoolPages = struct {
 	"total",
 }
 
-// LabelBufferPoolSize are the possible values that the label "buffer_pool_size" can have.
-var LabelBufferPoolSize = struct {
+// AttributeBufferPoolSize are the possible values that the attribute "buffer_pool_size" can have.
+var AttributeBufferPoolSize = struct {
 	Data  string
 	Dirty string
 	Size  string
@@ -372,8 +352,8 @@ var LabelBufferPoolSize = struct {
 	"size",
 }
 
-// LabelCommand are the possible values that the label "command" can have.
-var LabelCommand = struct {
+// AttributeCommand are the possible values that the attribute "command" can have.
+var AttributeCommand = struct {
 	Execute      string
 	Close        string
 	Fetch        string
@@ -389,8 +369,8 @@ var LabelCommand = struct {
 	"send_long_data",
 }
 
-// LabelDoubleWrites are the possible values that the label "double_writes" can have.
-var LabelDoubleWrites = struct {
+// AttributeDoubleWrites are the possible values that the attribute "double_writes" can have.
+var AttributeDoubleWrites = struct {
 	PagesWritten string
 	Writes       string
 }{
@@ -398,8 +378,8 @@ var LabelDoubleWrites = struct {
 	"writes",
 }
 
-// LabelHandler are the possible values that the label "handler" can have.
-var LabelHandler = struct {
+// AttributeHandler are the possible values that the attribute "handler" can have.
+var AttributeHandler = struct {
 	Commit            string
 	Delete            string
 	Discover          string
@@ -439,8 +419,8 @@ var LabelHandler = struct {
 	"write",
 }
 
-// LabelLocks are the possible values that the label "locks" can have.
-var LabelLocks = struct {
+// AttributeLocks are the possible values that the attribute "locks" can have.
+var AttributeLocks = struct {
 	Immediate string
 	Waited    string
 }{
@@ -448,8 +428,8 @@ var LabelLocks = struct {
 	"waited",
 }
 
-// LabelLogOperations are the possible values that the label "log_operations" can have.
-var LabelLogOperations = struct {
+// AttributeLogOperations are the possible values that the attribute "log_operations" can have.
+var AttributeLogOperations = struct {
 	Waits         string
 	WriteRequests string
 	Writes        string
@@ -459,8 +439,8 @@ var LabelLogOperations = struct {
 	"writes",
 }
 
-// LabelOperations are the possible values that the label "operations" can have.
-var LabelOperations = struct {
+// AttributeOperations are the possible values that the attribute "operations" can have.
+var AttributeOperations = struct {
 	Fsyncs string
 	Reads  string
 	Writes string
@@ -470,8 +450,8 @@ var LabelOperations = struct {
 	"writes",
 }
 
-// LabelPageOperations are the possible values that the label "page_operations" can have.
-var LabelPageOperations = struct {
+// AttributePageOperations are the possible values that the attribute "page_operations" can have.
+var AttributePageOperations = struct {
 	Created string
 	Read    string
 	Written string
@@ -481,8 +461,8 @@ var LabelPageOperations = struct {
 	"written",
 }
 
-// LabelRowLocks are the possible values that the label "row_locks" can have.
-var LabelRowLocks = struct {
+// AttributeRowLocks are the possible values that the attribute "row_locks" can have.
+var AttributeRowLocks = struct {
 	Waits string
 	Time  string
 }{
@@ -490,8 +470,8 @@ var LabelRowLocks = struct {
 	"time",
 }
 
-// LabelRowOperations are the possible values that the label "row_operations" can have.
-var LabelRowOperations = struct {
+// AttributeRowOperations are the possible values that the attribute "row_operations" can have.
+var AttributeRowOperations = struct {
 	Deleted  string
 	Inserted string
 	Read     string
@@ -503,8 +483,8 @@ var LabelRowOperations = struct {
 	"updated",
 }
 
-// LabelSorts are the possible values that the label "sorts" can have.
-var LabelSorts = struct {
+// AttributeSorts are the possible values that the attribute "sorts" can have.
+var AttributeSorts = struct {
 	MergePasses string
 	Range       string
 	Rows        string
@@ -516,8 +496,8 @@ var LabelSorts = struct {
 	"scan",
 }
 
-// LabelThreads are the possible values that the label "threads" can have.
-var LabelThreads = struct {
+// AttributeThreads are the possible values that the attribute "threads" can have.
+var AttributeThreads = struct {
 	Cached    string
 	Connected string
 	Created   string

@@ -106,7 +106,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -117,7 +117,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -164,7 +164,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("ms")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -211,7 +211,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -229,8 +229,8 @@ var Metrics = &metricStruct{
 // manipulating those metrics. M is an alias for Metrics
 var M = Metrics
 
-// Labels contains the possible metric labels that can be used.
-var Labels = struct {
+// Attributes contains the possible metric attributes that can be used.
+var Attributes = struct {
 	// ConnectionType (The status of the connection.)
 	ConnectionType string
 	// DatabaseName (The name of a database.)
@@ -246,12 +246,11 @@ var Labels = struct {
 	"operation",
 }
 
-// L contains the possible metric labels that can be used. L is an alias for
-// Labels.
-var L = Labels
+// A is an alias for Attributes.
+var A = Attributes
 
-// LabelConnectionType are the possible values that the label "connection_type" can have.
-var LabelConnectionType = struct {
+// AttributeConnectionType are the possible values that the attribute "connection_type" can have.
+var AttributeConnectionType = struct {
 	Active    string
 	Available string
 	Current   string
@@ -261,8 +260,8 @@ var LabelConnectionType = struct {
 	"current",
 }
 
-// LabelMemoryType are the possible values that the label "memory_type" can have.
-var LabelMemoryType = struct {
+// AttributeMemoryType are the possible values that the attribute "memory_type" can have.
+var AttributeMemoryType = struct {
 	Resident          string
 	Virtual           string
 	Mapped            string
@@ -274,8 +273,8 @@ var LabelMemoryType = struct {
 	"mappedWithJournal",
 }
 
-// LabelOperation are the possible values that the label "operation" can have.
-var LabelOperation = struct {
+// AttributeOperation are the possible values that the attribute "operation" can have.
+var AttributeOperation = struct {
 	Insert  string
 	Query   string
 	Update  string

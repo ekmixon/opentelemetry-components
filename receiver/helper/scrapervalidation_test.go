@@ -109,7 +109,7 @@ func TestCompareMetrics(t *testing.T) {
 				return metrics
 			}(),
 			expected:      baseTestMetrics(),
-			expectedError: fmt.Errorf("metric datapoint type doesn't match expected: 2, actual: 1"),
+			expectedError: fmt.Errorf("metric datapoint type doesn't match expected: Double, actual: Int"),
 		},
 		{
 			name: "Wrong attribute key",
@@ -157,17 +157,17 @@ func TestCompareMetrics(t *testing.T) {
 
 // TestScraperTest ensures that ScraperTest correctly
 func TestScraperTest(t *testing.T) {
-	scrape := func(c context.Context) (pdata.ResourceMetricsSlice, error) {
-		rms := pdata.NewResourceMetricsSlice()
+	scrape := func(c context.Context) (pdata.Metrics, error) {
+		rms := pdata.NewMetrics()
 		baseMetrics := baseTestMetrics()
-		baseMetrics.CopyTo(pdata.MetricSlice(rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty().Metrics()))
+		baseMetrics.CopyTo(pdata.MetricSlice(rms.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty().Metrics()))
 		return rms, nil
 	}
 
 	newMetrics := pdata.NewMetrics()
 	metricslice := newMetrics.ResourceMetrics()
 	rms, _ := scrape(context.Background())
-	rms.CopyTo(metricslice)
+	rms.ResourceMetrics().CopyTo(metricslice)
 
 	expectedBytes, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(newMetrics)
 	require.NoError(t, err)

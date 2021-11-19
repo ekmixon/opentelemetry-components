@@ -46,33 +46,33 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
+func (r *rabbitmqScraper) scrape(context.Context) (pdata.Metrics, error) {
 	req, err := http.NewRequest("GET", r.cfg.Endpoint+"/api/queues", nil)
 	if err != nil {
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.Metrics{}, err
 	}
 
 	req.Header.Add("Authorization", "Basic "+basicAuth(r.cfg.Username, r.cfg.Password))
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.Metrics{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.Metrics{}, err
 	}
 
 	var bodyParsed []interface{}
 
 	err = json.Unmarshal(body, &bodyParsed)
 	if err != nil {
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.Metrics{}, err
 	}
-	rms := pdata.NewResourceMetricsSlice()
-	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
-	ilm.InstrumentationLibrary().SetName("otel/rabbitmq")
+	rms := pdata.NewMetrics()
+	ilm := rms.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	ilm.InstrumentationLibrary().SetName("otelcol/rabbitmq")
 	now := pdata.NewTimestampFromTime(time.Now())
 
 	publishRateMetric := initMetric(ilm.Metrics(), metadata.M.RabbitmqPublishRate).Gauge().DataPoints()
@@ -93,7 +93,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 			r.logger.Info("could not parse queue name from body")
 			break
 		}
-		attributes.Upsert(metadata.L.Queue, pdata.NewAttributeValueString(queueName))
+		attributes.Upsert(metadata.A.Queue, pdata.NewAttributeValueString(queueName))
 
 		val, err := getValFromBody([]string{"message_stats", "publish_details", "rate"}, queue)
 		if err != nil {
@@ -132,7 +132,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:total"),
 			)
 		} else {
-			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("total"))
+			attributes.Upsert(metadata.A.State, pdata.NewAttributeValueString("total"))
 			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 
@@ -143,7 +143,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:unacknowledged"),
 			)
 		} else {
-			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("unacknowledged"))
+			attributes.Upsert(metadata.A.State, pdata.NewAttributeValueString("unacknowledged"))
 			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 
@@ -154,7 +154,7 @@ func (r *rabbitmqScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, e
 				zap.String("metric", "num_messages state:ready"),
 			)
 		} else {
-			attributes.Upsert(metadata.L.State, pdata.NewAttributeValueString("ready"))
+			attributes.Upsert(metadata.A.State, pdata.NewAttributeValueString("ready"))
 			addToDoubleMetric(numMessagesMetric, attributes, val, now)
 		}
 	}

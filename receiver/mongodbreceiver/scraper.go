@@ -80,43 +80,43 @@ var serverStatusMetrics = []mongoMetric{
 	{
 		metricDef:        metadata.M.MongodbConnections,
 		path:             []string{"connections", "active"},
-		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Active},
+		staticAttributes: map[string]string{metadata.A.ConnectionType: metadata.AttributeConnectionType.Active},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbConnections,
 		path:             []string{"connections", "available"},
-		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Available},
+		staticAttributes: map[string]string{metadata.A.ConnectionType: metadata.AttributeConnectionType.Available},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbConnections,
 		path:             []string{"connections", "current"},
-		staticAttributes: map[string]string{metadata.L.ConnectionType: metadata.LabelConnectionType.Current},
+		staticAttributes: map[string]string{metadata.A.ConnectionType: metadata.AttributeConnectionType.Current},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "resident"},
-		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Resident},
+		staticAttributes: map[string]string{metadata.A.MemoryType: metadata.AttributeMemoryType.Resident},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "virtual"},
-		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Virtual},
+		staticAttributes: map[string]string{metadata.A.MemoryType: metadata.AttributeMemoryType.Virtual},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mapped"},
-		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.Mapped},
+		staticAttributes: map[string]string{metadata.A.MemoryType: metadata.AttributeMemoryType.Mapped},
 		dataPointType:    integer,
 	},
 	{
 		metricDef:        metadata.M.MongodbMemoryUsage,
 		path:             []string{"mem", "mappedWithJournal"},
-		staticAttributes: map[string]string{metadata.L.MemoryType: metadata.LabelMemoryType.MappedWithJournal},
+		staticAttributes: map[string]string{metadata.A.MemoryType: metadata.AttributeMemoryType.MappedWithJournal},
 		dataPointType:    integer,
 	},
 }
@@ -136,12 +136,12 @@ func (r *mongodbScraper) start(ctx context.Context, host component.Host) error {
 	return nil
 }
 
-func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice, error) {
+func (r *mongodbScraper) scrape(ctx context.Context) (pdata.Metrics, error) {
 	// Init client in scrape method to create a new connection for each scrape.
 	client, err := r.buildClient(r.config, r.logger)
 	if err != nil {
 		r.logger.Error("Failed to create client", zap.Error(err))
-		return pdata.NewResourceMetricsSlice(), err
+		return pdata.NewMetrics(), err
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.config.Timeout)
@@ -149,7 +149,7 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 
 	if err := client.Connect(timeoutCtx); err != nil {
 		r.logger.Error("Failed to connect to client", zap.Error(err))
-		return pdata.NewResourceMetricsSlice(), err
+		return pdata.NewMetrics(), err
 	}
 
 	defer func() {
@@ -163,15 +163,15 @@ func (r *mongodbScraper) scrape(ctx context.Context) (pdata.ResourceMetricsSlice
 	err = client.Ping(ctx, readpref.PrimaryPreferred())
 	if err != nil {
 		r.logger.Error("Failed to ping server", zap.Error(err))
-		return pdata.NewResourceMetricsSlice(), err
+		return pdata.NewMetrics(), err
 	}
 
 	return r.collectMetrics(ctx, client)
 }
 
-func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pdata.ResourceMetricsSlice, error) {
-	rms := pdata.NewResourceMetricsSlice()
-	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pdata.Metrics, error) {
+	rms := pdata.NewMetrics()
+	ilm := rms.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
 	ilm.InstrumentationLibrary().SetName("otelcol/mongodb")
 	mm := newMetricManager(r.logger, ilm)
 
@@ -180,7 +180,7 @@ func (r *mongodbScraper) collectMetrics(ctx context.Context, client client) (pda
 	dbNames, err := client.ListDatabaseNames(timeoutCtx, bson.D{})
 	if err != nil {
 		r.logger.Error("Failed to fetch database names", zap.Error(err))
-		return pdata.ResourceMetricsSlice{}, err
+		return pdata.Metrics{}, err
 	}
 
 	serverStatus, err := client.query(ctx, "admin", bson.M{"serverStatus": 1})
@@ -257,19 +257,19 @@ func (r *mongodbScraper) parseSpecialMetrics(ctx context.Context, mm *metricMana
 
 	// Collect Operations
 	for _, operation := range []string{
-		metadata.LabelOperation.Insert,
-		metadata.LabelOperation.Query,
-		metadata.LabelOperation.Update,
-		metadata.LabelOperation.Delete,
-		metadata.LabelOperation.Getmore,
-		metadata.LabelOperation.Command,
+		metadata.AttributeOperation.Insert,
+		metadata.AttributeOperation.Query,
+		metadata.AttributeOperation.Update,
+		metadata.AttributeOperation.Delete,
+		metadata.AttributeOperation.Getmore,
+		metadata.AttributeOperation.Command,
 	} {
 		count, err := getIntMetricValue(document, []string{"opcounters", operation})
 		if err != nil {
 			r.logger.Error("Failed to Parse", zap.Error(err), zap.String("metric", metadata.M.MongodbOperations.Name()))
 		} else {
 			attributes := pdata.NewAttributeMap()
-			attributes.Insert(metadata.L.Operation, pdata.NewAttributeValueString(operation))
+			attributes.Insert(metadata.A.Operation, pdata.NewAttributeValueString(operation))
 			mm.addIntDataPoint(metadata.M.MongodbOperations, count, attributes)
 		}
 	}
@@ -284,7 +284,7 @@ func (r *mongodbScraper) parseDatabaseMetrics(
 ) {
 	for _, metricRequest := range metricsRequested {
 		attributes := pdata.NewAttributeMap()
-		attributes.Insert(metadata.L.DatabaseName, pdata.NewAttributeValueString(databaseName))
+		attributes.Insert(metadata.A.DatabaseName, pdata.NewAttributeValueString(databaseName))
 		for k, v := range metricRequest.staticAttributes {
 			attributes.Insert(k, pdata.NewAttributeValueString(v))
 		}

@@ -100,7 +100,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -111,7 +111,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -122,7 +122,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -133,7 +133,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -162,7 +162,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -191,7 +191,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -202,7 +202,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("1")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 }
@@ -211,8 +211,8 @@ var Metrics = &metricStruct{
 // manipulating those metrics. M is an alias for Metrics
 var M = Metrics
 
-// Labels contains the possible metric labels that can be used.
-var Labels = struct {
+// Attributes contains the possible metric attributes that can be used.
+var Attributes = struct {
 	// HTTPMethod (An HTTP request method.)
 	HTTPMethod string
 	// NodeName (The name of the node.)
@@ -225,12 +225,11 @@ var Labels = struct {
 	"response_code",
 }
 
-// L contains the possible metric labels that can be used. L is an alias for
-// Labels.
-var L = Labels
+// A is an alias for Attributes.
+var A = Attributes
 
-// LabelHTTPMethod are the possible values that the label "http_method" can have.
-var LabelHTTPMethod = struct {
+// AttributeHTTPMethod are the possible values that the attribute "http_method" can have.
+var AttributeHTTPMethod = struct {
 	COPY    string
 	DELETE  string
 	GET     string
@@ -248,8 +247,8 @@ var LabelHTTPMethod = struct {
 	"PUT",
 }
 
-// LabelResponseCode are the possible values that the label "response_code" can have.
-var LabelResponseCode = struct {
+// AttributeResponseCode are the possible values that the attribute "response_code" can have.
+var AttributeResponseCode = struct {
 	HTTP200 string
 	HTTP201 string
 	HTTP202 string

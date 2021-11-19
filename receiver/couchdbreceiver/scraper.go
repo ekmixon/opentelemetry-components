@@ -64,21 +64,21 @@ func addToIntMetric(metric pdata.NumberDataPointSlice, attributes pdata.Attribut
 	}
 }
 
-func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, error) {
+func (c *couchdbScraper) scrape(context.Context) (pdata.Metrics, error) {
 	if c.client == nil {
-		return pdata.ResourceMetricsSlice{}, errors.New("failed to connect to couchdb client")
+		return pdata.Metrics{}, errors.New("failed to connect to couchdb client")
 	}
 
 	stats, err := c.client.Get()
 	if err != nil {
 		c.logger.Error("Failed to fetch couchdb metrics", zap.Error(err))
-		return pdata.ResourceMetricsSlice{}, errors.New("failed to fetch couchdb stats")
+		return pdata.Metrics{}, errors.New("failed to fetch couchdb stats")
 	}
 
 	// metric initialization
-	rms := pdata.NewResourceMetricsSlice()
-	ilm := rms.AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
-	ilm.InstrumentationLibrary().SetName("otel/postgresql")
+	rms := pdata.NewMetrics()
+	ilm := rms.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty()
+	ilm.InstrumentationLibrary().SetName("otelcol/postgresql")
 	now := pdata.NewTimestampFromTime(time.Now())
 
 	requestTime := initMetric(ilm.Metrics(), metadata.M.CouchdbRequestTime).Gauge().DataPoints()
@@ -95,7 +95,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// request_time
 	requestTimeAttributes := pdata.NewAttributeMap()
-	requestTimeAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	requestTimeAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	requestTimeKeys := []string{"request_time", "value", "arithmetic_mean"}
 	requestTimeValue, err := getFloatFromBody(requestTimeKeys, stats)
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// httpd bulk_requests
 	httpdBulkRequestAttributes := pdata.NewAttributeMap()
-	httpdBulkRequestAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdBulkRequestAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	httpdBulkRequestKeys := []string{"httpd", "bulk_requests", "value"}
 	httpdBulkRequestValue, err := getIntFromBody(httpdBulkRequestKeys, stats)
 	if err != nil {
@@ -123,7 +123,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// requests
 	requestsAttributes := pdata.NewAttributeMap()
-	requestsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	requestsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	requestsKeys := []string{"httpd", "requests", "value"}
 	requestsValue, err := getFloatFromBody(requestsKeys, stats)
 	if err != nil {
@@ -137,8 +137,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// httpd_request_methods
 	httpdRequestMethodsAttributes := pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("COPY"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("COPY"))
 	httpdRequestMethodsKeys := []string{"httpd_request_methods", "COPY", "value"}
 	httpdRequestMethodsValue, err := getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -151,8 +151,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("DELETE"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("DELETE"))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "DELETE", "value"}
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -165,8 +165,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("GET"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("GET"))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "GET", "value"}
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -179,8 +179,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("HEAD"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("HEAD"))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "HEAD", "value"}
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -193,8 +193,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("OPTIONS"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("OPTIONS"))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "OPTIONS", "value"}
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -207,9 +207,9 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "POST", "value"}
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("POST"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("POST"))
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
 		c.logger.Info(
@@ -221,8 +221,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdRequestMethodsAttributes = pdata.NewAttributeMap()
-	httpdRequestMethodsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdRequestMethodsAttributes.Insert(metadata.L.HTTPMethod, pdata.NewAttributeValueString("PUT"))
+	httpdRequestMethodsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdRequestMethodsAttributes.Insert(metadata.A.HTTPMethod, pdata.NewAttributeValueString("PUT"))
 	httpdRequestMethodsKeys = []string{"httpd_request_methods", "PUT", "value"}
 	httpdRequestMethodsValue, err = getIntFromBody(httpdRequestMethodsKeys, stats)
 	if err != nil {
@@ -236,8 +236,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// httpd response codes
 	httpdResponseCodesAttributes := pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_200"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_200"))
 	httpdResponseCodesKeys := []string{"httpd_status_codes", "200", "value"}
 	httpdResponseCodesValue, err := getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -250,8 +250,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_201"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_201"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "201", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -264,8 +264,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_202"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_202"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "202", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -278,8 +278,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_204"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_204"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "204", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -292,8 +292,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_206"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_206"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "206", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -306,8 +306,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_301"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_301"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "301", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -320,8 +320,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_302"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_302"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "302", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -334,8 +334,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_304"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_304"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "304", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -348,8 +348,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_400"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_400"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "400", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -362,8 +362,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_401"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_401"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "401", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -376,8 +376,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_403"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_403"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "403", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -390,8 +390,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_404"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_404"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "404", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -404,8 +404,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_405"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_405"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "405", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -418,8 +418,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_406"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_406"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "406", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -432,8 +432,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_409"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_409"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "409", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -446,8 +446,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_412"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_412"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "412", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -460,8 +460,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_413"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_413"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "413", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -474,8 +474,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_414"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_414"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "414", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -488,8 +488,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_415"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_415"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "415", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -502,8 +502,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_416"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_416"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "416", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -516,8 +516,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_417"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_417"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "417", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -530,8 +530,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_500"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_500"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "500", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -544,8 +544,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_501"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_501"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "501", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -558,8 +558,8 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 	}
 
 	httpdResponseCodesAttributes = pdata.NewAttributeMap()
-	httpdResponseCodesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
-	httpdResponseCodesAttributes.Insert(metadata.L.ResponseCode, pdata.NewAttributeValueString("response_503"))
+	httpdResponseCodesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdResponseCodesAttributes.Insert(metadata.A.ResponseCode, pdata.NewAttributeValueString("response_503"))
 	httpdResponseCodesKeys = []string{"httpd_status_codes", "503", "value"}
 	httpdResponseCodesValue, err = getIntFromBody(httpdResponseCodesKeys, stats)
 	if err != nil {
@@ -573,7 +573,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// httpd temporary view reads
 	httpdTemporaryViewReadsAttributes := pdata.NewAttributeMap()
-	httpdTemporaryViewReadsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	httpdTemporaryViewReadsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	httpdTemporaryViewReadsKeys := []string{"httpd", "temporary_view_reads", "value"}
 	httpdTemporaryViewReadsValue, err := getIntFromBody(httpdTemporaryViewReadsKeys, stats)
 	if err != nil {
@@ -587,7 +587,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// view reads
 	viewReadsAttributes := pdata.NewAttributeMap()
-	viewReadsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	viewReadsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	viewReadsKeys := []string{"httpd", "view_reads", "value"}
 	viewReadsValue, err := getIntFromBody(viewReadsKeys, stats)
 	if err != nil {
@@ -601,7 +601,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// open databases
 	openDatabasesAttributes := pdata.NewAttributeMap()
-	openDatabasesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	openDatabasesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	openDatabasesKeys := []string{"open_databases", "value"}
 	openDatabasesValue, err := getFloatFromBody(openDatabasesKeys, stats)
 	if err != nil {
@@ -615,7 +615,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// open files
 	openFilesAttributes := pdata.NewAttributeMap()
-	openFilesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	openFilesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	openFilesKeys := []string{"open_os_files", "value"}
 	openFilesValue, err := getFloatFromBody(openFilesKeys, stats)
 	if err != nil {
@@ -629,7 +629,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// reads
 	readsAttributes := pdata.NewAttributeMap()
-	readsAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	readsAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	readsKeys := []string{"database_reads", "value"}
 	readsValue, err := getIntFromBody(readsKeys, stats)
 	if err != nil {
@@ -643,7 +643,7 @@ func (c *couchdbScraper) scrape(context.Context) (pdata.ResourceMetricsSlice, er
 
 	// writes
 	writesAttributes := pdata.NewAttributeMap()
-	writesAttributes.Insert(metadata.L.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
+	writesAttributes.Insert(metadata.A.NodeName, pdata.NewAttributeValueString(c.cfg.Nodename))
 	writesKeys := []string{"database_writes", "value"}
 	writesValue, err := getIntFromBody(writesKeys, stats)
 	if err != nil {

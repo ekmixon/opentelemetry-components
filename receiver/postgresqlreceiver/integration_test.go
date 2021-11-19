@@ -185,23 +185,23 @@ func getContainer(t *testing.T, req testcontainers.ContainerRequest) testcontain
 	return container
 }
 
-func enumerateExpectedMetrics(databases []expectedDatabase, perTableMetric bool, metric string, labels []string) map[string]bool {
+func enumerateExpectedMetrics(databases []expectedDatabase, perTableMetric bool, metric string, attributes []string) map[string]bool {
 	expected := map[string]bool{}
 	for _, db := range databases {
 		if perTableMetric {
 			for _, table := range db.tables {
-				if len(labels) > 0 {
-					for _, label := range labels {
-						expected[fmt.Sprintf("%s %s %s %s", metric, db.name, table, label)] = true
+				if len(attributes) > 0 {
+					for _, attribute := range attributes {
+						expected[fmt.Sprintf("%s %s %s %s", metric, db.name, table, attribute)] = true
 					}
 				} else {
 					expected[fmt.Sprintf("%s %s %s", metric, db.name, table)] = true
 				}
 			}
 		} else {
-			if len(labels) > 0 {
-				for _, label := range labels {
-					expected[fmt.Sprintf("%s %s %s", metric, db.name, label)] = true
+			if len(attributes) > 0 {
+				for _, attribute := range attributes {
+					expected[fmt.Sprintf("%s %s %s", metric, db.name, attribute)] = true
 				}
 			} else {
 				expected[fmt.Sprintf("%s %s", metric, db.name)] = true
@@ -211,21 +211,21 @@ func enumerateExpectedMetrics(databases []expectedDatabase, perTableMetric bool,
 	return expected
 }
 
-func enumerateActualMetrics(m pdata.Metric, dps pdata.NumberDataPointSlice, labelKey string) map[string]bool {
+func enumerateActualMetrics(m pdata.Metric, dps pdata.NumberDataPointSlice, attrKey string) map[string]bool {
 	actual := map[string]bool{}
 	for j := 0; j < dps.Len(); j++ {
 		dp := dps.At(j)
-		dbAttribute, _ := dp.Attributes().Get(metadata.L.Database)
-		if tableAttribute, ok := dp.Attributes().Get(metadata.L.Table); ok {
-			if labelKey != "" {
-				additionalLabelAttribute, _ := dp.Attributes().Get(labelKey)
+		dbAttribute, _ := dp.Attributes().Get(metadata.A.Database)
+		if tableAttribute, ok := dp.Attributes().Get(metadata.A.Table); ok {
+			if attrKey != "" {
+				additionalLabelAttribute, _ := dp.Attributes().Get(attrKey)
 				actual[fmt.Sprintf("%s %s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString(), additionalLabelAttribute.AsString())] = true
 			} else {
 				actual[fmt.Sprintf("%s %s %s", m.Name(), dbAttribute.AsString(), tableAttribute.AsString())] = true
 			}
 		} else {
-			if labelKey != "" {
-				additionalLabelAttribute, _ := dp.Attributes().Get(labelKey)
+			if attrKey != "" {
+				additionalLabelAttribute, _ := dp.Attributes().Get(attrKey)
 				actual[fmt.Sprintf("%s %s %s", m.Name(), dbAttribute.AsString(), additionalLabelAttribute.AsString())] = true
 			} else {
 				actual[fmt.Sprintf("%s %s", m.Name(), dbAttribute.AsString())] = true
@@ -242,7 +242,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice, databases []expecte
 		m := metrics.At(i)
 		switch m.Name() {
 		case metadata.M.PostgresqlBlocksRead.Name():
-			actual := enumerateActualMetrics(m, m.Sum().DataPoints(), metadata.L.Source)
+			actual := enumerateActualMetrics(m, m.Sum().DataPoints(), metadata.A.Source)
 			expected := enumerateExpectedMetrics(
 				databases,
 				true,
@@ -290,7 +290,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice, databases []expecte
 			require.Equal(t, expected, actual)
 
 		case metadata.M.PostgresqlRows.Name():
-			actual := enumerateActualMetrics(m, m.Gauge().DataPoints(), metadata.L.State)
+			actual := enumerateActualMetrics(m, m.Gauge().DataPoints(), metadata.A.State)
 			expected := enumerateExpectedMetrics(
 				databases,
 				true,
@@ -301,7 +301,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice, databases []expecte
 			require.Equal(t, expected, actual)
 
 		case metadata.M.PostgresqlOperations.Name():
-			actual := enumerateActualMetrics(m, m.Sum().DataPoints(), metadata.L.Operation)
+			actual := enumerateActualMetrics(m, m.Sum().DataPoints(), metadata.A.Operation)
 			expected := enumerateExpectedMetrics(
 				databases,
 				true,

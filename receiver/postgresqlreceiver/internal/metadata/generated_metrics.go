@@ -97,7 +97,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -108,7 +108,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -128,7 +128,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -139,7 +139,7 @@ var Metrics = &metricStruct{
 			metric.SetUnit("")
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		},
 	},
 	&metricImpl{
@@ -157,8 +157,8 @@ var Metrics = &metricStruct{
 // manipulating those metrics. M is an alias for Metrics
 var M = Metrics
 
-// Labels contains the possible metric labels that can be used.
-var Labels = struct {
+// Attributes contains the possible metric attributes that can be used.
+var Attributes = struct {
 	// Database (The name of the database.)
 	Database string
 	// Operation (The database operation.)
@@ -177,12 +177,11 @@ var Labels = struct {
 	"table",
 }
 
-// L contains the possible metric labels that can be used. L is an alias for
-// Labels.
-var L = Labels
+// A is an alias for Attributes.
+var A = Attributes
 
-// LabelOperation are the possible values that the label "operation" can have.
-var LabelOperation = struct {
+// AttributeOperation are the possible values that the attribute "operation" can have.
+var AttributeOperation = struct {
 	Ins    string
 	Upd    string
 	Del    string
@@ -194,8 +193,8 @@ var LabelOperation = struct {
 	"hot_upd",
 }
 
-// LabelSource are the possible values that the label "source" can have.
-var LabelSource = struct {
+// AttributeSource are the possible values that the attribute "source" can have.
+var AttributeSource = struct {
 	HeapRead  string
 	HeapHit   string
 	IdxRead   string
@@ -215,8 +214,8 @@ var LabelSource = struct {
 	"tidx_hit",
 }
 
-// LabelState are the possible values that the label "state" can have.
-var LabelState = struct {
+// AttributeState are the possible values that the attribute "state" can have.
+var AttributeState = struct {
 	Dead string
 	Live string
 }{

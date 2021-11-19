@@ -152,7 +152,7 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			requestMethodMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				method, _ := dp.Attributes().Get(metadata.L.HTTPMethod)
+				method, _ := dp.Attributes().Get(metadata.A.HTTPMethod)
 				attribute := fmt.Sprintf("%s method:%s", m.Name(), method.AsString())
 				requestMethodMetrics[attribute] = true
 			}
@@ -175,7 +175,7 @@ func validateIntegrationResult(t *testing.T, metric pdata.MetricSlice) {
 			respondCodeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				code, _ := dp.Attributes().Get(metadata.L.ResponseCode)
+				code, _ := dp.Attributes().Get(metadata.A.ResponseCode)
 				attribute := fmt.Sprintf("%s code:%s", m.Name(), code.AsString())
 				respondCodeMetrics[attribute] = true
 			}

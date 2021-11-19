@@ -12,7 +12,7 @@ import (
 )
 
 // TestScraper tests that a scraper collects the expected metrics against a given array of expectedbytes representing a pdata.Metrics struct
-func ScraperTest(t *testing.T, actualScraper scraperhelper.ScrapeResourceMetrics, expectedFileBytes []byte) {
+func ScraperTest(t *testing.T, actualScraper scraperhelper.ScrapeFunc, expectedFileBytes []byte) {
 	scrapedRMS, err := actualScraper(context.Background())
 	require.NoError(t, err)
 
@@ -21,7 +21,7 @@ func ScraperTest(t *testing.T, actualScraper scraperhelper.ScrapeResourceMetrics
 	require.NoError(t, err)
 
 	eMetricSlice := expectedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
-	aMetricSlice := scrapedRMS.At(0).InstrumentationLibraryMetrics().At(0).Metrics()
+	aMetricSlice := scrapedRMS.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 
 	require.NoError(t, CompareMetrics(eMetricSlice, aMetricSlice))
 }
@@ -84,7 +84,7 @@ func CompareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
 			for k := 0; k < actualDataPoints.Len(); k++ {
 				adp := actualDataPoints.At(k)
 				adpAttributes := adp.Attributes()
-				labelMatches := true
+				attributeMatches := true
 
 				if edp.Attributes().Len() != adpAttributes.Len() {
 					break
@@ -93,10 +93,10 @@ func CompareMetrics(expectedAll, actualAll pdata.MetricSlice) error {
 					if attributeVal, ok := adpAttributes.Get(k); ok && attributeVal.StringVal() == v.StringVal() {
 						return true
 					}
-					labelMatches = false
+					attributeMatches = false
 					return false
 				})
-				if !labelMatches {
+				if !attributeMatches {
 					continue
 				}
 				if edp.Type() != adp.Type() {

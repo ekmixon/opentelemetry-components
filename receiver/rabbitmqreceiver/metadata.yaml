@@ -1,6 +1,6 @@
 name: rabbitmqreceiver
 
-labels:
+attributes:
   queue:
     description: The rabbit queue name.
   state:
@@ -16,22 +16,22 @@ metrics:
     unit: 1
     data:
       type: gauge
-    labels: [queue]
+    attributes: [queue]
   rabbitmq.delivery_rate:
     description: The rate (per second) at which messages are being delivered. 
     unit: 1/s
     data:
       type: gauge
-    labels: [queue]
+    attributes: [queue]
   rabbitmq.num_messages:
     description: The number of messages in a queue.  
     unit: 1
     data:
       type: gauge
-    labels: [queue,state]
+    attributes: [queue,state]
   rabbitmq.publish_rate:
     description: The rate (per second) at which messages are being published. 
     unit: 1
     data:
       type: gauge
-    labels: [queue]
+    attributes: [queue]

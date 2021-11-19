@@ -1,6 +1,6 @@
 name: couchdbreceiver
 
-labels:
+attributes:
   node_name:
     description: The name of the node.
   http_method:
@@ -16,7 +16,7 @@ metrics:
     unit: 1
     data:
       type: gauge
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.httpd_bulk_requests:
     description: The bulk request count.
     unit: 1
@@ -24,13 +24,13 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.requests:
     description: The requests count.
     unit: 1
     data:
       type: gauge
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.httpd_request_methods:
     description: The HTTP request method count.
     unit: 1
@@ -38,7 +38,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name, http_method ]
+    attributes: [ node_name, http_method ]
   couchdb.httpd_response_codes:
     description: The HTTP request method count.
     unit: 1
@@ -46,7 +46,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name, response_code ]
+    attributes: [ node_name, response_code ]
   couchdb.httpd_temporary_view_reads:
     description: The temporary view reads count.
     unit: 1
@@ -54,7 +54,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.view_reads:
     description: The view reads count.
     unit: 1
@@ -62,19 +62,19 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.open_databases:
     description: The number of open databases.
     unit: 1
     data:
       type: gauge
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.open_files:
     description: The number of open files.
     unit: 1
     data:
       type: gauge
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.reads:
     description: The database read count.
     unit: 1
@@ -82,7 +82,7 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
+    attributes: [ node_name ]
   couchdb.writes:
     description: The database write count.
     unit: 1
@@ -90,4 +90,4 @@ metrics:
       type: sum
       monotonic: true
       aggregation: cumulative
-    labels: [ node_name ]
+    attributes: [ node_name ]

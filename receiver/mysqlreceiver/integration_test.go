@@ -139,7 +139,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolPagesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolPages)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.BufferPoolPages)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				bufferPoolPagesMetrics[attribute] = true
 			}
@@ -158,7 +158,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolOperations)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.BufferPoolOperations)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				bufferPoolOperationsMetrics[attribute] = true
 			}
@@ -178,7 +178,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			bufferPoolSizeMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.BufferPoolSize)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.BufferPoolSize)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				bufferPoolSizeMetrics[attribute] = true
 			}
@@ -195,7 +195,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			commandsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Command)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Command)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				commandsMetrics[attribute] = true
 			}
@@ -215,7 +215,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			handlersMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Handler)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Handler)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				handlersMetrics[attribute] = true
 			}
@@ -247,7 +247,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			doubleWritesMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.DoubleWrites)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.DoubleWrites)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				doubleWritesMetrics[attribute] = true
 			}
@@ -263,7 +263,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			logOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.LogOperations)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.LogOperations)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				logOperationsMetrics[attribute] = true
 			}
@@ -280,7 +280,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			operationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Operations)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Operations)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				operationsMetrics[attribute] = true
 			}
@@ -297,7 +297,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			pageOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.PageOperations)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.PageOperations)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				pageOperationsMetrics[attribute] = true
 			}
@@ -314,7 +314,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowLocksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.RowLocks)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.RowLocks)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				rowLocksMetrics[attribute] = true
 			}
@@ -330,7 +330,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			rowOperationsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.RowOperations)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.RowOperations)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				rowOperationsMetrics[attribute] = true
 			}
@@ -348,7 +348,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			locksMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Locks)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Locks)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				locksMetrics[attribute] = true
 			}
@@ -364,7 +364,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			sortsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Sorts)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Sorts)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				sortsMetrics[attribute] = true
 			}
@@ -381,7 +381,7 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 			threadsMetrics := map[string]bool{}
 			for j := 0; j < dps.Len(); j++ {
 				dp := dps.At(j)
-				value_attribute, _ := dp.Attributes().Get(metadata.L.Threads)
+				value_attribute, _ := dp.Attributes().Get(metadata.A.Threads)
 				attribute := fmt.Sprintf("%s :%s", m.Name(), value_attribute.AsString())
 				threadsMetrics[attribute] = true
 			}

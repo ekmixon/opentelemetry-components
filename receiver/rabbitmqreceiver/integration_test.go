@@ -89,11 +89,11 @@ func validateResult(t *testing.T, metrics pdata.MetricSlice) {
 	exists := make(map[string]bool)
 
 	unenumAttributeSet := []string{
-		metadata.L.Queue,
+		metadata.A.Queue,
 	}
 
 	enumAttributeSet := []string{
-		metadata.L.State,
+		metadata.A.State,
 	}
 
 	for i := 0; i < metrics.Len(); i++ {
